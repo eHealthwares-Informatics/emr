@@ -62,6 +62,11 @@ export class CreateStaffDto {
   @IsString()
   department?: string;
 
+  @ApiPropertyOptional({ description: 'EMR department id (departments table)' })
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
+
   @ApiPropertyOptional({ description: 'Location id in the identity service' })
   @IsOptional()
   @IsString()
@@ -128,6 +133,11 @@ export class UpdateStaffDto {
   @IsOptional()
   @IsString()
   department?: string;
+
+  @ApiPropertyOptional({ description: 'EMR department id (departments table)' })
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
 
   @ApiPropertyOptional({ description: 'Location id in the identity service' })
   @IsOptional()

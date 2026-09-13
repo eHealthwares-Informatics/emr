@@ -1,0 +1,2007 @@
+openapi: 3.0.0
+paths:
+  /api/health:
+    get:
+      operationId: HealthController_check
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: Health check
+      tags:
+        - health
+  /api/auth/login:
+    post:
+      operationId: AuthProxyController_login
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyLoginDto'
+      responses:
+        '200':
+          description: ''
+      summary: Authenticate via the identity service and return tokens
+      tags: &ref_0
+        - auth-proxy
+  /api/auth/refresh-token:
+    post:
+      operationId: AuthProxyController_refreshToken
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyRefreshTokenDto'
+      responses:
+        '200':
+          description: ''
+      summary: Rotate refresh token through the identity service
+      tags: *ref_0
+  /api/auth/logout:
+    post:
+      operationId: AuthProxyController_logout
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyRefreshTokenDto'
+      responses:
+        '200':
+          description: ''
+      summary: Revoke the presented refresh token (sign out this device)
+      tags: *ref_0
+  /api/auth/logout-all:
+    post:
+      operationId: AuthProxyController_logoutAll
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyRefreshTokenDto'
+      responses:
+        '200':
+          description: ''
+      summary: Revoke all refresh tokens for the user
+      tags: *ref_0
+  /api/auth/me:
+    get:
+      operationId: AuthProxyController_me
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+        - bearer: []
+      summary: Get current user profile with modules from the identity service
+      tags: *ref_0
+  /api/locations:
+    get:
+      operationId: LocationProxyController_list
+      parameters:
+        - name: search
+          required: false
+          in: query
+          description: Search by location name or code
+          schema:
+            example: Pharmacy
+            type: string
+        - name: limit
+          required: false
+          in: query
+          description: Items per page
+          schema:
+            example: 20
+            type: number
+        - name: page
+          required: false
+          in: query
+          description: Page number (1-based)
+          schema:
+            example: 1
+            type: number
+      responses:
+        '200':
+          description: ''
+      summary: Search locations proxied from the identity service
+      tags: &ref_1
+        - location-proxy
+  /api/locations/{id}:
+    get:
+      operationId: LocationProxyController_getById
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get a location by id from the identity service
+      tags: *ref_1
+  /api/patients:
+    get:
+      operationId: PatientsController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: limit
+          required: false
+          in: query
+          schema:
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: search
+          required: false
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: filter
+          required: false
+          in: query
+          description: Generic filter string
+          schema:
+            type: string
+        - name: organizationId
+          required: false
+          in: query
+          description: Filter by organization (superadmin only)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List patients with pagination and search
+      tags: &ref_2
+        - patients
+    post:
+      operationId: PatientsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientDto'
+      responses:
+        '201':
+          description: ''
+      summary: Register a new patient
+      tags: *ref_2
+  /api/patients/by-mrn/{patientId}:
+    get:
+      operationId: PatientsController_getByMrn
+      parameters:
+        - name: patientId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get patient by MRN (patientId)
+      tags: *ref_2
+  /api/patients/{id}:
+    get:
+      operationId: PatientsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get patient by id
+      tags: *ref_2
+    patch:
+      operationId: PatientsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePatientDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a patient
+      tags: *ref_2
+    delete:
+      operationId: PatientsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a patient
+      tags: *ref_2
+  /api/payment-providers:
+    get:
+      operationId: PaymentProvidersController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: limit
+          required: false
+          in: query
+          schema:
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: search
+          required: false
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: filter
+          required: false
+          in: query
+          description: Generic filter string
+          schema:
+            type: string
+        - name: organizationId
+          required: false
+          in: query
+          description: Filter by organization (superadmin only)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List payment providers with pagination and search
+      tags: &ref_3
+        - payment-providers
+    post:
+      operationId: PaymentProvidersController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentProviderDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a payment provider
+      tags: *ref_3
+  /api/payment-providers/{id}:
+    get:
+      operationId: PaymentProvidersController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get payment provider by id
+      tags: *ref_3
+    patch:
+      operationId: PaymentProvidersController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentProviderDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a payment provider
+      tags: *ref_3
+    delete:
+      operationId: PaymentProvidersController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a payment provider
+      tags: *ref_3
+  /api/staff:
+    get:
+      operationId: StaffController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List staff with search and role/category/department filters
+      tags: &ref_4
+        - staff
+    post:
+      operationId: StaffController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStaffDto'
+      responses:
+        '201':
+          description: ''
+      summary: Register a staff member (optionally linked to an identity user)
+      tags: *ref_4
+  /api/staff/{id}:
+    get:
+      operationId: StaffController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get staff member by id
+      tags: *ref_4
+    patch:
+      operationId: StaffController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStaffDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a staff member
+      tags: *ref_4
+    delete:
+      operationId: StaffController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a staff member
+      tags: *ref_4
+  /api/departments:
+    get:
+      operationId: DepartmentsController_list
+      parameters:
+        - name: isActive
+          required: false
+          in: query
+          description: Filter by active state (true/false)
+          schema:
+            type: string
+        - name: departmentType
+          required: false
+          in: query
+          description: Filter by department type
+          schema:
+            type: string
+        - name: locationId
+          required: false
+          in: query
+          description: Filter by identity site (location) id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List departments with search and filters
+      tags: &ref_5
+        - departments
+    post:
+      operationId: DepartmentsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDepartmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a department (belongs to an identity site location)
+      tags: *ref_5
+  /api/departments/{id}:
+    get:
+      operationId: DepartmentsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get department by id
+      tags: *ref_5
+    patch:
+      operationId: DepartmentsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDepartmentDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a department
+      tags: *ref_5
+    delete:
+      operationId: DepartmentsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a department
+      tags: *ref_5
+  /api/appointments:
+    get:
+      operationId: AppointmentsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List appointments with pagination, date/status filters
+      tags: &ref_6
+        - appointments
+    post:
+      operationId: AppointmentsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Schedule an appointment
+      tags: *ref_6
+  /api/appointments/{id}:
+    get:
+      operationId: AppointmentsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get appointment by id
+      tags: *ref_6
+    patch:
+      operationId: AppointmentsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppointmentDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an appointment
+      tags: *ref_6
+    delete:
+      operationId: AppointmentsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive an appointment
+      tags: *ref_6
+  /api/appointments/{id}/check-in:
+    post:
+      operationId: AppointmentsController_checkIn
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Check in appointment and start a visit
+      tags: *ref_6
+  /api/appointments/{id}/cancel:
+    post:
+      operationId: AppointmentsController_cancel
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Cancel an appointment
+      tags: *ref_6
+  /api/appointments/{id}/no-show:
+    post:
+      operationId: AppointmentsController_noShow
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Mark appointment as no-show
+      tags: *ref_6
+  /api/appointments/{id}/complete:
+    post:
+      operationId: AppointmentsController_complete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Complete an in-progress appointment
+      tags: *ref_6
+  /api/visits:
+    get:
+      operationId: VisitsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List visits with pagination and status/provider filters
+      tags: &ref_7
+        - visits
+    post:
+      operationId: VisitsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVisitDto'
+      responses:
+        '201':
+          description: ''
+      summary: Start a new visit
+      tags: *ref_7
+  /api/visits/active:
+    get:
+      operationId: VisitsController_active
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List active (ongoing) visits
+      tags: *ref_7
+  /api/visits/{id}:
+    get:
+      operationId: VisitsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get visit by id
+      tags: *ref_7
+    patch:
+      operationId: VisitsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVisitDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a visit
+      tags: *ref_7
+    delete:
+      operationId: VisitsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a visit
+      tags: *ref_7
+  /api/visits/{id}/end:
+    post:
+      operationId: VisitsController_end
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndVisitDto'
+      responses:
+        '201':
+          description: ''
+      summary: End an ongoing visit
+      tags: *ref_7
+  /api/visits/{id}/cancel:
+    post:
+      operationId: VisitsController_cancel
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Cancel an ongoing visit
+      tags: *ref_7
+  /api/encounters:
+    get:
+      operationId: EncountersController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List encounters with patient/visit filters
+      tags: &ref_8
+        - encounters
+    post:
+      operationId: EncountersController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEncounterDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create an encounter (optionally linked to a visit)
+      tags: *ref_8
+  /api/encounters/{id}:
+    get:
+      operationId: EncountersController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get encounter by id
+      tags: *ref_8
+    patch:
+      operationId: EncountersController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEncounterDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an encounter
+      tags: *ref_8
+    delete:
+      operationId: EncountersController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive an encounter
+      tags: *ref_8
+  /api/encounters/{id}/requests:
+    post:
+      operationId: EncountersController_createRequest
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEncounterRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a request from an encounter context
+      tags: *ref_8
+  /api/requests:
+    get:
+      operationId: RequestsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List clinical requests with filters
+      tags: &ref_9
+        - requests
+    post:
+      operationId: RequestsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a request (optionally external-synced to LIS/pharmacy)
+      tags: *ref_9
+  /api/requests/{id}:
+    get:
+      operationId: RequestsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get request by id with items
+      tags: *ref_9
+    patch:
+      operationId: RequestsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequestDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an open request
+      tags: *ref_9
+    delete:
+      operationId: RequestsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a request
+      tags: *ref_9
+  /api/requests/{id}/history:
+    get:
+      operationId: RequestsController_getHistory
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get request status history only (lightweight)
+      tags: *ref_9
+  /api/requests/{id}/transition:
+    post:
+      operationId: RequestsController_transition
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequestStatusDto'
+      responses:
+        '201':
+          description: ''
+      summary: Transition request status
+      tags: *ref_9
+  /api/requests/{id}/note:
+    post:
+      operationId: RequestsController_addNote
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRequestNoteDto'
+      responses:
+        '201':
+          description: ''
+      summary: Append a free-text note to the request timeline
+      tags: *ref_9
+  /api/requests/{id}/sync:
+    post:
+      operationId: RequestsController_sync
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Manually re-sync request to external system
+      tags: *ref_9
+  /api/form-definitions:
+    get:
+      operationId: FormDefinitionsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List form definitions
+      tags: &ref_10
+        - form-definitions
+    post:
+      operationId: FormDefinitionsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFormDefinitionDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a form definition (draft)
+      tags: *ref_10
+  /api/form-definitions/{id}:
+    get:
+      operationId: FormDefinitionsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get form definition by id
+      tags: *ref_10
+    patch:
+      operationId: FormDefinitionsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFormDefinitionDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a form definition (bumps version when schema changes)
+      tags: *ref_10
+    delete:
+      operationId: FormDefinitionsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a form definition
+      tags: *ref_10
+  /api/form-definitions/{id}/publish:
+    post:
+      operationId: FormDefinitionsController_publish
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishFormDto'
+      responses:
+        '201':
+          description: ''
+      summary: Publish a form definition
+      tags: *ref_10
+  /api/form-definitions/{id}/unpublish:
+    post:
+      operationId: FormDefinitionsController_unpublish
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Unpublish a form definition
+      tags: *ref_10
+  /api/form-submissions:
+    get:
+      operationId: FormSubmissionsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List form submissions (filter by patient/visit/encounter/form)
+      tags: &ref_11
+        - form-submissions
+    post:
+      operationId: FormSubmissionsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFormSubmissionDto'
+      responses:
+        '201':
+          description: ''
+      summary: Submit (or draft) a form against a patient/encounter
+      tags: *ref_11
+  /api/form-submissions/{id}:
+    get:
+      operationId: FormSubmissionsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get form submission by id
+      tags: *ref_11
+    patch:
+      operationId: FormSubmissionsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFormSubmissionDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a draft submission
+      tags: *ref_11
+    delete:
+      operationId: FormSubmissionsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a form submission
+      tags: *ref_11
+  /api/form-submissions/{id}/chain:
+    get:
+      operationId: FormSubmissionsController_getChain
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get the amend chain (original + all amendments) for a submission
+      tags: *ref_11
+  /api/form-submissions/{id}/pdf:
+    get:
+      operationId: FormSubmissionsController_pdf
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Render a submission as a PDF document
+      tags: *ref_11
+  /api/form-submissions/{id}/amend:
+    post:
+      operationId: FormSubmissionsController_amend
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFormSubmissionDto'
+      responses:
+        '201':
+          description: ''
+      summary: Amend a submitted form (creates a new submission)
+      tags: *ref_11
+  /api/forms/available:
+    get:
+      operationId: FormAccessController_available
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+        - bearer: []
+      summary: List published forms the current user has access to
+      tags:
+        - forms
+  /api/dashboard:
+    get:
+      operationId: DashboardController_summary
+      parameters:
+        - name: date
+          required: false
+          in: query
+          description: YYYY-MM-DD; defaults to today
+          schema: {}
+      responses:
+        '200':
+          description: ''
+      summary: Daily operational summary for the EMR dashboard
+      tags:
+        - dashboard
+info:
+  title: EMR API
+  description: >-
+    Electronic Medical Record: appointments, visits, encounters, dynamic forms,
+    and clinical requests
+  version: 1.0.0
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    ProxyLoginDto:
+      type: object
+      properties:
+        username:
+          type: string
+          example: admin
+          description: Username
+        password:
+          type: string
+          example: password
+          description: Password (min 6 characters)
+      required:
+        - username
+        - password
+    ProxyRefreshTokenDto:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required:
+        - refreshToken
+    Object:
+      type: object
+      properties: {}
+    CreatePatientDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        otherNames:
+          type: string
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        nextOfKinName:
+          type: string
+        nextOfKinPhone:
+          type: string
+        nextOfKinRelationship:
+          type: string
+        identifiers:
+          type: array
+          items:
+            type: string
+        maritalStatus:
+          type: string
+        occupation:
+          type: string
+        bloodGroup:
+          type: string
+        genotype:
+          type: string
+        paymentProviderIds:
+          type: array
+          items:
+            type: string
+      required:
+        - firstName
+        - lastName
+    UpdatePatientDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        otherNames:
+          type: string
+        dateOfBirth:
+          type: string
+        gender:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        nextOfKinName:
+          type: string
+        nextOfKinPhone:
+          type: string
+        nextOfKinRelationship:
+          type: string
+        identifiers:
+          type: array
+          items:
+            type: string
+        maritalStatus:
+          type: string
+        occupation:
+          type: string
+        bloodGroup:
+          type: string
+        genotype:
+          type: string
+        paymentProviderIds:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+    CreatePaymentProviderDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: &ref_12
+            - CASH
+            - HMO
+            - COMPANY
+            - PROGRAM
+            - OTHER
+        description:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+      required:
+        - code
+        - name
+        - type
+    UpdatePaymentProviderDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: *ref_12
+        description:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        isActive:
+          type: boolean
+    CreateStaffDto:
+      type: object
+      properties:
+        staffNumber:
+          type: string
+          description: Auto-generated as STF-xxx if omitted
+        firstName:
+          type: string
+        lastName:
+          type: string
+        otherNames:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        hireDate:
+          type: string
+        roleType:
+          type: string
+          enum: &ref_13
+            - Doctor
+            - Nurse
+            - Technician
+            - Therapist
+            - Admin
+            - Support
+            - Specialist
+            - Finance
+        category:
+          type: string
+          enum: &ref_14
+            - Medical
+            - Nursing
+            - Allied Health
+            - Pharmacy
+            - Laboratory
+            - Administrative
+            - Support
+            - Other
+        department:
+          type: string
+        departmentId:
+          type: string
+          description: EMR department id (departments table)
+        identityLocationId:
+          type: string
+          description: Location id in the identity service
+        userId:
+          type: string
+          description: Linked identity-service user id (login)
+        isActive:
+          type: boolean
+          default: true
+        otherDetails:
+          type: object
+      required:
+        - firstName
+        - lastName
+        - roleType
+    UpdateStaffDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        otherNames:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        hireDate:
+          type: string
+        roleType:
+          type: string
+          enum: *ref_13
+        category:
+          type: string
+          enum: *ref_14
+        department:
+          type: string
+        departmentId:
+          type: string
+          description: EMR department id (departments table)
+        identityLocationId:
+          type: string
+          description: Location id in the identity service
+        userId:
+          type: string
+          description: Linked identity-service user id (login)
+        isActive:
+          type: boolean
+        otherDetails:
+          type: object
+    CreateDepartmentDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: RADIOLOGY
+        name:
+          type: string
+          example: Radiology
+        departmentType:
+          type: string
+          enum: &ref_15
+            - OPD
+            - INPATIENT
+            - EMERGENCY
+            - LABORATORY
+            - PHARMACY
+            - RADIOLOGY
+            - MATERNITY
+            - SUPPORT
+            - OTHER
+          default: OPD
+        description:
+          type: string
+        locationId:
+          type: string
+          description: >-
+            Identity location (site) id the department belongs to; defaults to
+            the caller’s location
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - code
+        - name
+    UpdateDepartmentDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        departmentType:
+          type: string
+          enum: *ref_15
+        description:
+          type: string
+        locationId:
+          type: string
+          description: Identity location (site) id the department belongs to
+        isActive:
+          type: boolean
+    CreateAppointmentDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        appointmentType:
+          type: string
+          enum: &ref_16
+            - CHECKUP
+            - FOLLOW_UP
+            - CONSULTATION
+            - PROCEDURE
+            - EMERGENCY
+            - SURGERY
+            - OTHER
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        scheduleLocation:
+          type: string
+        priority:
+          type: string
+          enum: &ref_17
+            - ROUTINE
+            - URGENT
+            - EMERGENCY
+          default: ROUTINE
+        reason:
+          type: string
+        notes:
+          type: string
+      required:
+        - patientId
+        - appointmentType
+        - date
+        - startTime
+    CheckInAppointmentDto:
+      type: object
+      properties:
+        locationId:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+    CancelAppointmentDto:
+      type: object
+      properties:
+        reason:
+          type: string
+    UpdateAppointmentDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        appointmentType:
+          type: string
+          enum: *ref_16
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        scheduleLocation:
+          type: string
+        priority:
+          type: string
+          enum: *ref_17
+        status:
+          type: string
+          enum:
+            - SCHEDULED
+            - CHECKED_IN
+            - IN_PROGRESS
+            - COMPLETED
+            - CANCELLED
+            - NO_SHOW
+            - MISSED
+        reason:
+          type: string
+        notes:
+          type: string
+    CreateVisitDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        visitType:
+          type: string
+          enum: &ref_18
+            - OUTPATIENT
+            - INPATIENT
+            - EMERGENCY
+            - HOME_VISIT
+          default: OUTPATIENT
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        appointmentId:
+          type: string
+        startDatetime:
+          type: string
+      required:
+        - patientId
+        - visitType
+    EndVisitDto:
+      type: object
+      properties:
+        stopDatetime:
+          type: string
+    UpdateVisitDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        visitType:
+          type: string
+          enum: *ref_18
+        status:
+          type: string
+          enum:
+            - ONGOING
+            - COMPLETED
+            - CANCELLED
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        stopDatetime:
+          type: string
+    CreateEncounterDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        visitId:
+          type: string
+        encounterType:
+          type: string
+          enum: &ref_19
+            - CONSULTATION
+            - VITALS
+            - HISTORY_AND_PHYSICAL
+            - CLINICAL_NOTE
+            - LAB_RESULTS
+            - DISCHARGE
+            - PROCEDURE
+            - ADMISSION
+            - OTHER
+        providerId:
+          type: string
+        providerName:
+          type: string
+        encounterDatetime:
+          type: string
+        reason:
+          type: string
+        notes:
+          type: string
+      required:
+        - patientId
+        - encounterType
+    CreateEncounterRequestDto:
+      type: object
+      properties:
+        requestType:
+          type: string
+          enum: &ref_20
+            - PRESCRIPTION
+            - LAB
+            - RADIOLOGY
+            - OTHER_TEST
+        priority:
+          type: string
+          enum: *ref_17
+          default: ROUTINE
+        orderingProviderId:
+          type: string
+        orderingProviderName:
+          type: string
+        diagnosis:
+          type: string
+        clinicalNotes:
+          type: string
+        requestedAt:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+      required:
+        - requestType
+        - items
+    UpdateEncounterDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        visitId:
+          type: string
+        encounterType:
+          type: string
+          enum: *ref_19
+        providerId:
+          type: string
+        providerName:
+          type: string
+        encounterDatetime:
+          type: string
+        reason:
+          type: string
+        notes:
+          type: string
+    CreateRequestDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        encounterId:
+          type: string
+        visitId:
+          type: string
+        requestType:
+          type: string
+          enum: *ref_20
+        priority:
+          type: string
+          enum: *ref_17
+          default: ROUTINE
+        orderingProviderId:
+          type: string
+        orderingProviderName:
+          type: string
+        diagnosis:
+          type: string
+        clinicalNotes:
+          type: string
+        requestedAt:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+      required:
+        - patientId
+        - requestType
+        - items
+    TransitionRequestStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - REQUESTED
+            - IN_PROGRESS
+            - COMPLETED
+            - CANCELLED
+            - REJECTED
+        reason:
+          type: string
+      required:
+        - status
+    AddRequestNoteDto:
+      type: object
+      properties:
+        note:
+          type: string
+      required:
+        - note
+    SyncRequestDto:
+      type: object
+      properties:
+        externalOrderId:
+          type: string
+        externalReference:
+          type: string
+    UpdateRequestDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        encounterId:
+          type: string
+        visitId:
+          type: string
+        priority:
+          type: string
+          enum: *ref_17
+        orderingProviderId:
+          type: string
+        orderingProviderName:
+          type: string
+        diagnosis:
+          type: string
+        clinicalNotes:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+    CreateFormDefinitionDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: &ref_21
+            - CLINICAL_NOTE
+            - VITALS
+            - ASSESSMENT
+            - SCREENING
+            - PROCEDURE
+            - OTHER
+        schemaJson:
+          type: object
+        version:
+          type: number
+      required:
+        - code
+        - name
+        - category
+        - schemaJson
+    PublishFormDto:
+      type: object
+      properties:
+        notes:
+          type: string
+    UpdateFormDefinitionDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: *ref_21
+        schemaJson:
+          type: object
+        version:
+          type: number
+    CreateFormSubmissionDto:
+      type: object
+      properties:
+        formDefinitionId:
+          type: string
+        patientId:
+          type: string
+        visitId:
+          type: string
+        encounterId:
+          type: string
+        dataJson:
+          type: object
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - SUBMITTED
+      required:
+        - formDefinitionId
+        - patientId
+        - dataJson
+    UpdateFormSubmissionDto:
+      type: object
+      properties:
+        dataJson:
+          type: object
+        visitId:
+          type: string
+        encounterId:
+          type: string
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - SUBMITTED
+            - AMENDED

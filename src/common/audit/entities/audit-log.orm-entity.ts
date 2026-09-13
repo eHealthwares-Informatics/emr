@@ -12,7 +12,7 @@ export class AuditLogOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'organization_id', type: 'text', nullable: true })
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId!: string | null;
 
   @Column({ name: 'actor_user_id', type: 'text', nullable: true })

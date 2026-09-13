@@ -1,6 +1,7 @@
 import {
   AppointmentStatus,
   AppointmentType,
+  DepartmentType,
   EncounterType,
   FormCategory,
   FormFieldType,
@@ -53,6 +54,14 @@ export type PaymentProvider = BaseEntityType & {
   description: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
+  isActive: boolean;
+};
+
+export type Department = BaseEntityType & {
+  code: string;
+  name: string;
+  departmentType: DepartmentType;
+  description: string | null;
   isActive: boolean;
 };
 

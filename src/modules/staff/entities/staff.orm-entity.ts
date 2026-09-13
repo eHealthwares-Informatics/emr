@@ -35,6 +35,10 @@ export class StaffOrmEntity extends EmrBaseEntity {
   @Column({ type: 'text', nullable: true })
   department!: string | null;
 
+  // Functional EMR department (departments table) the staff member works in.
+  @Column({ name: 'department_id', type: 'text', nullable: true })
+  departmentId!: string | null;
+
   // Location in the identity service (kept separate from the EMR base location).
   @Column({ name: 'identity_location_id', type: 'text', nullable: true })
   identityLocationId!: string | null;

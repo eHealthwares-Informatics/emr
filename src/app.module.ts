@@ -21,6 +21,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { IdentityProxyModule } from './modules/identity-proxy/identity-proxy.module';
 import { AuthProxyModule } from './modules/auth-proxy/auth-proxy.module';
 import { LocationProxyModule } from './modules/location-proxy/location-proxy.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
 import { SeedsModule } from './modules/seeds/seeds.module';
 
 @Module({
@@ -51,6 +52,7 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     PatientsModule,
     PaymentProvidersModule,
     StaffModule,
+    DepartmentsModule,
     AppointmentsModule,
     VisitsModule,
     EncountersModule,

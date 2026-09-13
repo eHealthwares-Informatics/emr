@@ -81,6 +81,19 @@ export const STAFF_ROLE_TYPES = [
 ] as const;
 export type StaffRoleType = (typeof STAFF_ROLE_TYPES)[number];
 
+export const DEPARTMENT_TYPES = [
+  'OPD',
+  'INPATIENT',
+  'EMERGENCY',
+  'LABORATORY',
+  'PHARMACY',
+  'RADIOLOGY',
+  'MATERNITY',
+  'SUPPORT',
+  'OTHER',
+] as const;
+export type DepartmentType = (typeof DEPARTMENT_TYPES)[number];
+
 export const STAFF_CATEGORIES = [
   'Medical',
   'Nursing',
