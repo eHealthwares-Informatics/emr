@@ -1,6 +1,10 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
-import type { AppointmentStatus, AppointmentType, Priority } from '../../../shared/domain/enums';
+import type {
+  AppointmentStatus,
+  AppointmentType,
+  Priority,
+} from '../../../shared/domain/enums';
 
 @Entity('appointments')
 export class AppointmentOrmEntity extends EmrBaseEntity {

@@ -29,11 +29,19 @@ export class AuditLogService {
     return this.repo.save(entity);
   }
 
-  async list(query: { organizationId?: string | null; limit?: number; offset?: number }) {
-    const qb = this.repo.createQueryBuilder('log').orderBy('log.createdAt', 'DESC');
+  async list(query: {
+    organizationId?: string | null;
+    limit?: number;
+    offset?: number;
+  }) {
+    const qb = this.repo
+      .createQueryBuilder('log')
+      .orderBy('log.createdAt', 'DESC');
 
     if (query.organizationId) {
-      qb.where('log.organization_id = :organizationId', { organizationId: query.organizationId });
+      qb.where('log.organization_id = :organizationId', {
+        organizationId: query.organizationId,
+      });
     }
 
     qb.skip(query.offset ?? 0).take(query.limit ?? 50);

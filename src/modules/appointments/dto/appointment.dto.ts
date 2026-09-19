@@ -1,7 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
-import { APPOINTMENT_STATUSES, APPOINTMENT_TYPES, PRIORITIES } from '../../../shared/domain/enums';
-import type { AppointmentStatus, AppointmentType, Priority } from '../../../shared/domain/enums';
+import {
+  APPOINTMENT_STATUSES,
+  APPOINTMENT_TYPES,
+  PRIORITIES,
+} from '../../../shared/domain/enums';
+import type {
+  AppointmentStatus,
+  AppointmentType,
+  Priority,
+} from '../../../shared/domain/enums';
 
 export class CreateAppointmentDto {
   @ApiProperty()

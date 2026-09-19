@@ -22,20 +22,33 @@ export class VisitsController {
   constructor(private readonly service: VisitsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List visits with pagination and status/provider filters' })
+  @ApiOperation({
+    summary: 'List visits with pagination and status/provider filters',
+  })
   async list(
-    @Query() query: ListQueryDto & { status?: string; providerId?: string; patientId?: string },
+    @Query()
+    query: ListQueryDto & {
+      status?: string;
+      providerId?: string;
+      patientId?: string;
+    },
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get('active')
   @ApiOperation({ summary: 'List active (ongoing) visits' })
   async active(@CurrentUser() user: RequestUser) {
     const result = await this.service.active(tenantFromUser(user));
-    return { data: result.data, meta: { page: 1, limit: result.data.length, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: 1, limit: result.data.length, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -52,7 +65,11 @@ export class VisitsController {
 
   @Post(':id/end')
   @ApiOperation({ summary: 'End an ongoing visit' })
-  end(@Param('id') id: string, @Body() dto: EndVisitDto, @CurrentUser() user: RequestUser) {
+  end(
+    @Param('id') id: string,
+    @Body() dto: EndVisitDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.end(id, dto, tenantFromUser(user));
   }
 
@@ -64,7 +81,11 @@ export class VisitsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a visit' })
-  update(@Param('id') id: string, @Body() dto: UpdateVisitDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateVisitDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.update(id, dto, tenantFromUser(user));
   }
 

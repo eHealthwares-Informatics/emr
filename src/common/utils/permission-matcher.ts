@@ -1,4 +1,7 @@
-export function permissionMatches(userPerm: string, requiredCode: string): boolean {
+export function permissionMatches(
+  userPerm: string,
+  requiredCode: string,
+): boolean {
   if (userPerm === '*') return true;
 
   const userParts = userPerm.split('.');

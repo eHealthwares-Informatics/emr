@@ -15,7 +15,10 @@ import { FormSubmissionsService } from '../services/form-submissions.service';
 import { FormDefinitionsService } from '../services/form-definitions.service';
 import { PdfService } from '../../pdf/pdf.service';
 import { submissionPdfHtml } from '../pdf/submission-pdf';
-import { CreateFormSubmissionDto, UpdateFormSubmissionDto } from '../dto/form.dto';
+import {
+  CreateFormSubmissionDto,
+  UpdateFormSubmissionDto,
+} from '../dto/form.dto';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -31,7 +34,9 @@ export class FormSubmissionsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List form submissions (filter by patient/visit/encounter/form)' })
+  @ApiOperation({
+    summary: 'List form submissions (filter by patient/visit/encounter/form)',
+  })
   async list(
     @Query()
     query: ListQueryDto & {
@@ -44,7 +49,10 @@ export class FormSubmissionsController {
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -54,18 +62,27 @@ export class FormSubmissionsController {
   }
 
   @Get(':id/chain')
-  @ApiOperation({ summary: 'Get the amend chain (original + all amendments) for a submission' })
+  @ApiOperation({
+    summary: 'Get the amend chain (original + all amendments) for a submission',
+  })
   getChain(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.service.getChain(id, tenantFromUser(user));
   }
 
   @Get(':id/pdf')
   @ApiOperation({ summary: 'Render a submission as a PDF document' })
-  async pdf(@Param('id') id: string, @CurrentUser() user: RequestUser, @Res() res: Response) {
+  async pdf(
+    @Param('id') id: string,
+    @CurrentUser() user: RequestUser,
+    @Res() res: Response,
+  ) {
     const tenant = tenantFromUser(user);
     const submission = await this.service.get(id, tenant);
     const form = submission.formDefinitionId
-      ? await this.formDefinitionsService.get(submission.formDefinitionId, tenant)
+      ? await this.formDefinitionsService.get(
+          submission.formDefinitionId,
+          tenant,
+        )
       : null;
     const html = submissionPdfHtml(submission, form);
     const buffer = await this.pdfService.renderHtml(html);
@@ -78,13 +95,20 @@ export class FormSubmissionsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Submit (or draft) a form against a patient/encounter' })
-  create(@Body() dto: CreateFormSubmissionDto, @CurrentUser() user: RequestUser) {
+  @ApiOperation({
+    summary: 'Submit (or draft) a form against a patient/encounter',
+  })
+  create(
+    @Body() dto: CreateFormSubmissionDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.create(dto, tenantFromUser(user), user);
   }
 
   @Post(':id/amend')
-  @ApiOperation({ summary: 'Amend a submitted form (creates a new submission)' })
+  @ApiOperation({
+    summary: 'Amend a submitted form (creates a new submission)',
+  })
   amend(
     @Param('id') id: string,
     @Body() dto: UpdateFormSubmissionDto,

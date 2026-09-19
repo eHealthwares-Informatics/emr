@@ -130,55 +130,7 @@ paths:
   /api/patients:
     get:
       operationId: PatientsController_list
-      parameters:
-        - name: page
-          required: false
-          in: query
-          schema:
-            default: 1
-            allOf:
-              - $ref: '#/components/schemas/Object'
-        - name: limit
-          required: false
-          in: query
-          schema:
-            default: 20
-            allOf:
-              - $ref: '#/components/schemas/Object'
-        - name: search
-          required: false
-          in: query
-          description: Search query
-          schema:
-            type: string
-        - name: sortBy
-          required: false
-          in: query
-          schema:
-            default: createdAt
-            allOf:
-              - $ref: '#/components/schemas/Object'
-        - name: sortOrder
-          required: false
-          in: query
-          schema:
-            default: desc
-            type: string
-            enum:
-              - asc
-              - desc
-        - name: filter
-          required: false
-          in: query
-          description: Generic filter string
-          schema:
-            type: string
-        - name: organizationId
-          required: false
-          in: query
-          description: Filter by organization (superadmin only)
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
           description: ''
@@ -535,6 +487,270 @@ paths:
           description: ''
       summary: Archive a department
       tags: *ref_5
+  /api/wards:
+    get:
+      operationId: WardsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List wards with search and filters
+      tags: &ref_6
+        - wards
+    post:
+      operationId: WardsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWardDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a ward
+      tags: *ref_6
+  /api/wards/{id}:
+    get:
+      operationId: WardsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get ward by id
+      tags: *ref_6
+    patch:
+      operationId: WardsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWardDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a ward
+      tags: *ref_6
+    delete:
+      operationId: WardsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a ward
+      tags: *ref_6
+  /api/beds:
+    get:
+      operationId: BedsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List beds with ward/status filters
+      tags: &ref_7
+        - beds
+    post:
+      operationId: BedsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBedDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a bed in a ward
+      tags: *ref_7
+  /api/beds/{id}:
+    get:
+      operationId: BedsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get bed by id
+      tags: *ref_7
+    patch:
+      operationId: BedsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBedDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a bed
+      tags: *ref_7
+    delete:
+      operationId: BedsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a bed
+      tags: *ref_7
+  /api/beds/{id}/status:
+    patch:
+      operationId: BedsController_setStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Set bed status directly (maintenance/out-of-service)
+      tags: *ref_7
+  /api/admissions:
+    get:
+      operationId: AdmissionsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List admissions with status/ward/patient filters
+      tags: &ref_8
+        - admissions
+    post:
+      operationId: AdmissionsController_admit
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdmitPatientDto'
+      responses:
+        '201':
+          description: ''
+      summary: Admit a patient (optionally with a bed allocation)
+      tags: *ref_8
+  /api/admissions/{id}:
+    get:
+      operationId: AdmissionsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get admission by id
+      tags: *ref_8
+    patch:
+      operationId: AdmissionsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAdmissionDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an active admission
+      tags: *ref_8
+    delete:
+      operationId: AdmissionsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive an admission
+      tags: *ref_8
+  /api/admissions/{id}/transfer:
+    post:
+      operationId: AdmissionsController_transfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferAdmissionDto'
+      responses:
+        '201':
+          description: ''
+      summary: Transfer an admission to another ward/bed
+      tags: *ref_8
+  /api/admissions/{id}/discharge:
+    post:
+      operationId: AdmissionsController_discharge
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DischargeDto'
+      responses:
+        '201':
+          description: ''
+      summary: Discharge an active admission
+      tags: *ref_8
   /api/appointments:
     get:
       operationId: AppointmentsController_list
@@ -543,7 +759,7 @@ paths:
         '200':
           description: ''
       summary: List appointments with pagination, date/status filters
-      tags: &ref_6
+      tags: &ref_9
         - appointments
     post:
       operationId: AppointmentsController_create
@@ -558,7 +774,21 @@ paths:
         '201':
           description: ''
       summary: Schedule an appointment
-      tags: *ref_6
+      tags: *ref_9
+  /api/appointments/{id}/pdf:
+    get:
+      operationId: AppointmentsController_print
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Print an appointment slip (PDF)
+      tags: *ref_9
   /api/appointments/{id}:
     get:
       operationId: AppointmentsController_get
@@ -572,7 +802,7 @@ paths:
         '200':
           description: ''
       summary: Get appointment by id
-      tags: *ref_6
+      tags: *ref_9
     patch:
       operationId: AppointmentsController_update
       parameters:
@@ -591,7 +821,7 @@ paths:
         '200':
           description: ''
       summary: Update an appointment
-      tags: *ref_6
+      tags: *ref_9
     delete:
       operationId: AppointmentsController_remove
       parameters:
@@ -604,7 +834,7 @@ paths:
         '200':
           description: ''
       summary: Archive an appointment
-      tags: *ref_6
+      tags: *ref_9
   /api/appointments/{id}/check-in:
     post:
       operationId: AppointmentsController_checkIn
@@ -624,7 +854,7 @@ paths:
         '201':
           description: ''
       summary: Check in appointment and start a visit
-      tags: *ref_6
+      tags: *ref_9
   /api/appointments/{id}/cancel:
     post:
       operationId: AppointmentsController_cancel
@@ -644,7 +874,7 @@ paths:
         '201':
           description: ''
       summary: Cancel an appointment
-      tags: *ref_6
+      tags: *ref_9
   /api/appointments/{id}/no-show:
     post:
       operationId: AppointmentsController_noShow
@@ -658,7 +888,7 @@ paths:
         '201':
           description: ''
       summary: Mark appointment as no-show
-      tags: *ref_6
+      tags: *ref_9
   /api/appointments/{id}/complete:
     post:
       operationId: AppointmentsController_complete
@@ -672,7 +902,7 @@ paths:
         '201':
           description: ''
       summary: Complete an in-progress appointment
-      tags: *ref_6
+      tags: *ref_9
   /api/visits:
     get:
       operationId: VisitsController_list
@@ -681,7 +911,7 @@ paths:
         '200':
           description: ''
       summary: List visits with pagination and status/provider filters
-      tags: &ref_7
+      tags: &ref_10
         - visits
     post:
       operationId: VisitsController_create
@@ -696,7 +926,7 @@ paths:
         '201':
           description: ''
       summary: Start a new visit
-      tags: *ref_7
+      tags: *ref_10
   /api/visits/active:
     get:
       operationId: VisitsController_active
@@ -705,7 +935,7 @@ paths:
         '200':
           description: ''
       summary: List active (ongoing) visits
-      tags: *ref_7
+      tags: *ref_10
   /api/visits/{id}:
     get:
       operationId: VisitsController_get
@@ -719,7 +949,7 @@ paths:
         '200':
           description: ''
       summary: Get visit by id
-      tags: *ref_7
+      tags: *ref_10
     patch:
       operationId: VisitsController_update
       parameters:
@@ -738,7 +968,7 @@ paths:
         '200':
           description: ''
       summary: Update a visit
-      tags: *ref_7
+      tags: *ref_10
     delete:
       operationId: VisitsController_remove
       parameters:
@@ -751,7 +981,7 @@ paths:
         '200':
           description: ''
       summary: Archive a visit
-      tags: *ref_7
+      tags: *ref_10
   /api/visits/{id}/end:
     post:
       operationId: VisitsController_end
@@ -771,7 +1001,7 @@ paths:
         '201':
           description: ''
       summary: End an ongoing visit
-      tags: *ref_7
+      tags: *ref_10
   /api/visits/{id}/cancel:
     post:
       operationId: VisitsController_cancel
@@ -785,7 +1015,7 @@ paths:
         '201':
           description: ''
       summary: Cancel an ongoing visit
-      tags: *ref_7
+      tags: *ref_10
   /api/encounters:
     get:
       operationId: EncountersController_list
@@ -794,7 +1024,7 @@ paths:
         '200':
           description: ''
       summary: List encounters with patient/visit filters
-      tags: &ref_8
+      tags: &ref_11
         - encounters
     post:
       operationId: EncountersController_create
@@ -809,7 +1039,7 @@ paths:
         '201':
           description: ''
       summary: Create an encounter (optionally linked to a visit)
-      tags: *ref_8
+      tags: *ref_11
   /api/encounters/{id}:
     get:
       operationId: EncountersController_get
@@ -823,7 +1053,7 @@ paths:
         '200':
           description: ''
       summary: Get encounter by id
-      tags: *ref_8
+      tags: *ref_11
     patch:
       operationId: EncountersController_update
       parameters:
@@ -842,7 +1072,7 @@ paths:
         '200':
           description: ''
       summary: Update an encounter
-      tags: *ref_8
+      tags: *ref_11
     delete:
       operationId: EncountersController_remove
       parameters:
@@ -855,7 +1085,7 @@ paths:
         '200':
           description: ''
       summary: Archive an encounter
-      tags: *ref_8
+      tags: *ref_11
   /api/encounters/{id}/requests:
     post:
       operationId: EncountersController_createRequest
@@ -875,7 +1105,7 @@ paths:
         '201':
           description: ''
       summary: Create a request from an encounter context
-      tags: *ref_8
+      tags: *ref_11
   /api/requests:
     get:
       operationId: RequestsController_list
@@ -884,7 +1114,7 @@ paths:
         '200':
           description: ''
       summary: List clinical requests with filters
-      tags: &ref_9
+      tags: &ref_12
         - requests
     post:
       operationId: RequestsController_create
@@ -899,7 +1129,7 @@ paths:
         '201':
           description: ''
       summary: Create a request (optionally external-synced to LIS/pharmacy)
-      tags: *ref_9
+      tags: *ref_12
   /api/requests/{id}:
     get:
       operationId: RequestsController_get
@@ -913,7 +1143,7 @@ paths:
         '200':
           description: ''
       summary: Get request by id with items
-      tags: *ref_9
+      tags: *ref_12
     patch:
       operationId: RequestsController_update
       parameters:
@@ -932,7 +1162,7 @@ paths:
         '200':
           description: ''
       summary: Update an open request
-      tags: *ref_9
+      tags: *ref_12
     delete:
       operationId: RequestsController_remove
       parameters:
@@ -945,7 +1175,7 @@ paths:
         '200':
           description: ''
       summary: Archive a request
-      tags: *ref_9
+      tags: *ref_12
   /api/requests/{id}/history:
     get:
       operationId: RequestsController_getHistory
@@ -959,7 +1189,7 @@ paths:
         '200':
           description: ''
       summary: Get request status history only (lightweight)
-      tags: *ref_9
+      tags: *ref_12
   /api/requests/{id}/transition:
     post:
       operationId: RequestsController_transition
@@ -979,7 +1209,7 @@ paths:
         '201':
           description: ''
       summary: Transition request status
-      tags: *ref_9
+      tags: *ref_12
   /api/requests/{id}/note:
     post:
       operationId: RequestsController_addNote
@@ -999,7 +1229,7 @@ paths:
         '201':
           description: ''
       summary: Append a free-text note to the request timeline
-      tags: *ref_9
+      tags: *ref_12
   /api/requests/{id}/sync:
     post:
       operationId: RequestsController_sync
@@ -1019,7 +1249,21 @@ paths:
         '201':
           description: ''
       summary: Manually re-sync request to external system
-      tags: *ref_9
+      tags: *ref_12
+  /api/requests/{id}/resend:
+    post:
+      operationId: RequestsController_resend
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Re-send a failed/open LAB or PRESCRIPTION request to the external system
+      tags: *ref_12
   /api/form-definitions:
     get:
       operationId: FormDefinitionsController_list
@@ -1028,7 +1272,7 @@ paths:
         '200':
           description: ''
       summary: List form definitions
-      tags: &ref_10
+      tags: &ref_13
         - form-definitions
     post:
       operationId: FormDefinitionsController_create
@@ -1043,7 +1287,7 @@ paths:
         '201':
           description: ''
       summary: Create a form definition (draft)
-      tags: *ref_10
+      tags: *ref_13
   /api/form-definitions/{id}:
     get:
       operationId: FormDefinitionsController_get
@@ -1057,7 +1301,7 @@ paths:
         '200':
           description: ''
       summary: Get form definition by id
-      tags: *ref_10
+      tags: *ref_13
     patch:
       operationId: FormDefinitionsController_update
       parameters:
@@ -1076,7 +1320,7 @@ paths:
         '200':
           description: ''
       summary: Update a form definition (bumps version when schema changes)
-      tags: *ref_10
+      tags: *ref_13
     delete:
       operationId: FormDefinitionsController_remove
       parameters:
@@ -1089,7 +1333,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form definition
-      tags: *ref_10
+      tags: *ref_13
   /api/form-definitions/{id}/publish:
     post:
       operationId: FormDefinitionsController_publish
@@ -1109,7 +1353,7 @@ paths:
         '201':
           description: ''
       summary: Publish a form definition
-      tags: *ref_10
+      tags: *ref_13
   /api/form-definitions/{id}/unpublish:
     post:
       operationId: FormDefinitionsController_unpublish
@@ -1123,7 +1367,7 @@ paths:
         '201':
           description: ''
       summary: Unpublish a form definition
-      tags: *ref_10
+      tags: *ref_13
   /api/form-submissions:
     get:
       operationId: FormSubmissionsController_list
@@ -1132,7 +1376,7 @@ paths:
         '200':
           description: ''
       summary: List form submissions (filter by patient/visit/encounter/form)
-      tags: &ref_11
+      tags: &ref_14
         - form-submissions
     post:
       operationId: FormSubmissionsController_create
@@ -1147,7 +1391,7 @@ paths:
         '201':
           description: ''
       summary: Submit (or draft) a form against a patient/encounter
-      tags: *ref_11
+      tags: *ref_14
   /api/form-submissions/{id}:
     get:
       operationId: FormSubmissionsController_get
@@ -1161,7 +1405,7 @@ paths:
         '200':
           description: ''
       summary: Get form submission by id
-      tags: *ref_11
+      tags: *ref_14
     patch:
       operationId: FormSubmissionsController_update
       parameters:
@@ -1180,7 +1424,7 @@ paths:
         '200':
           description: ''
       summary: Update a draft submission
-      tags: *ref_11
+      tags: *ref_14
     delete:
       operationId: FormSubmissionsController_remove
       parameters:
@@ -1193,7 +1437,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form submission
-      tags: *ref_11
+      tags: *ref_14
   /api/form-submissions/{id}/chain:
     get:
       operationId: FormSubmissionsController_getChain
@@ -1207,7 +1451,7 @@ paths:
         '200':
           description: ''
       summary: Get the amend chain (original + all amendments) for a submission
-      tags: *ref_11
+      tags: *ref_14
   /api/form-submissions/{id}/pdf:
     get:
       operationId: FormSubmissionsController_pdf
@@ -1221,7 +1465,7 @@ paths:
         '200':
           description: ''
       summary: Render a submission as a PDF document
-      tags: *ref_11
+      tags: *ref_14
   /api/form-submissions/{id}/amend:
     post:
       operationId: FormSubmissionsController_amend
@@ -1241,7 +1485,7 @@ paths:
         '201':
           description: ''
       summary: Amend a submitted form (creates a new submission)
-      tags: *ref_11
+      tags: *ref_14
   /api/forms/available:
     get:
       operationId: FormAccessController_available
@@ -1306,9 +1550,6 @@ components:
           type: string
       required:
         - refreshToken
-    Object:
-      type: object
-      properties: {}
     CreatePatientDto:
       type: object
       properties:
@@ -1398,6 +1639,9 @@ components:
             type: string
         isActive:
           type: boolean
+    Object:
+      type: object
+      properties: {}
     CreatePaymentProviderDto:
       type: object
       properties:
@@ -1407,7 +1651,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_12
+          enum: &ref_15
             - CASH
             - HMO
             - COMPANY
@@ -1432,7 +1676,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_12
+          enum: *ref_15
         description:
           type: string
         contactPhone:
@@ -1461,7 +1705,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_13
+          enum: &ref_16
             - Doctor
             - Nurse
             - Technician
@@ -1472,7 +1716,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_14
+          enum: &ref_17
             - Medical
             - Nursing
             - Allied Health
@@ -1518,10 +1762,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_13
+          enum: *ref_16
         category:
           type: string
-          enum: *ref_14
+          enum: *ref_17
         department:
           type: string
         departmentId:
@@ -1548,7 +1792,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_15
+          enum: &ref_18
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -1581,7 +1825,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_15
+          enum: *ref_18
         description:
           type: string
         locationId:
@@ -1589,6 +1833,191 @@ components:
           description: Identity location (site) id the department belongs to
         isActive:
           type: boolean
+    CreateWardDto:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Short unique code, e.g. W3A
+        name:
+          type: string
+          description: Ward display name
+        wardType:
+          type: string
+          enum: &ref_19
+            - GENERAL
+            - PRIVATE
+            - ICU
+            - PEDIATRIC
+            - MATERNITY
+            - ISOLATION
+            - EMERGENCY
+            - OTHER
+          default: GENERAL
+        departmentId:
+          type: string
+          description: Owning EMR department id
+        departmentType:
+          type: string
+          description: Friendly department type label
+        description:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - code
+        - name
+    UpdateWardDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        wardType:
+          type: string
+          enum: *ref_19
+        departmentId:
+          type: string
+        departmentType:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+    CreateBedDto:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Short bed code, e.g. B-101
+        wardId:
+          type: string
+          description: Ward the bed belongs to
+        bedType:
+          type: string
+          enum: &ref_20
+            - STANDARD
+            - ICU
+            - MATERNITY
+            - ISOLATION
+            - PEDIATRIC
+            - RECOVERY
+          default: STANDARD
+        status:
+          type: string
+          enum: &ref_21
+            - AVAILABLE
+            - OCCUPIED
+            - MAINTENANCE
+            - OUT_OF_SERVICE
+          default: AVAILABLE
+        notes:
+          type: string
+      required:
+        - code
+        - wardId
+    UpdateBedDto:
+      type: object
+      properties:
+        code:
+          type: string
+        wardId:
+          type: string
+        bedType:
+          type: string
+          enum: *ref_20
+        status:
+          type: string
+          enum: *ref_21
+        notes:
+          type: string
+    AdmitPatientDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+          description: Patient MRN
+        patientName:
+          type: string
+          description: Patient display name
+        wardId:
+          type: string
+        bedId:
+          type: string
+          description: Bed to allocate on admission
+        admissionDatetime:
+          type: string
+          default: '2026-09-17T20:30:30.682Z'
+        admissionType:
+          type: string
+          enum: &ref_22
+            - EMERGENCY
+            - URGENT
+            - ELECTIVE
+            - MATERNITY
+            - SURGICAL
+            - MEDICAL
+          default: ELECTIVE
+        diagnosis:
+          type: string
+        referringProviderId:
+          type: string
+        referringProviderName:
+          type: string
+        notes:
+          type: string
+      required:
+        - patientId
+        - patientName
+    UpdateAdmissionDto:
+      type: object
+      properties:
+        wardId:
+          type: string
+        bedId:
+          type: string
+        admissionDatetime:
+          type: string
+        admissionType:
+          type: string
+          enum: *ref_22
+        diagnosis:
+          type: string
+        referringProviderId:
+          type: string
+        referringProviderName:
+          type: string
+        notes:
+          type: string
+    TransferAdmissionDto:
+      type: object
+      properties:
+        wardId:
+          type: string
+          description: Destination ward
+        bedId:
+          type: string
+          description: Destination bed
+    DischargeDto:
+      type: object
+      properties:
+        dischargeType:
+          type: string
+          enum:
+            - DISCHARGED_HOME
+            - DIED
+            - REFERRED
+            - TRANSFERRED
+            - SELF_DISCHARGE
+            - AMA
+          default: DISCHARGED_HOME
+        dischargeSummary:
+          type: string
+        dischargeDatetime:
+          type: string
+          default: '2026-09-17T20:30:30.683Z'
     CreateAppointmentDto:
       type: object
       properties:
@@ -1598,7 +2027,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: &ref_16
+          enum: &ref_23
             - CHECKUP
             - FOLLOW_UP
             - CONSULTATION
@@ -1622,7 +2051,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_17
+          enum: &ref_24
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -1659,7 +2088,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: *ref_16
+          enum: *ref_23
         date:
           type: string
         startTime:
@@ -1676,7 +2105,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_17
+          enum: *ref_24
         status:
           type: string
           enum:
@@ -1700,7 +2129,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_18
+          enum: &ref_25
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -1733,7 +2162,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_18
+          enum: *ref_25
         status:
           type: string
           enum:
@@ -1757,7 +2186,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_19
+          enum: &ref_26
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -1785,14 +2214,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_20
+          enum: &ref_27
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_17
+          enum: *ref_24
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -1820,7 +2249,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_19
+          enum: *ref_26
         providerId:
           type: string
         providerName:
@@ -1844,10 +2273,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_20
+          enum: *ref_27
         priority:
           type: string
-          enum: *ref_17
+          enum: *ref_24
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -1909,7 +2338,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_17
+          enum: *ref_24
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -1933,7 +2362,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_21
+          enum: &ref_28
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -1963,7 +2392,7 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_21
+          enum: *ref_28
         schemaJson:
           type: object
         version:

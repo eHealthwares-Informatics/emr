@@ -90,7 +90,7 @@ describe('StaffService', () => {
       repo.qbState.getOne = { ...staff };
       const saved = await service.update(
         'staff-1',
-        { department: 'Neurology' } as never,
+        { department: 'Neurology' },
         tenant,
       );
       expect(saved.department).toBe('Neurology');

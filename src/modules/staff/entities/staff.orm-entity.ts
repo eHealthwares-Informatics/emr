@@ -1,6 +1,9 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
-import type { StaffCategory, StaffRoleType } from '../../../shared/domain/enums';
+import type {
+  StaffCategory,
+  StaffRoleType,
+} from '../../../shared/domain/enums';
 
 @Entity('staff')
 export class StaffOrmEntity extends EmrBaseEntity {

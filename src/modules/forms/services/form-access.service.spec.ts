@@ -15,7 +15,9 @@ describe('FormAccessService', () => {
   beforeEach(() => {
     accessRepo = repoMock();
     formDefs = {
-      list: jest.fn().mockResolvedValue({ data: published, total: published.length }),
+      list: jest
+        .fn()
+        .mockResolvedValue({ data: published, total: published.length }),
     };
     service = new FormAccessService(accessRepo as never, formDefs as never);
   });
@@ -37,25 +39,51 @@ describe('FormAccessService', () => {
 
   it('grants only explicitly allowed forms', async () => {
     accessRepo.find.mockResolvedValue([
-      { userId: 'user-1', roleCode: null, formCode: 'CLINICAL_NOTE', isAllowed: true },
-      { userId: 'user-1', roleCode: null, formCode: 'LAB_REQUEST', isAllowed: true },
+      {
+        userId: 'user-1',
+        roleCode: null,
+        formCode: 'CLINICAL_NOTE',
+        isAllowed: true,
+      },
+      {
+        userId: 'user-1',
+        roleCode: null,
+        formCode: 'LAB_REQUEST',
+        isAllowed: true,
+      },
     ]);
     const result = await service.getAvailableForms(user, tenant);
-    expect(result.data.map((f) => f.code)).toEqual(['CLINICAL_NOTE', 'LAB_REQUEST']);
+    expect(result.data.map((f) => f.code)).toEqual([
+      'CLINICAL_NOTE',
+      'LAB_REQUEST',
+    ]);
   });
 
   it('grants everything when a wildcard allow row exists, then applies denies', async () => {
     accessRepo.find.mockResolvedValue([
       { userId: 'user-1', roleCode: null, formCode: null, isAllowed: true },
-      { userId: 'user-1', roleCode: null, formCode: 'CONSENT', isAllowed: false },
+      {
+        userId: 'user-1',
+        roleCode: null,
+        formCode: 'CONSENT',
+        isAllowed: false,
+      },
     ]);
     const result = await service.getAvailableForms(user, tenant);
-    expect(result.data.map((f) => f.code)).toEqual(['CLINICAL_NOTE', 'LAB_REQUEST']);
+    expect(result.data.map((f) => f.code)).toEqual([
+      'CLINICAL_NOTE',
+      'LAB_REQUEST',
+    ]);
   });
 
   it('resolves role-based rows via role codes', async () => {
     accessRepo.find.mockResolvedValue([
-      { userId: null, roleCode: 'doctor', formCode: 'CLINICAL_NOTE', isAllowed: true },
+      {
+        userId: null,
+        roleCode: 'doctor',
+        formCode: 'CLINICAL_NOTE',
+        isAllowed: true,
+      },
     ]);
     const result = await service.getAvailableForms(
       { ...user, roles: ['doctor'] },

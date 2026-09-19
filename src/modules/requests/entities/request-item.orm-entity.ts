@@ -7,7 +7,9 @@ export class RequestItemOrmEntity extends EmrBaseEntity {
   @Column({ name: 'request_id', type: 'text' })
   requestId!: string;
 
-  @ManyToOne(() => RequestOrmEntity, (request) => request.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => RequestOrmEntity, (request) => request.items, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'request_id' })
   request!: RequestOrmEntity;
 

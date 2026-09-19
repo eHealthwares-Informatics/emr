@@ -73,7 +73,12 @@ describe('DashboardService', () => {
     visitRepo.qbState.list = [
       { ...visit, patientId: 'p1' },
       { ...visit, patientId: 'p2' },
-      { ...visit, patientId: 'p3', providerId: 'staff-2', providerName: 'Dr. Be' },
+      {
+        ...visit,
+        patientId: 'p3',
+        providerId: 'staff-2',
+        providerName: 'Dr. Be',
+      },
     ];
 
     const summary = await service.summary(tenant, '2026-01-05');
@@ -109,11 +114,10 @@ describe('DashboardService', () => {
     await service.summary(tenant, '2026-01-05');
 
     const qb = appointmentRepo.createQueryBuilder.mock.results;
-    const upcomingCalls = qb.filter(
-      (r) =>
-        (r.value as { orderBy?: jest.Mock })?.orderBy?.mock.calls.some(
-          (c: unknown[]) => c[0] === 'appointment.date',
-        ),
+    const upcomingCalls = qb.filter((r) =>
+      (r.value as { orderBy?: jest.Mock })?.orderBy?.mock.calls.some(
+        (c: unknown[]) => c[0] === 'appointment.date',
+      ),
     );
     expect(upcomingCalls.length).toBeGreaterThan(0);
   });

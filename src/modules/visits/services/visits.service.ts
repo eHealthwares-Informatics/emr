@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VisitOrmEntity } from '../entities/visit.orm-entity';
@@ -6,7 +10,7 @@ import { CreateVisitDto, EndVisitDto, UpdateVisitDto } from '../dto/visit.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort } from '../../../database/list';
+import { applySort, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 
 const SORT_ALLOW_LIST = [
@@ -26,7 +30,14 @@ export class VisitsService {
     private readonly repo: Repository<VisitOrmEntity>,
   ) {}
 
-  async list(query: ListQueryDto & { status?: string; providerId?: string; patientId?: string }, tenant: TenantContext) {
+  async list(
+    query: ListQueryDto & {
+      status?: string;
+      providerId?: string;
+      patientId?: string;
+    },
+    tenant: TenantContext,
+  ) {
     const qb = this.repo
       .createQueryBuilder('visit')
       .where('visit.deleted_at IS NULL');
@@ -45,17 +56,22 @@ export class VisitsService {
       );
     }
 
-    if (query.status) {
-      qb.andWhere('visit.status = :status', { status: query.status });
+    const status = dslFilterValue(query.status);
+    if (status) {
+      qb.andWhere('visit.status = :status', { status });
     }
-    if (query.providerId) {
-      qb.andWhere('visit.provider_id = :providerId', { providerId: query.providerId });
+    const providerId = dslFilterValue(query.providerId);
+    if (providerId) {
+      qb.andWhere('visit.provider_id = :providerId', { providerId });
     }
-    if (query.patientId) {
-      qb.andWhere('visit.patient_id = :patientId', { patientId: query.patientId });
+    const patientId = dslFilterValue(query.patientId);
+    if (patientId) {
+      qb.andWhere('visit.patient_id = :patientId', { patientId });
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'startDatetime';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'startDatetime';
     applySort(qb, 'visit', sortBy, query.sortOrder);
 
     const [data, total] = await qb
@@ -95,7 +111,9 @@ export class VisitsService {
       visitNumber: generateNumber('VIS'),
       patientName: dto.patientName ?? dto.patientId,
       status: 'ONGOING',
-      startDatetime: dto.startDatetime ? new Date(dto.startDatetime) : new Date(),
+      startDatetime: dto.startDatetime
+        ? new Date(dto.startDatetime)
+        : new Date(),
       organizationId: tenant.organizationId,
       locationId: dto.locationId ?? tenant.locationId,
       createdById: user.sub,
@@ -114,7 +132,9 @@ export class VisitsService {
     if (visit.status === 'COMPLETED') {
       throw new BadRequestException('Visit is already completed');
     }
-    visit.stopDatetime = dto.stopDatetime ? new Date(dto.stopDatetime) : new Date();
+    visit.stopDatetime = dto.stopDatetime
+      ? new Date(dto.stopDatetime)
+      : new Date();
     visit.status = 'COMPLETED';
     return this.repo.save(visit);
   }

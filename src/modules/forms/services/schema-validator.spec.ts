@@ -40,6 +40,13 @@ describe('validateFormSchema', () => {
     );
   });
 
+  it('accepts the item (concept/drug) field type', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'drug', label: 'Drug', type: 'item' }],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [
@@ -75,7 +82,9 @@ describe('validateFormSchema', () => {
           key: 'col1',
           label: 'Col',
           type: 'col',
-          fields: [{ key: 'innerTab', label: 'Nested tab', type: 'tab', fields: [] }],
+          fields: [
+            { key: 'innerTab', label: 'Nested tab', type: 'tab', fields: [] },
+          ],
         },
       ],
     };

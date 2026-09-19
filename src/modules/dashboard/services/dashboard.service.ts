@@ -31,7 +31,13 @@ export class DashboardService {
   ) {}
 
   async summary(tenant: TenantContext, today: string) {
-    const [appointments, activeVisits, todaysVisits, totalPatients, pendingRequests] = await Promise.all([
+    const [
+      appointments,
+      activeVisits,
+      todaysVisits,
+      totalPatients,
+      pendingRequests,
+    ] = await Promise.all([
       this.listTodayAppointments(today, tenant),
       this.listActiveVisits(tenant),
       this.listTodaysVisits(today, tenant),
@@ -50,7 +56,7 @@ export class DashboardService {
     };
     for (const a of appointments) {
       if (a.status in statusCounts) {
-        statusCounts[a.status as keyof typeof statusCounts]++;
+        statusCounts[a.status]++;
       }
     }
 
@@ -61,9 +67,16 @@ export class DashboardService {
       }
     }
 
-    const averageWaitMinutes = this.computeAverageWaitMinutes(appointments, today, visitStartByAppointmentId);
+    const averageWaitMinutes = this.computeAverageWaitMinutes(
+      appointments,
+      today,
+      visitStartByAppointmentId,
+    );
 
-    const providerMap = new Map<string, { providerId: string; providerName: string; patientCount: number }>();
+    const providerMap = new Map<
+      string,
+      { providerId: string; providerName: string; patientCount: number }
+    >();
     for (const v of activeVisits) {
       const key = v.providerId ?? v.providerName ?? 'unknown';
       const entry = providerMap.get(key) ?? {
@@ -74,7 +87,9 @@ export class DashboardService {
       entry.patientCount++;
       providerMap.set(key, entry);
     }
-    const providerLoad = Array.from(providerMap.values()).sort((a, b) => b.patientCount - a.patientCount);
+    const providerLoad = Array.from(providerMap.values()).sort(
+      (a, b) => b.patientCount - a.patientCount,
+    );
 
     const upcoming = await this.listUpcomingAppointments(today, tenant, 6);
 
@@ -118,7 +133,11 @@ export class DashboardService {
     return qb.getMany();
   }
 
-  private async listUpcomingAppointments(today: string, tenant: TenantContext, limit: number) {
+  private async listUpcomingAppointments(
+    today: string,
+    tenant: TenantContext,
+    limit: number,
+  ) {
     const qb = this.appointmentRepo
       .createQueryBuilder('appointment')
       .where('appointment.date >= :today', { today })
@@ -134,7 +153,10 @@ export class DashboardService {
       );
     }
 
-    qb.orderBy('appointment.date', 'ASC').addOrderBy('appointment.start_time', 'ASC');
+    qb.orderBy('appointment.date', 'ASC').addOrderBy(
+      'appointment.start_time',
+      'ASC',
+    );
     qb.limit(limit);
 
     return qb.getMany();
@@ -147,9 +169,12 @@ export class DashboardService {
       .andWhere('visit.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(visit.organization_id = :orgId OR visit.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(visit.organization_id = :orgId OR visit.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     return qb.getMany();
@@ -164,9 +189,12 @@ export class DashboardService {
       .andWhere('visit.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(visit.organization_id = :orgId OR visit.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(visit.organization_id = :orgId OR visit.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     return qb.getMany();
@@ -179,9 +207,12 @@ export class DashboardService {
       .andWhere('patient.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(patient.organization_id = :orgId OR patient.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(patient.organization_id = :orgId OR patient.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     return qb.getCount();
@@ -190,13 +221,18 @@ export class DashboardService {
   private async countPendingRequests(tenant: TenantContext) {
     const qb = this.requestRepo
       .createQueryBuilder('request')
-      .where('request.status IN (:...statuses)', { statuses: ['REQUESTED', 'IN_PROGRESS'] })
+      .where('request.status IN (:...statuses)', {
+        statuses: ['REQUESTED', 'IN_PROGRESS'],
+      })
       .andWhere('request.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(request.organization_id = :orgId OR request.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(request.organization_id = :orgId OR request.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     return qb.getCount();
@@ -213,7 +249,9 @@ export class DashboardService {
       const visitStart = visitStartByAppointmentId.get(a.id);
       const scheduled = this.parseTime(a.date ?? today, a.startTime);
       if (!scheduled || !visitStart) continue;
-      const minutes = Math.round((visitStart.getTime() - scheduled.getTime()) / 60000);
+      const minutes = Math.round(
+        (visitStart.getTime() - scheduled.getTime()) / 60000,
+      );
       if (minutes >= 0) waits.push(minutes);
     }
     if (waits.length === 0) return 0;

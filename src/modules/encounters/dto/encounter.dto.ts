@@ -8,8 +8,16 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { ENCOUNTER_TYPES, PRIORITIES, REQUEST_TYPES } from '../../../shared/domain/enums';
-import type { EncounterType, Priority, RequestType } from '../../../shared/domain/enums';
+import {
+  ENCOUNTER_TYPES,
+  PRIORITIES,
+  REQUEST_TYPES,
+} from '../../../shared/domain/enums';
+import type {
+  EncounterType,
+  Priority,
+  RequestType,
+} from '../../../shared/domain/enums';
 import { RequestItemDto } from '../../requests/dto/request.dto';
 
 export class CreateEncounterDto {

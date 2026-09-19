@@ -14,6 +14,7 @@ const FIELD_TYPES = [
   'section',
   'tab',
   'col',
+  'item',
 ];
 
 const CONTAINER_TYPES = ['section', 'tab', 'col'];
@@ -67,13 +68,20 @@ export function validateFormSchema(schema: FormSchema): string[] {
       }
 
       if (
-        (field.type === 'select' || field.type === 'radio' || field.type === 'checkbox-group') &&
+        (field.type === 'select' ||
+          field.type === 'radio' ||
+          field.type === 'checkbox-group') &&
         (!Array.isArray(field.options) || field.options.length === 0)
       ) {
-        errors.push(`Field ${field.key} of type ${field.type} requires options`);
+        errors.push(
+          `Field ${field.key} of type ${field.type} requires options`,
+        );
       }
 
-      if (field.type === 'table' && (!Array.isArray(field.columns) || field.columns.length === 0)) {
+      if (
+        field.type === 'table' &&
+        (!Array.isArray(field.columns) || field.columns.length === 0)
+      ) {
         errors.push(`Field ${field.key} of type table requires columns`);
       }
     }
@@ -104,7 +112,10 @@ export function validateFormData(
 
     const value = data?.[field.key];
 
-    if (field.required && (value === undefined || value === null || value === '')) {
+    if (
+      field.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       errors.push(`${field.label || field.key} is required`);
       return;
     }
@@ -135,7 +146,10 @@ export function validateFormData(
         }
         break;
       case 'checkbox-group':
-        if (!Array.isArray(value) || value.some((v) => !field.options?.includes(String(v)))) {
+        if (
+          !Array.isArray(value) ||
+          value.some((v) => !field.options?.includes(String(v)))
+        ) {
           errors.push(`${field.label || field.key} must be a valid selection`);
         }
         break;

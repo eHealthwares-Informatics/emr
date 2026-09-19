@@ -21,7 +21,11 @@ import { RequestsController } from './controllers/requests.controller';
     AuditModule,
   ],
   controllers: [RequestsController],
-  providers: [RequestsService, LisIntegrationService, PharmacyIntegrationService],
+  providers: [
+    RequestsService,
+    LisIntegrationService,
+    PharmacyIntegrationService,
+  ],
   exports: [RequestsService],
 })
 export class RequestsModule {}

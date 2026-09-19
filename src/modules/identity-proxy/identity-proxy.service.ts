@@ -43,14 +43,21 @@ export class IdentityProxyService {
   ) {}
 
   private get baseUrl(): string {
-    return this.config.get<string>('IDENTITY_SERVICE_URL', 'https://api.ehealthwares.com/identity');
+    return this.config.get<string>(
+      'IDENTITY_SERVICE_URL',
+      'https://api.ehealthwares.com/identity',
+    );
   }
 
   private get apiKey(): string {
     return this.config.get<string>('INTERNAL_API_KEY', 'rxsoft-internal-key');
   }
 
-  private cached<T>(key: string, ttlMs: number, fetch: () => Promise<T>): Promise<T> {
+  private cached<T>(
+    key: string,
+    ttlMs: number,
+    fetch: () => Promise<T>,
+  ): Promise<T> {
     const hit = this.cache.get(key);
     if (hit && hit.expiresAt > Date.now()) {
       return Promise.resolve(hit.value as T);
@@ -66,13 +73,19 @@ export class IdentityProxyService {
   }
 
   async listUsers(token?: string): Promise<IdentityUser[]> {
-    const headers = token ? { Authorization: `Bearer ${token}` } : this.systemHeaders();
-    return this.cached(`users:${token ? 'token' : 'apikey'}`, 30_000, async () => {
-      const { data } = await firstValueFrom(
-        this.http.get(`${this.baseUrl}/users`, { headers }),
-      );
-      return (data?.data ?? data ?? []) as IdentityUser[];
-    });
+    const headers = token
+      ? { Authorization: `Bearer ${token}` }
+      : this.systemHeaders();
+    return this.cached(
+      `users:${token ? 'token' : 'apikey'}`,
+      30_000,
+      async () => {
+        const { data } = await firstValueFrom(
+          this.http.get(`${this.baseUrl}/users`, { headers }),
+        );
+        return (data?.data ?? data ?? []) as IdentityUser[];
+      },
+    );
   }
 
   async getUser(id: string, token?: string): Promise<IdentityUser | null> {
@@ -81,7 +94,9 @@ export class IdentityProxyService {
   }
 
   async listLocations(token?: string): Promise<IdentityLocation[]> {
-    const headers = token ? { Authorization: `Bearer ${token}` } : this.systemHeaders();
+    const headers = token
+      ? { Authorization: `Bearer ${token}` }
+      : this.systemHeaders();
     return this.cached('locations', 60_000, async () => {
       const { data } = await firstValueFrom(
         this.http.get(`${this.baseUrl}/locations`, { headers }),
@@ -93,7 +108,10 @@ export class IdentityProxyService {
   async searchLocations(
     query: { page?: number; limit?: number; search?: string },
     organizationId?: string,
-  ): Promise<{ data: IdentityLocation[]; meta: { page: number; limit: number; total: number } }> {
+  ): Promise<{
+    data: IdentityLocation[];
+    meta: { page: number; limit: number; total: number };
+  }> {
     const { data } = await firstValueFrom(
       this.http.get(`${this.baseUrl}/locations`, {
         headers: this.systemHeaders(),
@@ -114,12 +132,18 @@ export class IdentityProxyService {
     return { data: locations, meta };
   }
 
-  async getLocation(id: string, token?: string): Promise<IdentityLocation | null> {
+  async getLocation(
+    id: string,
+    token?: string,
+  ): Promise<IdentityLocation | null> {
     const locations = await this.listLocations(token);
     return locations.find((l) => l.id === id) ?? null;
   }
 
-  async getLocationById(id: string, organizationId?: string): Promise<IdentityLocation | null> {
+  async getLocationById(
+    id: string,
+    organizationId?: string,
+  ): Promise<IdentityLocation | null> {
     const { data } = await firstValueFrom(
       this.http.get(`${this.baseUrl}/locations/${id}`, {
         headers: this.systemHeaders(),
@@ -130,7 +154,9 @@ export class IdentityProxyService {
   }
 
   async listOrganizations(token?: string): Promise<IdentityOrganization[]> {
-    const headers = token ? { Authorization: `Bearer ${token}` } : this.systemHeaders();
+    const headers = token
+      ? { Authorization: `Bearer ${token}` }
+      : this.systemHeaders();
     return this.cached('organizations', 120_000, async () => {
       const { data } = await firstValueFrom(
         this.http.get(`${this.baseUrl}/organizations`, { headers }),
@@ -139,7 +165,10 @@ export class IdentityProxyService {
     });
   }
 
-  async resolveProviderName(providerId: string | null, token?: string): Promise<string | null> {
+  async resolveProviderName(
+    providerId: string | null,
+    token?: string,
+  ): Promise<string | null> {
     if (!providerId) return null;
     const user = await this.getUser(providerId, token);
     return user?.username ?? user?.email ?? null;

@@ -58,12 +58,18 @@ describe('EncountersService', () => {
         tenant,
       );
       const qb = repo.createQueryBuilder.mock.results[0].value;
-      expect(qb.andWhere).toHaveBeenCalledWith('encounter.patient_id = :patientId', {
-        patientId: 'patient-1',
-      });
-      expect(qb.andWhere).toHaveBeenCalledWith('encounter.visit_id = :visitId', {
-        visitId: 'visit-1',
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'encounter.patient_id = :patientId',
+        {
+          patientId: 'patient-1',
+        },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'encounter.visit_id = :visitId',
+        {
+          visitId: 'visit-1',
+        },
+      );
     });
   });
 
@@ -160,7 +166,7 @@ describe('EncountersService', () => {
       repo.qbState.getOne = { ...encounter };
       const saved = await service.update(
         'enc-1',
-        { reason: 'Follow-up' } as never,
+        { reason: 'Follow-up' },
         tenant,
       );
       expect(saved.reason).toBe('Follow-up');
@@ -168,7 +174,9 @@ describe('EncountersService', () => {
 
     it('soft-removes an encounter', async () => {
       repo.qbState.getOne = encounter;
-      await expect(service.remove('enc-1', tenant)).resolves.toEqual({ ok: true });
+      await expect(service.remove('enc-1', tenant)).resolves.toEqual({
+        ok: true,
+      });
     });
 
     it('throws NotFound for a missing encounter', async () => {

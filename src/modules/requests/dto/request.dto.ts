@@ -13,8 +13,16 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { PRIORITIES, REQUEST_STATUSES, REQUEST_TYPES } from '../../../shared/domain/enums';
-import type { Priority, RequestStatus, RequestType } from '../../../shared/domain/enums';
+import {
+  PRIORITIES,
+  REQUEST_STATUSES,
+  REQUEST_TYPES,
+} from '../../../shared/domain/enums';
+import type {
+  Priority,
+  RequestStatus,
+  RequestType,
+} from '../../../shared/domain/enums';
 
 export class RequestItemDto {
   @ApiProperty()

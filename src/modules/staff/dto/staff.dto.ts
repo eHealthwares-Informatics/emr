@@ -9,8 +9,14 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { STAFF_CATEGORIES, STAFF_ROLE_TYPES } from '../../../shared/domain/enums';
-import type { StaffCategory, StaffRoleType } from '../../../shared/domain/enums';
+import {
+  STAFF_CATEGORIES,
+  STAFF_ROLE_TYPES,
+} from '../../../shared/domain/enums';
+import type {
+  StaffCategory,
+  StaffRoleType,
+} from '../../../shared/domain/enums';
 
 export class CreateStaffDto {
   @ApiPropertyOptional({ description: 'Auto-generated as STF-xxx if omitted' })
@@ -72,7 +78,9 @@ export class CreateStaffDto {
   @IsString()
   identityLocationId?: string;
 
-  @ApiPropertyOptional({ description: 'Linked identity-service user id (login)' })
+  @ApiPropertyOptional({
+    description: 'Linked identity-service user id (login)',
+  })
   @IsOptional()
   @IsString()
   userId?: string;
@@ -144,7 +152,9 @@ export class UpdateStaffDto {
   @IsString()
   identityLocationId?: string;
 
-  @ApiPropertyOptional({ description: 'Linked identity-service user id (login)' })
+  @ApiPropertyOptional({
+    description: 'Linked identity-service user id (login)',
+  })
   @IsOptional()
   @IsString()
   userId?: string;

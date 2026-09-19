@@ -28,11 +28,19 @@ export class EncountersController {
   @Get()
   @ApiOperation({ summary: 'List encounters with patient/visit filters' })
   async list(
-    @Query() query: ListQueryDto & { patientId?: string; visitId?: string; encounterType?: string },
+    @Query()
+    query: ListQueryDto & {
+      patientId?: string;
+      visitId?: string;
+      encounterType?: string;
+    },
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -42,7 +50,9 @@ export class EncountersController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create an encounter (optionally linked to a visit)' })
+  @ApiOperation({
+    summary: 'Create an encounter (optionally linked to a visit)',
+  })
   create(@Body() dto: CreateEncounterDto, @CurrentUser() user: RequestUser) {
     return this.service.create(dto, tenantFromUser(user), user);
   }
@@ -59,7 +69,11 @@ export class EncountersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an encounter' })
-  update(@Param('id') id: string, @Body() dto: UpdateEncounterDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateEncounterDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.update(id, dto, tenantFromUser(user));
   }
 

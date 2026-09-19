@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RequestOrmEntity } from '../entities/request.orm-entity';
@@ -16,7 +20,7 @@ import { TenantContext } from '../../../common/tenant-context';
 import { AuditLogService } from '../../../common/audit/services/audit-log.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort } from '../../../database/list';
+import { applySort, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 import { RequestStatus, SyncStatus } from '../../../shared/domain/enums';
 
@@ -81,6 +85,8 @@ export class RequestsService {
     query: ListQueryDto & {
       status?: string;
       requestType?: string;
+      priority?: string;
+      syncStatus?: string;
       patientId?: string;
       visitId?: string;
       encounterId?: string;
@@ -105,26 +111,42 @@ export class RequestsService {
         { search: `%${query.search}%` },
       );
     }
-    if (query.status) {
-      qb.andWhere('request.status = :status', { status: query.status });
+    const status = dslFilterValue(query.status);
+    if (status) {
+      qb.andWhere('request.status = :status', { status });
     }
-    if (query.requestType) {
-      qb.andWhere('request.request_type = :requestType', { requestType: query.requestType });
+    const requestType = dslFilterValue(query.requestType);
+    if (requestType) {
+      qb.andWhere('request.request_type = :requestType', { requestType });
     }
-    if (query.patientId) {
-      qb.andWhere('request.patient_id = :patientId', { patientId: query.patientId });
+    const priority = dslFilterValue(query.priority);
+    if (priority) {
+      qb.andWhere('request.priority = :priority', { priority });
     }
-    if (query.visitId) {
-      qb.andWhere('request.visit_id = :visitId', { visitId: query.visitId });
+    const syncStatus = dslFilterValue(query.syncStatus);
+    if (syncStatus) {
+      qb.andWhere('request.sync_status = :syncStatus', { syncStatus });
     }
-    if (query.encounterId) {
-      qb.andWhere('request.encounter_id = :encounterId', { encounterId: query.encounterId });
+    const patientId = dslFilterValue(query.patientId);
+    if (patientId) {
+      qb.andWhere('request.patient_id = :patientId', { patientId });
     }
-    if (query.providerId) {
-      qb.andWhere('request.ordering_provider_id = :providerId', { providerId: query.providerId });
+    const visitId = dslFilterValue(query.visitId);
+    if (visitId) {
+      qb.andWhere('request.visit_id = :visitId', { visitId });
+    }
+    const encounterId = dslFilterValue(query.encounterId);
+    if (encounterId) {
+      qb.andWhere('request.encounter_id = :encounterId', { encounterId });
+    }
+    const providerId = dslFilterValue(query.providerId);
+    if (providerId) {
+      qb.andWhere('request.ordering_provider_id = :providerId', { providerId });
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'requestedAt';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'requestedAt';
     applySort(qb, 'request', sortBy, query.sortOrder);
 
     const [data, total] = await qb
@@ -157,12 +179,20 @@ export class RequestsService {
     return { data: statusHistory };
   }
 
-  async create(dto: CreateRequestDto, tenant: TenantContext, user: RequestUser, token?: string) {
+  async create(
+    dto: CreateRequestDto,
+    tenant: TenantContext,
+    user: RequestUser,
+    token?: string,
+  ) {
     const entity = this.repo.create({
       ...dto,
       requestNumber: generateNumber('REQ'),
       status: 'REQUESTED',
       syncStatus: 'NONE',
+      sendAttemptCount: 0,
+      sentAt: null,
+      lastSyncedAt: null,
       requestedAt: dto.requestedAt ? new Date(dto.requestedAt) : new Date(),
       organizationId: tenant.organizationId,
       locationId: tenant.locationId,
@@ -206,14 +236,20 @@ export class RequestsService {
   async update(id: string, dto: UpdateRequestDto, tenant: TenantContext) {
     const request = await this.findOneScoped(id, tenant);
     if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(request.status)) {
-      throw new BadRequestException(`Requests in status ${request.status} cannot be edited`);
+      throw new BadRequestException(
+        `Requests in status ${request.status} cannot be edited`,
+      );
     }
 
     Object.assign(request, dto);
     if (dto.items) {
       await this.itemRepo.delete({ requestId: id });
       request.items = (dto.items ?? []).map((item) =>
-        this.itemRepo.create({ ...item, requestId: id, contrast: item.contrast ?? false }),
+        this.itemRepo.create({
+          ...item,
+          requestId: id,
+          contrast: item.contrast ?? false,
+        }),
       );
     }
     return this.repo.save(request);
@@ -243,7 +279,10 @@ export class RequestsService {
 
     if (dto.status === 'CANCELLED' && request.externalOrderId) {
       try {
-        await this.lisIntegration.cancelLabOrder(request.externalOrderId, token);
+        await this.lisIntegration.cancelLabOrder(
+          request.externalOrderId,
+          token,
+        );
       } catch {
         // keep local cancel; external cancel failure is non-fatal
       }
@@ -277,7 +316,12 @@ export class RequestsService {
     return saved;
   }
 
-  async addNote(id: string, note: string, tenant: TenantContext, user: RequestUser) {
+  async addNote(
+    id: string,
+    note: string,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     const request = await this.findOneScoped(id, tenant);
     if (!note.trim()) {
       throw new BadRequestException('Note cannot be empty');
@@ -307,13 +351,58 @@ export class RequestsService {
     return entry;
   }
 
-  async sync(id: string, dto: SyncRequestDto, tenant: TenantContext, token?: string) {
+  async sync(
+    id: string,
+    dto: SyncRequestDto,
+    tenant: TenantContext,
+    token?: string,
+  ) {
     const request = await this.findOneScoped(id, tenant);
     if (dto.externalOrderId) request.externalOrderId = dto.externalOrderId;
-    if (dto.externalReference) request.externalReference = dto.externalReference;
+    if (dto.externalReference)
+      request.externalReference = dto.externalReference;
+    request.lastSyncedAt = new Date();
     const saved = await this.repo.save(request);
     await this.syncRequest(saved, token);
     return this.get(saved.id, tenant);
+  }
+
+  async resend(
+    id: string,
+    tenant: TenantContext,
+    user: RequestUser,
+    token?: string,
+  ) {
+    const request = await this.findOneScoped(id, tenant);
+    if (
+      request.requestType !== 'LAB' &&
+      request.requestType !== 'PRESCRIPTION'
+    ) {
+      throw new BadRequestException(
+        'Only LAB and PRESCRIPTION requests can be sent externally',
+      );
+    }
+    if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(request.status)) {
+      throw new BadRequestException(
+        `Requests in status ${request.status} cannot be re-sent`,
+      );
+    }
+
+    await this.syncRequest(request, token);
+    this.audit({
+      tenant,
+      user,
+      action: 'request.resend',
+      metadata: {
+        requestId: request.id,
+        requestNumber: request.requestNumber,
+        requestType: request.requestType,
+        syncStatus: request.syncStatus,
+        syncError: request.syncError ?? null,
+        sendAttemptCount: request.sendAttemptCount,
+      },
+    });
+    return this.get(request.id, tenant);
   }
 
   async remove(id: string, tenant: TenantContext) {
@@ -322,14 +411,21 @@ export class RequestsService {
     return { ok: true };
   }
 
-  private async syncRequest(request: RequestOrmEntity, token?: string): Promise<void> {
-    if (request.requestType !== 'LAB' && request.requestType !== 'PRESCRIPTION') {
+  private async syncRequest(
+    request: RequestOrmEntity,
+    token?: string,
+  ): Promise<void> {
+    if (
+      request.requestType !== 'LAB' &&
+      request.requestType !== 'PRESCRIPTION'
+    ) {
       request.syncStatus = 'NONE';
       await this.repo.save(request);
       return;
     }
 
     request.syncStatus = 'PENDING';
+    request.sendAttemptCount = (request.sendAttemptCount ?? 0) + 1;
     await this.repo.save(request);
 
     try {
@@ -337,17 +433,26 @@ export class RequestsService {
       if (request.requestType === 'LAB') {
         result = await this.lisIntegration.createLabOrder(request, token);
       } else {
-        result = await this.pharmacyIntegration.createPrescriptionOrder(request, token);
+        result = await this.pharmacyIntegration.createPrescriptionOrder(
+          request,
+          token,
+        );
       }
 
-      request.externalOrderId = result.externalOrderId ?? request.externalOrderId;
-      request.externalReference = result.externalReference ?? request.externalReference;
+      request.externalOrderId =
+        result.externalOrderId ?? request.externalOrderId;
+      request.externalReference =
+        result.externalReference ?? request.externalReference;
       request.syncStatus = 'SYNCED';
       request.syncError = null;
+      request.sentAt = new Date();
+      request.lastSyncedAt = request.sentAt;
       await this.repo.save(request);
     } catch (error) {
       request.syncStatus = 'FAILED';
-      request.syncError = error instanceof Error ? error.message : 'External sync failed';
+      request.syncError =
+        error instanceof Error ? error.message : 'External sync failed';
+      request.sentAt = request.sentAt ?? null;
       await this.repo.save(request);
     }
   }

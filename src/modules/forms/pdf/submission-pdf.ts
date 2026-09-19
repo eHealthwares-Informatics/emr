@@ -21,7 +21,12 @@ function renderValue(value: unknown): string {
     if (value.every((item) => typeof item === 'object' && item !== null)) {
       const rows = value as Array<Record<string, unknown>>;
       const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
-      const head = keys.map((key) => `<td style="font-size: 8; color: #666666; font-weight: bold;">${escapeHtml(key)}</td>`).join('');
+      const head = keys
+        .map(
+          (key) =>
+            `<td style="font-size: 8; color: #666666; font-weight: bold;">${escapeHtml(key)}</td>`,
+        )
+        .join('');
       const body = rows
         .map(
           (row) =>
@@ -47,15 +52,23 @@ export function submissionPdfHtml(
   form?: FormDefinitionOrmEntity | null,
 ): string {
   const labels = new Map<string, string>();
-  const collectLabels = (fields: Array<{ key: string; label: string; fields?: unknown[] }>): void => {
+  const collectLabels = (
+    fields: Array<{ key: string; label: string; fields?: unknown[] }>,
+  ): void => {
     for (const field of fields) {
       labels.set(field.key, field.label);
       if (Array.isArray(field.fields)) {
-        collectLabels(field.fields as Array<{ key: string; label: string; fields?: unknown[] }>);
+        collectLabels(
+          field.fields as Array<{
+            key: string;
+            label: string;
+            fields?: unknown[];
+          }>,
+        );
       }
     }
   };
-  collectLabels((form?.schemaJson?.fields ?? []) as Array<{ key: string; label: string; fields?: unknown[] }>);
+  collectLabels(form?.schemaJson?.fields ?? []);
 
   const fieldRows = Object.entries(submission.dataJson ?? {})
     .map(([key, value]) => {

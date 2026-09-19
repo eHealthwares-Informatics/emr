@@ -32,7 +32,10 @@ export class FormDefinitionsController {
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -43,13 +46,20 @@ export class FormDefinitionsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a form definition (draft)' })
-  create(@Body() dto: CreateFormDefinitionDto, @CurrentUser() user: RequestUser) {
+  create(
+    @Body() dto: CreateFormDefinitionDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.create(dto, tenantFromUser(user), user);
   }
 
   @Post(':id/publish')
   @ApiOperation({ summary: 'Publish a form definition' })
-  publish(@Param('id') id: string, @Body() _dto: PublishFormDto, @CurrentUser() user: RequestUser) {
+  publish(
+    @Param('id') id: string,
+    @Body() _dto: PublishFormDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.publish(id, tenantFromUser(user));
   }
 
@@ -60,7 +70,9 @@ export class FormDefinitionsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a form definition (bumps version when schema changes)' })
+  @ApiOperation({
+    summary: 'Update a form definition (bumps version when schema changes)',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateFormDefinitionDto,

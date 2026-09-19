@@ -63,12 +63,58 @@ describe('AppointmentsService', () => {
         { providerId: 'staff-1' },
       );
     });
+
+    it('applies DSL date filters (EQUALS) through the filter engine', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(listQuery({ date: 'EQUALS|2026-01-05|' }), tenant);
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        expect.stringMatching(/^appointment\.date = :/),
+        expect.any(Object),
+      );
+      expect(qb.andWhere).not.toHaveBeenCalledWith('appointment.date = :date', {
+        date: 'EQUALS|2026-01-05|',
+      });
+    });
+
+    it('applies DSL date BETWEEN filters', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(
+        listQuery({ date: 'BETWEEN|2026-01-01|2026-01-31' }),
+        tenant,
+      );
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        expect.stringMatching(/^appointment\.date BETWEEN :/),
+        expect.any(Object),
+      );
+    });
+
+    it('filters by patient free-text against name or MRN', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(
+        listQuery({ patientName: 'FUZZY_MATCH|ada|' }),
+        tenant,
+      );
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(appointment.patient_name ILIKE :p OR appointment.patient_id ILIKE :p)',
+        { p: '%ada%' },
+      );
+    });
   });
 
   describe('create', () => {
     it('creates a SCHEDULED appointment with a generated number', async () => {
       const saved = await service.create(
-        { patientId: 'patient-1', patientName: 'Ada Obi', date: '2026-01-05' } as never,
+        {
+          patientId: 'patient-1',
+          patientName: 'Ada Obi',
+          date: '2026-01-05',
+        } as never,
         tenant,
         user,
       );
@@ -101,9 +147,9 @@ describe('AppointmentsService', () => {
 
     it('rejects check-in for a completed appointment', async () => {
       repo.qbState.getOne = { ...appointment, status: 'COMPLETED' };
-      await expect(service.checkIn('apt-1', {}, tenant, user)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.checkIn('apt-1', {}, tenant, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 
@@ -125,7 +171,7 @@ describe('AppointmentsService', () => {
       repo.qbState.getOne = { ...appointment };
       const saved = await service.cancel(
         'apt-1',
-        { reason: 'Patient unavailable' } as never,
+        { reason: 'Patient unavailable' },
         tenant,
       );
       expect(saved.status).toBe('CANCELLED');
@@ -134,9 +180,9 @@ describe('AppointmentsService', () => {
 
     it('rejects cancelling an already closed appointment', async () => {
       repo.qbState.getOne = { ...appointment, status: 'COMPLETED' };
-      await expect(
-        service.cancel('apt-1', {} as never, tenant),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.cancel('apt-1', {}, tenant)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 
@@ -144,7 +190,7 @@ describe('AppointmentsService', () => {
     it('rejects editing completed or cancelled appointments', async () => {
       repo.qbState.getOne = { ...appointment, status: 'COMPLETED' };
       await expect(
-        service.update('apt-1', { startTime: '10:00' } as never, tenant),
+        service.update('apt-1', { startTime: '10:00' }, tenant),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -152,7 +198,7 @@ describe('AppointmentsService', () => {
       repo.qbState.getOne = { ...appointment };
       const saved = await service.update(
         'apt-1',
-        { startTime: '10:00' } as never,
+        { startTime: '10:00' },
         tenant,
       );
       expect(saved.startTime).toBe('10:00');

@@ -1,4 +1,10 @@
-import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IdentityProxyService } from '../identity-proxy/identity-proxy.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -10,10 +16,30 @@ export class LocationProxyController {
   constructor(private readonly identityProxy: IdentityProxyService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Search locations proxied from the identity service' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (1-based)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20, description: 'Items per page' })
-  @ApiQuery({ name: 'search', required: false, type: String, example: 'Pharmacy', description: 'Search by location name or code' })
+  @ApiOperation({
+    summary: 'Search locations proxied from the identity service',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    description: 'Page number (1-based)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 20,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    example: 'Pharmacy',
+    description: 'Search by location name or code',
+  })
   async list(
     @Query('page') page = 1,
     @Query('limit') limit = 20,

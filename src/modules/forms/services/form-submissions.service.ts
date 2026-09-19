@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FormSubmissionOrmEntity } from '../entities/form-submission.orm-entity';
@@ -14,7 +18,13 @@ import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 
-const SORT_ALLOW_LIST = ['formName', 'status', 'submittedAt', 'createdAt', 'updatedAt'];
+const SORT_ALLOW_LIST = [
+  'formName',
+  'status',
+  'submittedAt',
+  'createdAt',
+  'updatedAt',
+];
 
 @Injectable()
 export class FormSubmissionsService {
@@ -52,13 +62,17 @@ export class FormSubmissionsService {
       );
     }
     if (query.patientId) {
-      qb.andWhere('submission.patient_id = :patientId', { patientId: query.patientId });
+      qb.andWhere('submission.patient_id = :patientId', {
+        patientId: query.patientId,
+      });
     }
     if (query.visitId) {
       qb.andWhere('submission.visit_id = :visitId', { visitId: query.visitId });
     }
     if (query.encounterId) {
-      qb.andWhere('submission.encounter_id = :encounterId', { encounterId: query.encounterId });
+      qb.andWhere('submission.encounter_id = :encounterId', {
+        encounterId: query.encounterId,
+      });
     }
     if (query.formDefinitionId) {
       qb.andWhere('submission.form_definition_id = :formDefinitionId', {
@@ -69,10 +83,15 @@ export class FormSubmissionsService {
       qb.andWhere('submission.status = :status', { status: query.status });
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'submittedAt';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'submittedAt';
     applySort(qb, 'submission', sortBy, query.sortOrder);
 
-    const [data, total] = await qb.skip(query.offset).take(query.limit).getManyAndCount();
+    const [data, total] = await qb
+      .skip(query.offset)
+      .take(query.limit)
+      .getManyAndCount();
     return { data, total };
   }
 
@@ -124,8 +143,15 @@ export class FormSubmissionsService {
     return qb.orderBy('submission.created_at', 'ASC').getMany();
   }
 
-  async create(dto: CreateFormSubmissionDto, tenant: TenantContext, user: RequestUser) {
-    const form = await this.formDefinitionsService.get(dto.formDefinitionId, tenant);
+  async create(
+    dto: CreateFormSubmissionDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
+    const form = await this.formDefinitionsService.get(
+      dto.formDefinitionId,
+      tenant,
+    );
 
     if (!form.isPublished && form.schemaJson?.fields?.length > 0) {
       throw new BadRequestException('Form is not published yet');
@@ -134,7 +160,9 @@ export class FormSubmissionsService {
     if (dto.status === 'SUBMITTED') {
       const errors = validateFormData(form.schemaJson, dto.dataJson ?? {});
       if (errors.length > 0) {
-        throw new BadRequestException(`Form validation failed: ${errors.join('; ')}`);
+        throw new BadRequestException(
+          `Form validation failed: ${errors.join('; ')}`,
+        );
       }
     }
 
@@ -153,17 +181,30 @@ export class FormSubmissionsService {
     return this.repo.save(entity);
   }
 
-  async update(id: string, dto: UpdateFormSubmissionDto, tenant: TenantContext) {
+  async update(
+    id: string,
+    dto: UpdateFormSubmissionDto,
+    tenant: TenantContext,
+  ) {
     const submission = await this.findOneScoped(id, tenant);
-    if (submission.status === 'SUBMITTED' && dto.status && dto.status !== 'AMENDED') {
+    if (
+      submission.status === 'SUBMITTED' &&
+      dto.status &&
+      dto.status !== 'AMENDED'
+    ) {
       throw new BadRequestException('Submitted forms can only be amended');
     }
 
     if (dto.dataJson) {
-      const form = await this.formDefinitionsService.get(submission.formDefinitionId, tenant);
+      const form = await this.formDefinitionsService.get(
+        submission.formDefinitionId,
+        tenant,
+      );
       const errors = validateFormData(form.schemaJson, dto.dataJson);
       if (errors.length > 0) {
-        throw new BadRequestException(`Form validation failed: ${errors.join('; ')}`);
+        throw new BadRequestException(
+          `Form validation failed: ${errors.join('; ')}`,
+        );
       }
       submission.dataJson = dto.dataJson;
     }
@@ -178,13 +219,23 @@ export class FormSubmissionsService {
     return this.repo.save(submission);
   }
 
-  async amend(id: string, dto: UpdateFormSubmissionDto, tenant: TenantContext, user: RequestUser) {
+  async amend(
+    id: string,
+    dto: UpdateFormSubmissionDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     const original = await this.findOneScoped(id, tenant);
 
-    const form = await this.formDefinitionsService.get(original.formDefinitionId, tenant);
+    const form = await this.formDefinitionsService.get(
+      original.formDefinitionId,
+      tenant,
+    );
     const errors = validateFormData(form.schemaJson, dto.dataJson ?? {});
     if (errors.length > 0) {
-      throw new BadRequestException(`Form validation failed: ${errors.join('; ')}`);
+      throw new BadRequestException(
+        `Form validation failed: ${errors.join('; ')}`,
+      );
     }
 
     const amended = this.repo.create({

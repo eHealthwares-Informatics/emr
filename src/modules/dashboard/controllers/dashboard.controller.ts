@@ -12,8 +12,15 @@ export class DashboardController {
 
   @Get()
   @ApiOperation({ summary: 'Daily operational summary for the EMR dashboard' })
-  @ApiQuery({ name: 'date', required: false, description: 'YYYY-MM-DD; defaults to today' })
-  summary(@Query('date') date: string | undefined, @CurrentUser() user: RequestUser) {
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    description: 'YYYY-MM-DD; defaults to today',
+  })
+  summary(
+    @Query('date') date: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
     const today = date ?? new Date().toISOString().slice(0, 10);
     return this.dashboardService.summary(tenantFromUser(user), today);
   }

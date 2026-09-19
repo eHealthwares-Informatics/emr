@@ -5,10 +5,17 @@ import { StaffOrmEntity } from '../entities/staff.orm-entity';
 import { CreateStaffDto, UpdateStaffDto } from '../dto/staff.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort } from '../../../database/list';
+import { applySort, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 
-const SORT_ALLOW_LIST = ['staffNumber', 'firstName', 'lastName', 'roleType', 'department', 'createdAt'];
+const SORT_ALLOW_LIST = [
+  'staffNumber',
+  'firstName',
+  'lastName',
+  'roleType',
+  'department',
+  'createdAt',
+];
 
 @Injectable()
 export class StaffService {
@@ -26,7 +33,9 @@ export class StaffService {
     },
     tenant: TenantContext,
   ) {
-    const qb = this.repo.createQueryBuilder('staff').where('staff.deleted_at IS NULL');
+    const qb = this.repo
+      .createQueryBuilder('staff')
+      .where('staff.deleted_at IS NULL');
 
     if (tenant.organizationId) {
       qb.andWhere(
@@ -41,27 +50,38 @@ export class StaffService {
         { search: `%${query.search}%` },
       );
     }
-    if (query.roleType) {
-      qb.andWhere('staff.role_type = :roleType', { roleType: query.roleType });
+    const roleType = dslFilterValue(query.roleType);
+    if (roleType) {
+      qb.andWhere('staff.role_type = :roleType', { roleType });
     }
-    if (query.category) {
-      qb.andWhere('staff.category = :category', { category: query.category });
+    const category = dslFilterValue(query.category);
+    if (category) {
+      qb.andWhere('staff.category = :category', { category });
     }
-    if (query.department) {
+    const department = dslFilterValue(query.department);
+    if (department) {
       qb.andWhere('staff.department ILIKE :department', {
-        department: `%${query.department}%`,
+        department: `%${department}%`,
       });
     }
     if (query.isActive !== undefined) {
-      qb.andWhere('staff.is_active = :isActive', {
-        isActive: query.isActive === 'true',
-      });
+      const active = dslFilterValue(query.isActive);
+      if (active !== undefined) {
+        qb.andWhere('staff.is_active = :isActive', {
+          isActive: active === 'true',
+        });
+      }
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'staffNumber';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'staffNumber';
     applySort(qb, 'staff', sortBy, query.sortOrder);
 
-    const [data, total] = await qb.skip(query.offset).take(query.limit).getManyAndCount();
+    const [data, total] = await qb
+      .skip(query.offset)
+      .take(query.limit)
+      .getManyAndCount();
     return { data, total };
   }
 

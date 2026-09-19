@@ -52,9 +52,12 @@ describe('FormDefinitionsService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('form.category = :category', {
         category: 'CLINICAL',
       });
-      expect(qb.andWhere).toHaveBeenCalledWith('form.is_published = :published', {
-        published: true,
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'form.is_published = :published',
+        {
+          published: true,
+        },
+      );
     });
 
     it('gets a form by code (available-forms flow)', async () => {
@@ -93,11 +96,7 @@ describe('FormDefinitionsService', () => {
     it('rejects a duplicate code', async () => {
       repo.findOne.mockResolvedValue(form);
       await expect(
-        service.create(
-          { code: 'CLINICAL_NOTE' } as never,
-          tenant,
-          user,
-        ),
+        service.create({ code: 'CLINICAL_NOTE' } as never, tenant, user),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -134,7 +133,9 @@ describe('FormDefinitionsService', () => {
       await expect(
         service.update(
           'form-1',
-          { schemaJson: { fields: [{ key: 'x', label: 'X', type: 'bogus' }] } } as never,
+          {
+            schemaJson: { fields: [{ key: 'x', label: 'X', type: 'bogus' }] },
+          } as never,
           tenant,
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -172,7 +173,9 @@ describe('FormDefinitionsService', () => {
 
     it('soft-removes an unpublished form', async () => {
       repo.qbState.getOne = form;
-      await expect(service.remove('form-1', tenant)).resolves.toEqual({ ok: true });
+      await expect(service.remove('form-1', tenant)).resolves.toEqual({
+        ok: true,
+      });
       expect(repo.softRemove).toHaveBeenCalledWith(form);
     });
   });

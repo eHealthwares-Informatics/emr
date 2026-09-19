@@ -10,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaymentProvidersService } from '../services/payment-providers.service';
-import { CreatePaymentProviderDto, UpdatePaymentProviderDto } from '../dto/payment-provider.dto';
+import {
+  CreatePaymentProviderDto,
+  UpdatePaymentProviderDto,
+} from '../dto/payment-provider.dto';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -22,10 +25,15 @@ export class PaymentProvidersController {
   constructor(private readonly service: PaymentProvidersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List payment providers with pagination and search' })
+  @ApiOperation({
+    summary: 'List payment providers with pagination and search',
+  })
   async list(@Query() query: ListQueryDto, @CurrentUser() user: RequestUser) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -36,7 +44,10 @@ export class PaymentProvidersController {
 
   @Post()
   @ApiOperation({ summary: 'Create a payment provider' })
-  create(@Body() dto: CreatePaymentProviderDto, @CurrentUser() user: RequestUser) {
+  create(
+    @Body() dto: CreatePaymentProviderDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.create(dto, tenantFromUser(user));
   }
 

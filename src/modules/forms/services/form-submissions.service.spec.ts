@@ -8,9 +8,7 @@ import {
 } from '../../../test-helpers/repo-mock';
 
 const schema = {
-  fields: [
-    { key: 'name', label: 'Name', type: 'text', required: true },
-  ],
+  fields: [{ key: 'name', label: 'Name', type: 'text', required: true }],
 };
 
 describe('FormSubmissionsService', () => {
@@ -70,9 +68,12 @@ describe('FormSubmissionsService', () => {
         tenant,
       );
       const qb = repo.createQueryBuilder.mock.results[0].value;
-      expect(qb.andWhere).toHaveBeenCalledWith('submission.patient_id = :patientId', {
-        patientId: 'patient-1',
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'submission.patient_id = :patientId',
+        {
+          patientId: 'patient-1',
+        },
+      );
       expect(qb.andWhere).toHaveBeenCalledWith(
         'submission.encounter_id = :encounterId',
         { encounterId: 'enc-1' },
@@ -84,7 +85,11 @@ describe('FormSubmissionsService', () => {
     it('creates a submission stamped with the form name/version', async () => {
       formDefs.get.mockResolvedValue(form);
       const saved = await service.create(
-        { formDefinitionId: 'form-1', patientId: 'patient-1', dataJson: { name: 'Ada' } } as never,
+        {
+          formDefinitionId: 'form-1',
+          patientId: 'patient-1',
+          dataJson: { name: 'Ada' },
+        },
         tenant,
         user,
       );
@@ -132,7 +137,11 @@ describe('FormSubmissionsService', () => {
     });
 
     it('submits a draft with a submittedAt stamp', async () => {
-      repo.qbState.getOne = { ...submission, status: 'DRAFT', submittedAt: null };
+      repo.qbState.getOne = {
+        ...submission,
+        status: 'DRAFT',
+        submittedAt: null,
+      };
       formDefs.get.mockResolvedValue(form);
       const saved = await service.update(
         'sub-1',
@@ -150,7 +159,7 @@ describe('FormSubmissionsService', () => {
       formDefs.get.mockResolvedValue(form);
       const amended = await service.amend(
         'sub-1',
-        { dataJson: { name: 'Ada Obi' } } as never,
+        { dataJson: { name: 'Ada Obi' } },
         tenant,
         user,
       );
@@ -164,7 +173,7 @@ describe('FormSubmissionsService', () => {
       repo.qbState.getOne = submission;
       formDefs.get.mockResolvedValue(form);
       await expect(
-        service.amend('sub-1', { dataJson: {} } as never, tenant, user),
+        service.amend('sub-1', { dataJson: {} }, tenant, user),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
@@ -203,7 +212,11 @@ describe('FormSubmissionsService', () => {
       repo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.getChain('sub-2', tenant);
-      expect(result.data.map((s) => s.id)).toEqual(['sub-orig', 'sub-1', 'sub-2']);
+      expect(result.data.map((s) => s.id)).toEqual([
+        'sub-orig',
+        'sub-1',
+        'sub-2',
+      ]);
     });
   });
 

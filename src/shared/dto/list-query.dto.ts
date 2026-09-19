@@ -38,7 +38,9 @@ export class ListQueryDto {
   @IsOptional()
   filter?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by organization (superadmin only)' })
+  @ApiPropertyOptional({
+    description: 'Filter by organization (superadmin only)',
+  })
   @IsString()
   @IsOptional()
   organizationId?: string;

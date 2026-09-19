@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { FormDefinitionOrmEntity } from '../entities/form-definition.orm-entity';
@@ -12,7 +16,14 @@ import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
 import { validateFormSchema } from './schema-validator';
 
-const SORT_ALLOW_LIST = ['code', 'name', 'category', 'version', 'createdAt', 'updatedAt'];
+const SORT_ALLOW_LIST = [
+  'code',
+  'name',
+  'category',
+  'version',
+  'createdAt',
+  'updatedAt',
+];
 
 @Injectable()
 export class FormDefinitionsService {
@@ -21,15 +32,21 @@ export class FormDefinitionsService {
     private readonly repo: Repository<FormDefinitionOrmEntity>,
   ) {}
 
-  async list(query: ListQueryDto & { category?: string; published?: string }, tenant: TenantContext) {
+  async list(
+    query: ListQueryDto & { category?: string; published?: string },
+    tenant: TenantContext,
+  ) {
     const qb = this.repo
       .createQueryBuilder('form')
       .where('form.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(form.organization_id = :orgId OR form.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(form.organization_id = :orgId OR form.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     if (query.search) {
@@ -47,10 +64,15 @@ export class FormDefinitionsService {
       });
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'createdAt';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'createdAt';
     applySort(qb, 'form', sortBy, query.sortOrder);
 
-    const [data, total] = await qb.skip(query.offset).take(query.limit).getManyAndCount();
+    const [data, total] = await qb
+      .skip(query.offset)
+      .take(query.limit)
+      .getManyAndCount();
     return { data, total };
   }
 
@@ -65,9 +87,12 @@ export class FormDefinitionsService {
       .andWhere('form.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(form.organization_id = :orgId OR form.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(form.organization_id = :orgId OR form.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     const form = await qb.getOne();
@@ -77,17 +102,25 @@ export class FormDefinitionsService {
     return form;
   }
 
-  async create(dto: CreateFormDefinitionDto, tenant: TenantContext, user: RequestUser) {
+  async create(
+    dto: CreateFormDefinitionDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     const existing = await this.repo.findOne({
       where: { code: dto.code, deletedAt: IsNull() },
     });
     if (existing) {
-      throw new BadRequestException(`Form definition with code ${dto.code} already exists`);
+      throw new BadRequestException(
+        `Form definition with code ${dto.code} already exists`,
+      );
     }
 
     const errors = validateFormSchema(dto.schemaJson);
     if (errors.length > 0) {
-      throw new BadRequestException(`Invalid form schema: ${errors.join('; ')}`);
+      throw new BadRequestException(
+        `Invalid form schema: ${errors.join('; ')}`,
+      );
     }
 
     const entity = this.repo.create({
@@ -103,13 +136,19 @@ export class FormDefinitionsService {
     return this.repo.save(entity);
   }
 
-  async update(id: string, dto: UpdateFormDefinitionDto, tenant: TenantContext) {
+  async update(
+    id: string,
+    dto: UpdateFormDefinitionDto,
+    tenant: TenantContext,
+  ) {
     const form = await this.findOneScoped(id, tenant);
 
     if (dto.schemaJson) {
       const errors = validateFormSchema(dto.schemaJson);
       if (errors.length > 0) {
-        throw new BadRequestException(`Invalid form schema: ${errors.join('; ')}`);
+        throw new BadRequestException(
+          `Invalid form schema: ${errors.join('; ')}`,
+        );
       }
       form.schemaJson = dto.schemaJson;
       form.version = (dto.version ?? form.version) + 1;
@@ -142,7 +181,9 @@ export class FormDefinitionsService {
   async remove(id: string, tenant: TenantContext) {
     const form = await this.findOneScoped(id, tenant);
     if (form.isPublished) {
-      throw new BadRequestException('Published forms cannot be deleted; unpublish first');
+      throw new BadRequestException(
+        'Published forms cannot be deleted; unpublish first',
+      );
     }
     await this.repo.softRemove(form);
     return { ok: true };
@@ -155,9 +196,12 @@ export class FormDefinitionsService {
       .andWhere('form.deleted_at IS NULL');
 
     if (tenant.organizationId) {
-      qb.andWhere('(form.organization_id = :orgId OR form.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
+      qb.andWhere(
+        '(form.organization_id = :orgId OR form.organization_id IS NULL)',
+        {
+          orgId: tenant.organizationId,
+        },
+      );
     }
 
     const form = await qb.getOne();

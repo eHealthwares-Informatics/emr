@@ -12,7 +12,9 @@ export class FormAccessController {
 
   @Get('available')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List published forms the current user has access to' })
+  @ApiOperation({
+    summary: 'List published forms the current user has access to',
+  })
   available(@CurrentUser() user: RequestUser) {
     return this.formAccessService.getAvailableForms(user, tenantFromUser(user));
   }

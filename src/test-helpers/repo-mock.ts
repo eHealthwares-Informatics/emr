@@ -52,7 +52,7 @@ export function repoMock(): RepositoryMock {
       Promise.resolve([qbState.list, qbState.total] as [unknown[], number]),
     ),
     getCount: jest.fn(() => Promise.resolve(qbState.total)),
-  } as unknown as QueryBuilderMock;
+  };
 
   return {
     qbState,
@@ -76,7 +76,7 @@ export function repoMock(): RepositoryMock {
 export function listQuery<T extends object>(
   overrides: T = {} as T,
 ): ListQueryDto & T {
-  return Object.assign(new ListQueryDto(), overrides) as ListQueryDto & T;
+  return Object.assign(new ListQueryDto(), overrides);
 }
 
 /** A fixed TenantContext used across most specs. */

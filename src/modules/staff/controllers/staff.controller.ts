@@ -22,7 +22,9 @@ export class StaffController {
   constructor(private readonly service: StaffService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List staff with search and role/category/department filters' })
+  @ApiOperation({
+    summary: 'List staff with search and role/category/department filters',
+  })
   async list(
     @Query()
     query: ListQueryDto & {
@@ -34,7 +36,10 @@ export class StaffController {
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -44,7 +49,9 @@ export class StaffController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Register a staff member (optionally linked to an identity user)' })
+  @ApiOperation({
+    summary: 'Register a staff member (optionally linked to an identity user)',
+  })
   create(@Body() dto: CreateStaffDto, @CurrentUser() user: RequestUser) {
     return this.service.create(dto, tenantFromUser(user));
   }

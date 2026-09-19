@@ -52,9 +52,12 @@ describe('VisitsService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('visit.status = :status', {
         status: 'ONGOING',
       });
-      expect(qb.andWhere).toHaveBeenCalledWith('visit.provider_id = :providerId', {
-        providerId: 'staff-1',
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'visit.provider_id = :providerId',
+        {
+          providerId: 'staff-1',
+        },
+      );
     });
 
     it('lists only ongoing visits for the active board', async () => {

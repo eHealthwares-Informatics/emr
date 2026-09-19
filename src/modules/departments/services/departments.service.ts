@@ -1,11 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DepartmentOrmEntity } from '../entities/department.orm-entity';
-import { CreateDepartmentDto, UpdateDepartmentDto } from '../dto/department.dto';
+import {
+  CreateDepartmentDto,
+  UpdateDepartmentDto,
+} from '../dto/department.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort } from '../../../database/list';
+import { applySort, dslFilterValue } from '../../../database/list';
 
 const SORT_ALLOW_LIST = ['code', 'name', 'departmentType', 'createdAt'];
 
@@ -24,7 +31,9 @@ export class DepartmentsService {
     },
     tenant: TenantContext,
   ) {
-    const qb = this.repo.createQueryBuilder('department').where('department.deleted_at IS NULL');
+    const qb = this.repo
+      .createQueryBuilder('department')
+      .where('department.deleted_at IS NULL');
 
     if (tenant.organizationId) {
       qb.andWhere(
@@ -39,26 +48,34 @@ export class DepartmentsService {
         { search: `%${query.search}%` },
       );
     }
-    if (query.locationId) {
-      qb.andWhere('department.location_id = :locationId', {
-        locationId: query.locationId,
-      });
+    const locationId = dslFilterValue(query.locationId);
+    if (locationId) {
+      qb.andWhere('department.location_id = :locationId', { locationId });
     }
-    if (query.departmentType) {
+    const departmentType = dslFilterValue(query.departmentType);
+    if (departmentType) {
       qb.andWhere('department.department_type = :departmentType', {
-        departmentType: query.departmentType,
+        departmentType,
       });
     }
     if (query.isActive !== undefined) {
-      qb.andWhere('department.is_active = :isActive', {
-        isActive: query.isActive === 'true',
-      });
+      const active = dslFilterValue(query.isActive);
+      if (active !== undefined) {
+        qb.andWhere('department.is_active = :isActive', {
+          isActive: active === 'true',
+        });
+      }
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'createdAt';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'createdAt';
     applySort(qb, 'department', sortBy, query.sortOrder);
 
-    const [data, total] = await qb.skip(query.offset).take(query.limit).getManyAndCount();
+    const [data, total] = await qb
+      .skip(query.offset)
+      .take(query.limit)
+      .getManyAndCount();
     return { data, total };
   }
 
@@ -96,7 +113,11 @@ export class DepartmentsService {
     return { ok: true };
   }
 
-  private async assertCodeAvailable(code: string, tenant: TenantContext, excludeId?: string) {
+  private async assertCodeAvailable(
+    code: string,
+    tenant: TenantContext,
+    excludeId?: string,
+  ) {
     const qb = this.repo
       .createQueryBuilder('department')
       .where('department.code = :code', { code })

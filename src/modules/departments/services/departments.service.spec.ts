@@ -44,15 +44,24 @@ describe('DepartmentsService', () => {
         tenant,
       );
       const qb = repo.createQueryBuilder.mock.results[0].value;
-      expect(qb.andWhere).toHaveBeenCalledWith('department.location_id = :locationId', {
-        locationId: 'loc-1',
-      });
-      expect(qb.andWhere).toHaveBeenCalledWith('department.department_type = :departmentType', {
-        departmentType: 'PHARMACY',
-      });
-      expect(qb.andWhere).toHaveBeenCalledWith('department.is_active = :isActive', {
-        isActive: true,
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'department.location_id = :locationId',
+        {
+          locationId: 'loc-1',
+        },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'department.department_type = :departmentType',
+        {
+          departmentType: 'PHARMACY',
+        },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'department.is_active = :isActive',
+        {
+          isActive: true,
+        },
+      );
     });
   });
 
@@ -77,7 +86,7 @@ describe('DepartmentsService', () => {
         departmentType: 'OPD' as const,
         locationId: 'site-hq',
       };
-      const saved = await service.create(dto as never, tenant);
+      const saved = await service.create(dto, tenant);
       expect(saved.code).toBe('CARDIOLOGY');
       expect(saved.organizationId).toBe('org-1');
       expect(saved.locationId).toBe('site-hq');
@@ -97,7 +106,7 @@ describe('DepartmentsService', () => {
       repo.qbState.getOne = { ...department };
       const saved = await service.update(
         'dept-1',
-        { name: 'Pharmacy & Dispensary' } as never,
+        { name: 'Pharmacy & Dispensary' },
         tenant,
       );
       expect(saved.name).toBe('Pharmacy & Dispensary');

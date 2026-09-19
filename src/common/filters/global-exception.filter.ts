@@ -42,7 +42,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const dbError = (exception as any).driverError || exception;
       const code = dbError?.code;
 
-      const status = code === '23505' ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+      const status =
+        code === '23505' ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
 
       return void response.status(status).json({
         success: false,

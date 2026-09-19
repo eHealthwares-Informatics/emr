@@ -49,10 +49,9 @@ describe('PatientsService', () => {
       repo.qbState.total = 0;
       await service.list(listQuery({ filter: 'gender|MALE' }), tenant);
       const qb = repo.createQueryBuilder.mock.results[0].value;
-      expect(qb.andWhere).toHaveBeenCalledWith(
-        'patient.gender = :gender',
-        { gender: 'MALE' },
-      );
+      expect(qb.andWhere).toHaveBeenCalledWith('patient.gender = :gender', {
+        gender: 'MALE',
+      });
     });
   });
 
@@ -90,7 +89,7 @@ describe('PatientsService', () => {
       repo.qbState.getOne = null;
       const dto = { firstName: 'Ada', lastName: 'Obi' };
 
-      const saved = await service.create(dto as never, tenant, user);
+      const saved = await service.create(dto, tenant, user);
       expect(saved.patientId).toMatch(/^MRN-/);
       expect(saved.organizationId).toBe('org-1');
       expect(audit.record).toHaveBeenCalledWith(
@@ -111,7 +110,7 @@ describe('PatientsService', () => {
       repo.qbState.getOne = { ...patient };
       const saved = await service.update(
         'patient-1',
-        { phone: '0802222222' } as never,
+        { phone: '0802222222' },
         tenant,
         user,
       );
@@ -131,7 +130,7 @@ describe('PatientsService', () => {
     it('throws NotFound for a missing patient', async () => {
       repo.qbState.getOne = null;
       await expect(
-        service.update('missing', {} as never, tenant, user),
+        service.update('missing', {}, tenant, user),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });

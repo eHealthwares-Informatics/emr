@@ -22,7 +22,10 @@ export class LisIntegrationService {
     return this.config.get<string>('EMR_LIS_API_URL', 'http://localhost:8002');
   }
 
-  async createLabOrder(request: RequestOrmEntity, token?: string): Promise<ExternalSyncResult> {
+  async createLabOrder(
+    request: RequestOrmEntity,
+    token?: string,
+  ): Promise<ExternalSyncResult> {
     const items = (request.items ?? [])
       .map((item) => ({
         testDefinitionId: item.testDefinitionId ?? item.code,
@@ -31,10 +34,13 @@ export class LisIntegrationService {
       .filter((item) => !!item.testDefinitionId);
 
     if (items.length === 0) {
-      throw new Error('No LIS test definition ids provided on lab request items');
+      throw new Error(
+        'No LIS test definition ids provided on lab request items',
+      );
     }
 
     const payload = {
+      source: 'emr-encounter-request',
       patientId: request.patientId,
       patientName: request.patientName,
       internalReference: request.requestNumber,
@@ -45,7 +51,9 @@ export class LisIntegrationService {
       items,
     };
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
@@ -61,7 +69,9 @@ export class LisIntegrationService {
   }
 
   async cancelLabOrder(externalOrderId: string, token?: string): Promise<void> {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }

@@ -1,7 +1,12 @@
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
 import { RequestItemOrmEntity } from './request-item.orm-entity';
-import type { RequestStatus, RequestType, SyncStatus, Priority } from '../../../shared/domain/enums';
+import type {
+  RequestStatus,
+  RequestType,
+  SyncStatus,
+  Priority,
+} from '../../../shared/domain/enums';
 
 @Entity('requests')
 export class RequestOrmEntity extends EmrBaseEntity {
@@ -54,6 +59,15 @@ export class RequestOrmEntity extends EmrBaseEntity {
   @Column({ name: 'sync_error', type: 'text', nullable: true })
   syncError!: string | null;
 
+  @Column({ name: 'send_attempt_count', type: 'int', default: 0 })
+  sendAttemptCount!: number;
+
+  @Column({ name: 'sent_at', type: 'timestamptz', nullable: true })
+  sentAt!: Date | null;
+
+  @Column({ name: 'last_synced_at', type: 'timestamptz', nullable: true })
+  lastSyncedAt!: Date | null;
+
   @Column({ name: 'requested_at', type: 'timestamptz' })
   requestedAt!: Date;
 
@@ -63,6 +77,8 @@ export class RequestOrmEntity extends EmrBaseEntity {
   @Column({ name: 'created_by_id', type: 'text', nullable: true })
   createdById!: string | null;
 
-  @OneToMany(() => RequestItemOrmEntity, (item) => item.request, { cascade: true })
+  @OneToMany(() => RequestItemOrmEntity, (item) => item.request, {
+    cascade: true,
+  })
   items!: RequestItemOrmEntity[];
 }

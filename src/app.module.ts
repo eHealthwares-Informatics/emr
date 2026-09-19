@@ -22,6 +22,9 @@ import { IdentityProxyModule } from './modules/identity-proxy/identity-proxy.mod
 import { AuthProxyModule } from './modules/auth-proxy/auth-proxy.module';
 import { LocationProxyModule } from './modules/location-proxy/location-proxy.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
+import { WardsModule } from './modules/wards/wards.module';
+import { BedsModule } from './modules/beds/beds.module';
+import { AdmissionsModule } from './modules/admissions/admissions.module';
 import { SeedsModule } from './modules/seeds/seeds.module';
 
 @Module({
@@ -42,7 +45,7 @@ import { SeedsModule } from './modules/seeds/seeds.module';
           synchronize: config.get<string>('DB_SYNCHRONIZE', 'true') === 'true',
           dropSchema: config.get<string>('DB_DROP_SCHEMA', 'false') === 'true',
           logging: config.get<string>('TYPEORM_LOGGING', 'false') === 'true',
-        } as TypeOrmModuleOptions;
+        };
       },
     }),
     AuditModule,
@@ -53,6 +56,9 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     PaymentProvidersModule,
     StaffModule,
     DepartmentsModule,
+    WardsModule,
+    BedsModule,
+    AdmissionsModule,
     AppointmentsModule,
     VisitsModule,
     EncountersModule,

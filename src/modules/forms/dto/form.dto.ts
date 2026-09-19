@@ -8,7 +8,10 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import type { FormSchema, FormSubmissionStatus } from '../../../shared/domain/emr.types';
+import type {
+  FormSchema,
+  FormSubmissionStatus,
+} from '../../../shared/domain/emr.types';
 import { FORM_CATEGORIES } from '../../../shared/domain/enums';
 import type { FormCategory } from '../../../shared/domain/enums';
 

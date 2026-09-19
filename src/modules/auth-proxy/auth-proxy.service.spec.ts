@@ -25,7 +25,9 @@ describe('AuthProxyService', () => {
           provide: ConfigService,
           useValue: {
             get: (key: string, fallback?: string) =>
-              key === 'IDENTITY_SERVICE_URL' ? 'https://identity.test/identity' : fallback,
+              key === 'IDENTITY_SERVICE_URL'
+                ? 'https://identity.test/identity'
+                : fallback,
           },
         },
       ],
@@ -46,12 +48,17 @@ describe('AuthProxyService', () => {
       }),
     );
 
-    const result = await service.login({ username: 'admin', password: 'secret1' });
+    const result = await service.login({
+      username: 'admin',
+      password: 'secret1',
+    });
 
     expect(httpPost).toHaveBeenCalledWith(
       'https://identity.test/identity/auth/login',
       { username: 'admin', password: 'secret1' },
-      expect.objectContaining({ headers: { 'x-api-key': 'rxsoft-internal-key' } }),
+      expect.objectContaining({
+        headers: { 'x-api-key': 'rxsoft-internal-key' },
+      }),
     );
     expect(result).toEqual({
       accessToken: 'at',
@@ -69,19 +76,29 @@ describe('AuthProxyService', () => {
           username: 'alice',
           roles: ['Doctor', 'Specialist', 'Finance'],
           permissions: ['dashboard.view'],
-          modules: [{ id: 'm1', name: 'Dashboard', description: 'd', root: '/dashboard' }],
+          modules: [
+            {
+              id: 'm1',
+              name: 'Dashboard',
+              description: 'd',
+              root: '/dashboard',
+            },
+          ],
         },
       }),
     );
 
     const result = await service.me('some-token');
 
-    expect(httpGet).toHaveBeenCalledWith('https://identity.test/identity/auth/me', {
-      headers: {
-        'x-api-key': 'rxsoft-internal-key',
-        Authorization: 'Bearer some-token',
+    expect(httpGet).toHaveBeenCalledWith(
+      'https://identity.test/identity/auth/me',
+      {
+        headers: {
+          'x-api-key': 'rxsoft-internal-key',
+          Authorization: 'Bearer some-token',
+        },
       },
-    });
+    );
     expect(result.roles).toEqual(['Doctor', 'Specialist', 'Finance']);
     expect(result.modules[0].root).toBe('/dashboard');
   });
@@ -89,11 +106,15 @@ describe('AuthProxyService', () => {
   it('rejects an invalid me response with UnauthorizedException', async () => {
     httpGet.mockReturnValue(of({ data: null }));
 
-    await expect(service.me('bad-token')).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(service.me('bad-token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('forwards refresh-token and logout endpoints', async () => {
-    httpPost.mockReturnValue(of({ data: { accessToken: 'at2', refreshToken: 'rt2' } }));
+    httpPost.mockReturnValue(
+      of({ data: { accessToken: 'at2', refreshToken: 'rt2' } }),
+    );
 
     await service.refreshToken({ refreshToken: 'rt' });
     await service.logout({ refreshToken: 'rt' });
@@ -103,13 +124,17 @@ describe('AuthProxyService', () => {
       1,
       'https://identity.test/identity/auth/refresh-token',
       { refreshToken: 'rt' },
-      expect.objectContaining({ headers: { 'x-api-key': 'rxsoft-internal-key' } }),
+      expect.objectContaining({
+        headers: { 'x-api-key': 'rxsoft-internal-key' },
+      }),
     );
     expect(httpPost).toHaveBeenNthCalledWith(
       2,
       'https://identity.test/identity/auth/logout',
       { refreshToken: 'rt' },
-      expect.objectContaining({ headers: { 'x-api-key': 'rxsoft-internal-key' } }),
+      expect.objectContaining({
+        headers: { 'x-api-key': 'rxsoft-internal-key' },
+      }),
     );
     expect(httpPost).toHaveBeenNthCalledWith(
       3,

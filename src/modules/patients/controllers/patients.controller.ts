@@ -23,14 +23,23 @@ export class PatientsController {
 
   @Get()
   @ApiOperation({ summary: 'List patients with pagination and search' })
-  async list(@Query() query: ListQueryDto, @CurrentUser() user: RequestUser) {
+  async list(
+    @Query() query: ListQueryDto & { gender?: string; isActive?: string },
+    @CurrentUser() user: RequestUser,
+  ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get('by-mrn/:patientId')
   @ApiOperation({ summary: 'Get patient by MRN (patientId)' })
-  getByMrn(@Param('patientId') patientId: string, @CurrentUser() user: RequestUser) {
+  getByMrn(
+    @Param('patientId') patientId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.getByPatientId(patientId, tenantFromUser(user));
   }
 
@@ -48,7 +57,11 @@ export class PatientsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a patient' })
-  update(@Param('id') id: string, @Body() dto: UpdatePatientDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePatientDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.service.update(id, dto, tenantFromUser(user), user);
   }
 

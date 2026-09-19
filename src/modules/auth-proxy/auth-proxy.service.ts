@@ -26,7 +26,10 @@ export class AuthProxyService {
   ) {}
 
   private get baseUrl(): string {
-    return this.config.get<string>('IDENTITY_SERVICE_URL', 'https://api.ehealthwares.com/identity');
+    return this.config.get<string>(
+      'IDENTITY_SERVICE_URL',
+      'https://api.ehealthwares.com/identity',
+    );
   }
 
   private get apiKey(): string {
@@ -37,9 +40,14 @@ export class AuthProxyService {
     return { 'x-api-key': this.apiKey, ...extra };
   }
 
-  async login(payload: { username: string; password: string }): Promise<ProxyAuthResponse> {
+  async login(payload: {
+    username: string;
+    password: string;
+  }): Promise<ProxyAuthResponse> {
     const { data } = await firstValueFrom(
-      this.http.post(`${this.baseUrl}/auth/login`, payload, { headers: this.headers() }),
+      this.http.post(`${this.baseUrl}/auth/login`, payload, {
+        headers: this.headers(),
+      }),
     );
     const body = data?.data ?? data;
     return {
@@ -50,9 +58,13 @@ export class AuthProxyService {
     };
   }
 
-  async refreshToken(payload: { refreshToken: string }): Promise<ProxyAuthResponse> {
+  async refreshToken(payload: {
+    refreshToken: string;
+  }): Promise<ProxyAuthResponse> {
     const { data } = await firstValueFrom(
-      this.http.post(`${this.baseUrl}/auth/refresh-token`, payload, { headers: this.headers() }),
+      this.http.post(`${this.baseUrl}/auth/refresh-token`, payload, {
+        headers: this.headers(),
+      }),
     );
     const body = data?.data ?? data;
     return {
@@ -65,11 +77,16 @@ export class AuthProxyService {
 
   async logout(payload: { refreshToken: string }): Promise<void> {
     await firstValueFrom(
-      this.http.post(`${this.baseUrl}/auth/logout`, payload, { headers: this.headers() }),
+      this.http.post(`${this.baseUrl}/auth/logout`, payload, {
+        headers: this.headers(),
+      }),
     );
   }
 
-  async logoutAll(payload: { refreshToken: string }, token?: string): Promise<void> {
+  async logoutAll(
+    payload: { refreshToken: string },
+    token?: string,
+  ): Promise<void> {
     const extra: Record<string, string> = token
       ? { Authorization: `Bearer ${token}` }
       : {};

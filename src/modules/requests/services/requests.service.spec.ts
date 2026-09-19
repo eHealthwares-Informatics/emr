@@ -72,9 +72,12 @@ describe('RequestsService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('request.status = :status', {
         status: 'IN_PROGRESS',
       });
-      expect(qb.andWhere).toHaveBeenCalledWith('request.request_type = :requestType', {
-        requestType: 'LAB',
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'request.request_type = :requestType',
+        {
+          requestType: 'LAB',
+        },
+      );
       expect(qb.andWhere).toHaveBeenCalledWith(
         'request.ordering_provider_id = :providerId',
         { providerId: 'staff-1' },
@@ -127,7 +130,10 @@ describe('RequestsService', () => {
       expect(saved.requestNumber).toMatch(/^REQ-/);
       expect(saved.status).toBe('REQUESTED');
       expect(saved.syncStatus).toBe('NONE');
-      const createdEntity = repo.save.mock.calls[0][0] as Record<string, unknown>;
+      const createdEntity = repo.save.mock.calls[0][0] as Record<
+        string,
+        unknown
+      >;
       expect(createdEntity.items).toEqual([
         expect.objectContaining({ name: 'Chest X-ray' }),
       ]);
@@ -144,12 +150,19 @@ describe('RequestsService', () => {
         externalReference: 'REF-9',
       });
       const saved = await service.create(
-        { requestType: 'LAB', patientId: 'patient-1', items: [{ name: 'CBC' }] } as never,
+        {
+          requestType: 'LAB',
+          patientId: 'patient-1',
+          items: [{ name: 'CBC' }],
+        } as never,
         tenant,
         user,
       );
       expect(saved.syncStatus).toBe('SYNCED');
       expect(saved.externalOrderId).toBe('lab-9');
+      expect(saved.sendAttemptCount).toBe(1);
+      expect(saved.sentAt).toBeInstanceOf(Date);
+      expect(saved.lastSyncedAt).toBeInstanceOf(Date);
       expect(lis.createLabOrder).toHaveBeenCalled();
     });
 
@@ -162,6 +175,8 @@ describe('RequestsService', () => {
       );
       expect(saved.syncStatus).toBe('FAILED');
       expect(saved.syncError).toBe('LIS down');
+      expect(saved.sendAttemptCount).toBe(1);
+      expect(saved.sentAt).toBeNull();
     });
   });
 
@@ -222,7 +237,12 @@ describe('RequestsService', () => {
     it('rejects an illegal transition', async () => {
       repo.qbState.getOne = { ...request, status: 'COMPLETED' };
       await expect(
-        service.transition('req-1', { status: 'IN_PROGRESS' } as never, tenant, user),
+        service.transition(
+          'req-1',
+          { status: 'IN_PROGRESS' } as never,
+          tenant,
+          user,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -263,8 +283,16 @@ describe('RequestsService', () => {
   describe('addNote', () => {
     it('appends a note entry with audit', async () => {
       repo.qbState.getOne = request;
-      historyRepo.save.mockResolvedValue({ id: 'note-1', reason: 'Awaiting results' });
-      const entry = await service.addNote('req-1', 'Awaiting results', tenant, user);
+      historyRepo.save.mockResolvedValue({
+        id: 'note-1',
+        reason: 'Awaiting results',
+      });
+      const entry = await service.addNote(
+        'req-1',
+        'Awaiting results',
+        tenant,
+        user,
+      );
       expect(entry.reason).toBe('Awaiting results');
       expect(historyRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ toStatus: null, fromStatus: null }),
@@ -297,14 +325,81 @@ describe('RequestsService', () => {
       });
       const saved = await service.sync(
         'req-1',
-        { externalOrderId: 'lab-2', externalReference: 'REF-2' } as never,
+        { externalOrderId: 'lab-2', externalReference: 'REF-2' },
         tenant,
         'token',
       );
       expect(saved.externalOrderId).toBe('lab-2');
       expect(saved.externalReference).toBe('REF-2');
       expect(saved.syncStatus).toBe('SYNCED');
-      expect(lis.createLabOrder).toHaveBeenCalledWith(expect.anything(), 'token');
+      expect(saved.lastSyncedAt).toBeInstanceOf(Date);
+      expect(saved.sendAttemptCount).toBe(1);
+      expect(lis.createLabOrder).toHaveBeenCalledWith(
+        expect.anything(),
+        'token',
+      );
+    });
+  });
+
+  describe('resend', () => {
+    const syncableRequest = { ...request, requestType: 'PRESCRIPTION' };
+
+    beforeEach(() => {
+      repo.qbState.getOne = { ...syncableRequest };
+      repo.save.mockImplementation(async (entity: unknown) => {
+        repo.qbState.getOne = entity;
+        return entity;
+      });
+      itemRepo.find.mockResolvedValue([]);
+      historyRepo.find.mockResolvedValue([]);
+      pharmacy.createPrescriptionOrder.mockResolvedValue({
+        externalOrderId: 'rx-1',
+        externalReference: 'REF-RX-1',
+      });
+    });
+
+    it('re-dispatches a prescription and records attempts/sentAt', async () => {
+      const saved = await service.resend('req-1', tenant, user, 'token');
+      expect(saved.syncStatus).toBe('SYNCED');
+      expect(saved.externalOrderId).toBe('rx-1');
+      expect(saved.sendAttemptCount).toBe(1);
+      expect(saved.sentAt).toBeInstanceOf(Date);
+      expect(pharmacy.createPrescriptionOrder).toHaveBeenCalledWith(
+        expect.anything(),
+        'token',
+      );
+    });
+
+    it('keeps FAILED + increments attempts when the external service errors', async () => {
+      pharmacy.createPrescriptionOrder.mockRejectedValue(
+        new Error('Pharmacy down'),
+      );
+      const saved = await service.resend('req-1', tenant, user);
+      expect(saved.syncStatus).toBe('FAILED');
+      expect(saved.syncError).toBe('Pharmacy down');
+      expect(saved.sendAttemptCount).toBe(1);
+      expect(saved.sentAt).toBeNull();
+    });
+
+    it('rejects resending non-syncable request types', async () => {
+      repo.qbState.getOne = { ...request, requestType: 'RADIOLOGY' };
+      await expect(
+        service.resend('req-1', tenant, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects resending terminal requests', async () => {
+      repo.qbState.getOne = { ...syncableRequest, status: 'COMPLETED' };
+      await expect(
+        service.resend('req-1', tenant, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('throws NotFound for a missing request', async () => {
+      repo.qbState.getOne = null;
+      await expect(
+        service.resend('missing', tenant, user),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

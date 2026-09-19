@@ -10,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DepartmentsService } from '../services/departments.service';
-import { CreateDepartmentDto, UpdateDepartmentDto } from '../dto/department.dto';
+import {
+  CreateDepartmentDto,
+  UpdateDepartmentDto,
+} from '../dto/department.dto';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -23,9 +26,24 @@ export class DepartmentsController {
 
   @Get()
   @ApiOperation({ summary: 'List departments with search and filters' })
-  @ApiQuery({ name: 'locationId', required: false, type: String, description: 'Filter by identity site (location) id' })
-  @ApiQuery({ name: 'departmentType', required: false, type: String, description: 'Filter by department type' })
-  @ApiQuery({ name: 'isActive', required: false, type: String, description: 'Filter by active state (true/false)' })
+  @ApiQuery({
+    name: 'locationId',
+    required: false,
+    type: String,
+    description: 'Filter by identity site (location) id',
+  })
+  @ApiQuery({
+    name: 'departmentType',
+    required: false,
+    type: String,
+    description: 'Filter by department type',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: String,
+    description: 'Filter by active state (true/false)',
+  })
   async list(
     @Query()
     query: ListQueryDto & {
@@ -36,7 +54,10 @@ export class DepartmentsController {
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -46,7 +67,9 @@ export class DepartmentsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a department (belongs to an identity site location)' })
+  @ApiOperation({
+    summary: 'Create a department (belongs to an identity site location)',
+  })
   create(@Body() dto: CreateDepartmentDto, @CurrentUser() user: RequestUser) {
     return this.service.create(dto, tenantFromUser(user));
   }

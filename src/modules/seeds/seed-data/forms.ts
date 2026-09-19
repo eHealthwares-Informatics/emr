@@ -5,9 +5,22 @@ import { FormCategory } from '../../../shared/domain/enums';
 
 export const clinicalNoteSchema: FormSchema = {
   fields: [
-    { key: 'chiefComplaint', label: 'Chief Complaint', type: 'textarea', required: true },
-    { key: 'historyOfPresentingIllness', label: 'History of Presenting Illness', type: 'textarea' },
-    { key: 'pastMedicalHistory', label: 'Past Medical History', type: 'textarea' },
+    {
+      key: 'chiefComplaint',
+      label: 'Chief Complaint',
+      type: 'textarea',
+      required: true,
+    },
+    {
+      key: 'historyOfPresentingIllness',
+      label: 'History of Presenting Illness',
+      type: 'textarea',
+    },
+    {
+      key: 'pastMedicalHistory',
+      label: 'Past Medical History',
+      type: 'textarea',
+    },
     { key: 'medications', label: 'Current Medications', type: 'textarea' },
     { key: 'allergies', label: 'Allergies', type: 'textarea' },
     { key: 'reviewOfSystems', label: 'Review of Systems', type: 'textarea' },
@@ -22,9 +35,21 @@ export const vitalsSchema: FormSchema = {
   fields: [
     { key: 'temperature', label: 'Temperature (°C)', type: 'number' },
     { key: 'heartRate', label: 'Heart Rate (bpm)', type: 'number' },
-    { key: 'respiratoryRate', label: 'Respiratory Rate (/min)', type: 'number' },
-    { key: 'bloodPressureSystolic', label: 'Blood Pressure Systolic (mmHg)', type: 'number' },
-    { key: 'bloodPressureDiastolic', label: 'Blood Pressure Diastolic (mmHg)', type: 'number' },
+    {
+      key: 'respiratoryRate',
+      label: 'Respiratory Rate (/min)',
+      type: 'number',
+    },
+    {
+      key: 'bloodPressureSystolic',
+      label: 'Blood Pressure Systolic (mmHg)',
+      type: 'number',
+    },
+    {
+      key: 'bloodPressureDiastolic',
+      label: 'Blood Pressure Diastolic (mmHg)',
+      type: 'number',
+    },
     { key: 'oxygenSaturation', label: 'Oxygen Saturation (%)', type: 'number' },
     { key: 'weight', label: 'Weight (kg)', type: 'number' },
     { key: 'height', label: 'Height (cm)', type: 'number' },

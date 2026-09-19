@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PaymentProviderOrmEntity } from '../entities/payment-provider.orm-entity';
-import { CreatePaymentProviderDto, UpdatePaymentProviderDto } from '../dto/payment-provider.dto';
+import {
+  CreatePaymentProviderDto,
+  UpdatePaymentProviderDto,
+} from '../dto/payment-provider.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
@@ -35,7 +42,9 @@ export class PaymentProvidersService {
       );
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'name';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'name';
     applySort(qb, 'provider', sortBy, query.sortOrder);
 
     const [data, total] = await qb
@@ -55,7 +64,9 @@ export class PaymentProvidersService {
       where: { code: dto.code, deletedAt: IsNull() },
     });
     if (existing) {
-      throw new BadRequestException(`Payment provider with code ${dto.code} already exists`);
+      throw new BadRequestException(
+        `Payment provider with code ${dto.code} already exists`,
+      );
     }
 
     const entity = this.repo.create({
@@ -66,7 +77,11 @@ export class PaymentProvidersService {
     return this.repo.save(entity);
   }
 
-  async update(id: string, dto: UpdatePaymentProviderDto, tenant: TenantContext) {
+  async update(
+    id: string,
+    dto: UpdatePaymentProviderDto,
+    tenant: TenantContext,
+  ) {
     const provider = await this.findOneScoped(id, tenant);
 
     if (dto.code && dto.code !== provider.code) {
@@ -74,7 +89,9 @@ export class PaymentProvidersService {
         where: { code: dto.code, deletedAt: IsNull() },
       });
       if (existing && existing.id !== provider.id) {
-        throw new BadRequestException(`Payment provider with code ${dto.code} already exists`);
+        throw new BadRequestException(
+          `Payment provider with code ${dto.code} already exists`,
+        );
       }
     }
 

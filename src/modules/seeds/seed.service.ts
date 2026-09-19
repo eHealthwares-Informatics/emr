@@ -4,7 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FormDefinitionOrmEntity } from '../forms/entities/form-definition.orm-entity';
 import { FormAccessOrmEntity } from '../forms/entities/form-access.orm-entity';
-import { starterFormAccess, starterFormDefinitions, toFormAccessEntity, toFormEntity } from './seed-data/forms';
+import {
+  starterFormAccess,
+  starterFormDefinitions,
+  toFormAccessEntity,
+  toFormEntity,
+} from './seed-data/forms';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -50,9 +55,11 @@ export class SeedService implements OnApplicationBootstrap {
         ) {
           existing.name = seed.name as string;
           existing.description = seed.description ?? existing.description;
-          existing.schemaJson = seed.schemaJson as FormDefinitionOrmEntity['schemaJson'];
+          existing.schemaJson =
+            seed.schemaJson as FormDefinitionOrmEntity['schemaJson'];
           existing.isPublished = seed.isPublished ?? existing.isPublished;
-          existing.publishedVersion = seed.publishedVersion ?? existing.publishedVersion;
+          existing.publishedVersion =
+            seed.publishedVersion ?? existing.publishedVersion;
           existing.isActive = seed.isActive ?? existing.isActive;
           await this.formRepo.save(existing);
           updated += 1;

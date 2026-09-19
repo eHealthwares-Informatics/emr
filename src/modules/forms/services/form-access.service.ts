@@ -41,7 +41,9 @@ export class FormAccessService {
     const rows = await this.accessRepo.find({
       where: [
         { userId: user.sub, deletedAt: IsNull() },
-        ...(roleCodes.length > 0 ? [{ roleCode: In(roleCodes), deletedAt: IsNull() }] : []),
+        ...(roleCodes.length > 0
+          ? [{ roleCode: In(roleCodes), deletedAt: IsNull() }]
+          : []),
       ],
     });
 
@@ -57,7 +59,9 @@ export class FormAccessService {
     const allowedCodes = new Set<string>(
       wildcardAllow
         ? published.data.map((form) => form.code)
-        : allows.filter((row) => row.formCode).map((row) => row.formCode as string),
+        : allows
+            .filter((row) => row.formCode)
+            .map((row) => row.formCode as string),
     );
 
     for (const deny of denies) {

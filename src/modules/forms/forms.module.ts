@@ -20,8 +20,16 @@ import { FormAccessController } from './controllers/form-access.controller';
     ]),
     PdfModule,
   ],
-  controllers: [FormDefinitionsController, FormSubmissionsController, FormAccessController],
-  providers: [FormDefinitionsService, FormSubmissionsService, FormAccessService],
+  controllers: [
+    FormDefinitionsController,
+    FormSubmissionsController,
+    FormAccessController,
+  ],
+  providers: [
+    FormDefinitionsService,
+    FormSubmissionsService,
+    FormAccessService,
+  ],
   exports: [FormDefinitionsService, FormSubmissionsService, FormAccessService],
 })
 export class FormsModule {}

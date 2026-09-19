@@ -44,6 +44,8 @@ export class RequestsController {
     query: ListQueryDto & {
       status?: string;
       requestType?: string;
+      priority?: string;
+      syncStatus?: string;
       patientId?: string;
       visitId?: string;
       encounterId?: string;
@@ -52,7 +54,10 @@ export class RequestsController {
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));
-    return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
+    return {
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    };
   }
 
   @Get(':id')
@@ -68,13 +73,20 @@ export class RequestsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a request (optionally external-synced to LIS/pharmacy)' })
+  @ApiOperation({
+    summary: 'Create a request (optionally external-synced to LIS/pharmacy)',
+  })
   create(
     @Body() dto: CreateRequestDto,
     @CurrentUser() user: RequestUser,
     @Req() req: ExpressRequest,
   ) {
-    return this.service.create(dto, tenantFromUser(user), user, extractToken(req));
+    return this.service.create(
+      dto,
+      tenantFromUser(user),
+      user,
+      extractToken(req),
+    );
   }
 
   @Post(':id/transition')
@@ -85,7 +97,13 @@ export class RequestsController {
     @CurrentUser() user: RequestUser,
     @Req() req: ExpressRequest,
   ) {
-    return this.service.transition(id, dto, tenantFromUser(user), user, extractToken(req));
+    return this.service.transition(
+      id,
+      dto,
+      tenantFromUser(user),
+      user,
+      extractToken(req),
+    );
   }
 
   @Post(':id/note')
@@ -107,6 +125,19 @@ export class RequestsController {
     @Req() req: ExpressRequest,
   ) {
     return this.service.sync(id, dto, tenantFromUser(user), extractToken(req));
+  }
+
+  @Post(':id/resend')
+  @ApiOperation({
+    summary:
+      'Re-send a failed/open LAB or PRESCRIPTION request to the external system',
+  })
+  resend(
+    @Param('id') id: string,
+    @CurrentUser() user: RequestUser,
+    @Req() req: ExpressRequest,
+  ) {
+    return this.service.resend(id, tenantFromUser(user), user, extractToken(req));
   }
 
   @Patch(':id')

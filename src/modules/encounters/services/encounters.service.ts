@@ -1,8 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EncounterOrmEntity } from '../entities/encounter.orm-entity';
-import { CreateEncounterDto, CreateEncounterRequestDto, UpdateEncounterDto } from '../dto/encounter.dto';
+import {
+  CreateEncounterDto,
+  CreateEncounterRequestDto,
+  UpdateEncounterDto,
+} from '../dto/encounter.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
@@ -58,7 +66,9 @@ export class EncountersService {
     }
 
     if (query.patientId) {
-      qb.andWhere('encounter.patient_id = :patientId', { patientId: query.patientId });
+      qb.andWhere('encounter.patient_id = :patientId', {
+        patientId: query.patientId,
+      });
     }
     if (query.visitId) {
       qb.andWhere('encounter.visit_id = :visitId', { visitId: query.visitId });
@@ -69,7 +79,9 @@ export class EncountersService {
       });
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'encounterDatetime';
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'encounterDatetime';
     applySort(qb, 'encounter', sortBy, query.sortOrder);
 
     const [data, total] = await qb
@@ -84,7 +96,11 @@ export class EncountersService {
     return this.findOneScoped(id, tenant);
   }
 
-  async create(dto: CreateEncounterDto, tenant: TenantContext, user: RequestUser) {
+  async create(
+    dto: CreateEncounterDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     if (dto.visitId) {
       const visit = await this.visitsService.get(dto.visitId, tenant);
       if (visit.patientId !== dto.patientId) {
@@ -93,7 +109,9 @@ export class EncountersService {
         );
       }
       if (visit.status !== 'ONGOING') {
-        throw new BadRequestException('Cannot add an encounter to a closed visit');
+        throw new BadRequestException(
+          'Cannot add an encounter to a closed visit',
+        );
       }
     }
 
@@ -124,9 +142,13 @@ export class EncountersService {
     token?: string,
   ) {
     const encounter = await this.findOneScoped(encounterId, tenant);
-    const patient = await this.patientsService.getByPatientId(encounter.patientId, tenant);
+    const patient = await this.patientsService.getByPatientId(
+      encounter.patientId,
+      tenant,
+    );
     const patientName =
-      [patient.firstName, patient.lastName].filter(Boolean).join(' ') || encounter.patientId;
+      [patient.firstName, patient.lastName].filter(Boolean).join(' ') ||
+      encounter.patientId;
     return this.requestsService.create(
       {
         ...dto,

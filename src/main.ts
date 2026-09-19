@@ -26,7 +26,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('EMR API')
-    .setDescription('Electronic Medical Record: appointments, visits, encounters, dynamic forms, and clinical requests')
+    .setDescription(
+      'Electronic Medical Record: appointments, visits, encounters, dynamic forms, and clinical requests',
+    )
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

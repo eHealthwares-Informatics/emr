@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  NestInterceptor,
+} from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 
 type SafeHeaders = Record<string, string>;
@@ -41,7 +47,9 @@ export class RequestLoggingInterceptor implements NestInterceptor {
 
     const safeHeaders = maskSensitive({ ...headers });
     const safeBody: SafeBody =
-      body && typeof body === 'object' && Object.keys(body).length ? body : undefined;
+      body && typeof body === 'object' && Object.keys(body).length
+        ? body
+        : undefined;
 
     this.logger.log(
       `--> ${requestId} ${method} ${originalUrl}` +

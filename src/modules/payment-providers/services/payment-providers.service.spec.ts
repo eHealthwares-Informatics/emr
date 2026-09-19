@@ -39,7 +39,9 @@ describe('PaymentProvidersService', () => {
   describe('get', () => {
     it('returns a scoped provider', async () => {
       repo.qbState.getOne = provider;
-      await expect(service.get('provider-1', tenant)).resolves.toEqual(provider);
+      await expect(service.get('provider-1', tenant)).resolves.toEqual(
+        provider,
+      );
     });
 
     it('throws NotFound when missing', async () => {

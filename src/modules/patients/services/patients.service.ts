@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PatientOrmEntity } from '../entities/patient.orm-entity';
@@ -7,10 +11,16 @@ import { TenantContext } from '../../../common/tenant-context';
 import { AuditLogService } from '../../../common/audit/services/audit-log.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort } from '../../../database/list';
+import { applySort, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 
-const SORT_ALLOW_LIST = ['patientId', 'firstName', 'lastName', 'createdAt', 'updatedAt'];
+const SORT_ALLOW_LIST = [
+  'patientId',
+  'firstName',
+  'lastName',
+  'createdAt',
+  'updatedAt',
+];
 
 @Injectable()
 export class PatientsService {
@@ -44,7 +54,10 @@ export class PatientsService {
       .catch(() => undefined);
   }
 
-  async list(query: ListQueryDto, tenant: TenantContext) {
+  async list(
+    query: ListQueryDto & { gender?: string; isActive?: string },
+    tenant: TenantContext,
+  ) {
     const qb = this.repo
       .createQueryBuilder('patient')
       .where('patient.deleted_at IS NULL');
@@ -70,7 +83,22 @@ export class PatientsService {
       }
     }
 
-    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy) ? query.sortBy : 'createdAt';
+    const gender = dslFilterValue(query.gender);
+    if (gender) {
+      qb.andWhere('patient.gender = :gender', { gender });
+    }
+    if (query.isActive !== undefined) {
+      const active = dslFilterValue(query.isActive);
+      if (active !== undefined) {
+        qb.andWhere('patient.is_active = :isActive', {
+          isActive: active === 'true',
+        });
+      }
+    }
+
+    const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
+      ? query.sortBy
+      : 'createdAt';
     applySort(qb, 'patient', sortBy, query.sortOrder);
 
     const [data, total] = await qb
@@ -106,14 +134,20 @@ export class PatientsService {
     return patient;
   }
 
-  async create(dto: CreatePatientDto, tenant: TenantContext, user: RequestUser) {
+  async create(
+    dto: CreatePatientDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     const patientId = dto.patientId?.trim() || this.generatePatientId();
 
     const existing = await this.repo.findOne({
       where: { patientId, deletedAt: IsNull() },
     });
     if (existing) {
-      throw new BadRequestException(`Patient with MRN ${patientId} already exists`);
+      throw new BadRequestException(
+        `Patient with MRN ${patientId} already exists`,
+      );
     }
 
     const entity = this.repo.create({
@@ -131,7 +165,8 @@ export class PatientsService {
       action: 'patient.created',
       metadata: {
         patientId: saved.patientId,
-        patientName: [saved.firstName, saved.lastName].filter(Boolean).join(' ') || null,
+        patientName:
+          [saved.firstName, saved.lastName].filter(Boolean).join(' ') || null,
         gender: saved.gender ?? null,
         dateOfBirth: saved.dateOfBirth ?? null,
       },
@@ -139,10 +174,18 @@ export class PatientsService {
     return saved;
   }
 
-  async update(id: string, dto: UpdatePatientDto, tenant: TenantContext, user: RequestUser) {
+  async update(
+    id: string,
+    dto: UpdatePatientDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
     const patient = await this.findOneScoped(id, tenant);
     const before = Object.fromEntries(
-      Object.keys(dto).map((key) => [key, (patient as unknown as Record<string, unknown>)[key]]),
+      Object.keys(dto).map((key) => [
+        key,
+        (patient as unknown as Record<string, unknown>)[key],
+      ]),
     );
     Object.assign(patient, dto);
     const saved = await this.repo.save(patient);
@@ -161,7 +204,8 @@ export class PatientsService {
       action: 'patient.updated',
       metadata: {
         patientId: saved.patientId,
-        patientName: [saved.firstName, saved.lastName].filter(Boolean).join(' ') || null,
+        patientName:
+          [saved.firstName, saved.lastName].filter(Boolean).join(' ') || null,
         changedFields,
       },
     });
