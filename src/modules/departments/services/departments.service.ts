@@ -33,6 +33,12 @@ export class DepartmentsService {
   ) {
     const qb = this.repo
       .createQueryBuilder('department')
+      .leftJoinAndMapOne(
+        'department.parent',
+        DepartmentOrmEntity,
+        'parent',
+        'parent.id = department.parent_id AND parent.deleted_at IS NULL',
+      )
       .where('department.deleted_at IS NULL');
 
     if (tenant.organizationId) {
@@ -85,6 +91,7 @@ export class DepartmentsService {
 
   async create(dto: CreateDepartmentDto, tenant: TenantContext) {
     await this.assertCodeAvailable(dto.code, tenant);
+    await this.assertParentUsable(dto.parentId ?? null, tenant);
 
     const entity = this.repo.create({
       code: dto.code,
@@ -92,6 +99,7 @@ export class DepartmentsService {
       departmentType: dto.departmentType ?? 'OPD',
       description: dto.description ?? null,
       isActive: dto.isActive ?? true,
+      parentId: dto.parentId ?? null,
       organizationId: tenant.organizationId,
       locationId: dto.locationId ?? tenant.locationId,
     });
@@ -103,6 +111,9 @@ export class DepartmentsService {
     if (dto.code && dto.code !== department.code) {
       await this.assertCodeAvailable(dto.code, tenant, id);
     }
+    if (dto.parentId !== undefined) {
+      await this.assertParentUsable(dto.parentId, tenant, id);
+    }
     Object.assign(department, dto);
     return this.repo.save(department);
   }
@@ -111,6 +122,32 @@ export class DepartmentsService {
     const department = await this.findOneScoped(id, tenant);
     await this.repo.softRemove(department);
     return { ok: true };
+  }
+
+  /** A parent must exist in-scope and must not be the department itself. */
+  private async assertParentUsable(
+    parentId: string | null | undefined,
+    tenant: TenantContext,
+    selfId?: string,
+  ) {
+    if (parentId === null || parentId === undefined) return;
+    if (selfId && parentId === selfId) {
+      throw new BadRequestException('A department cannot be its own parent');
+    }
+    const qb = this.repo
+      .createQueryBuilder('department')
+      .where('department.id = :parentId', { parentId })
+      .andWhere('department.deleted_at IS NULL');
+    if (tenant.organizationId) {
+      qb.andWhere(
+        '(department.organization_id = :orgId OR department.organization_id IS NULL)',
+        { orgId: tenant.organizationId },
+      );
+    }
+    const parent = await qb.getOne();
+    if (!parent) {
+      throw new BadRequestException('Parent department not found');
+    }
   }
 
   private async assertCodeAvailable(

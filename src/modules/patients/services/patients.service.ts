@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PatientOrmEntity } from '../entities/patient.orm-entity';
 import { CreatePatientDto, UpdatePatientDto } from '../dto/patient.dto';
+import { TagsService } from '../../tags/services/tags.service';
+import type { TagSummary } from '../../tags/services/tags.service';
 import { TenantContext } from '../../../common/tenant-context';
 import { AuditLogService } from '../../../common/audit/services/audit-log.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -28,6 +30,7 @@ export class PatientsService {
     @InjectRepository(PatientOrmEntity)
     private readonly repo: Repository<PatientOrmEntity>,
     private readonly auditLogService: AuditLogService,
+    private readonly tagsService: TagsService,
   ) {}
 
   private audit(entry: {
@@ -106,12 +109,41 @@ export class PatientsService {
       .take(query.limit)
       .getManyAndCount();
 
-    return { data, total };
+    const withTags = await this.attachTags(data);
+    return { data: withTags, total };
+  }
+
+  /** Batch-attaches each patient's tags for the current page of rows. */
+  private async attachTags(
+    patients: PatientOrmEntity[],
+  ): Promise<Array<PatientOrmEntity & { tags: TagSummary[] }>> {
+    const tagMap = await this.tagsService.tagsForPatients(
+      patients.map((p) => String(p.id)),
+    );
+    return patients.map((patient) => ({
+      ...patient,
+      tags: tagMap.get(String(patient.id)) ?? [],
+    }));
+  }
+
+  async getTags(patientId: string, tenant: TenantContext) {
+    const patient = await this.findOneScoped(patientId, tenant);
+    const tagMap = await this.tagsService.tagsForPatients([String(patient.id)]);
+    return { patientId, tags: tagMap.get(String(patient.id)) ?? [] };
+  }
+
+  async assignTags(
+    patientId: string,
+    tagIds: string[],
+    tenant: TenantContext,
+  ) {
+    await this.findOneScoped(patientId, tenant);
+    return this.tagsService.assignToPatient(patientId, { tagIds }, tenant);
   }
 
   async get(id: string, tenant: TenantContext) {
     const patient = await this.findOneScoped(id, tenant);
-    return patient;
+    return this.attachTags([patient]).then(([withTags]) => withTags);
   }
 
   async getByPatientId(patientId: string, tenant: TenantContext) {

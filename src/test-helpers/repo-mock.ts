@@ -13,15 +13,20 @@ export interface QueryBuilderMock {
   limit: jest.Mock;
   skip: jest.Mock;
   take: jest.Mock;
+  leftJoin: jest.Mock;
+  innerJoin: jest.Mock;
+  leftJoinAndMapOne: jest.Mock;
+  select: jest.Mock;
   getOne: jest.Mock;
   getMany: jest.Mock;
   getManyAndCount: jest.Mock;
   getCount: jest.Mock;
+  getRawMany: jest.Mock;
 }
 
 export interface RepositoryMock {
   /** Mutable state consulted by createQueryBuilder().getOne()/getManyAndCount(). */
-  qbState: { getOne: unknown; list: unknown[]; total: number };
+  qbState: { getOne: unknown; list: unknown[]; total: number; raw: unknown[] };
   createQueryBuilder: jest.Mock;
   findOne: jest.Mock;
   find: jest.Mock;
@@ -36,6 +41,7 @@ export function repoMock(): RepositoryMock {
     getOne: null,
     list: [],
     total: 0,
+    raw: [],
   };
 
   const qb = {
@@ -46,12 +52,17 @@ export function repoMock(): RepositoryMock {
     limit: jest.fn(() => qb),
     skip: jest.fn(() => qb),
     take: jest.fn(() => qb),
+    leftJoin: jest.fn(() => qb),
+    innerJoin: jest.fn(() => qb),
+    leftJoinAndMapOne: jest.fn(() => qb),
+    select: jest.fn(() => qb),
     getOne: jest.fn(() => Promise.resolve(qbState.getOne)),
     getMany: jest.fn(() => Promise.resolve(qbState.list)),
     getManyAndCount: jest.fn(() =>
       Promise.resolve([qbState.list, qbState.total] as [unknown[], number]),
     ),
     getCount: jest.fn(() => Promise.resolve(qbState.total)),
+    getRawMany: jest.fn(() => Promise.resolve(qbState.raw)),
   };
 
   return {

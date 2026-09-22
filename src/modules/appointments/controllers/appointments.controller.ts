@@ -44,6 +44,7 @@ export class AppointmentsController {
       providerId?: string;
       patientId?: string;
       patientName?: string;
+      createdAt?: string;
     },
     @CurrentUser() user: RequestUser,
   ) {

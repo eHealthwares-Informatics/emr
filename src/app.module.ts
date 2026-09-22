@@ -10,6 +10,7 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthController } from './modules/health/controllers/health.controller';
 import { PatientsModule } from './modules/patients/patients.module';
+import { TagsModule } from './modules/tags/tags.module';
 import { PaymentProvidersModule } from './modules/payment-providers/payment-providers.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
@@ -53,6 +54,7 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     AuthProxyModule,
     LocationProxyModule,
     PatientsModule,
+    TagsModule,
     PaymentProvidersModule,
     StaffModule,
     DepartmentsModule,

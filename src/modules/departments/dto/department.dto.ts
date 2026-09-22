@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 import { DEPARTMENT_TYPES } from '../../../shared/domain/enums';
 import type { DepartmentType } from '../../../shared/domain/enums';
@@ -42,6 +43,11 @@ export class CreateDepartmentDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Optional parent department id' })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string | null;
 }
 
 export class UpdateDepartmentDto {
@@ -76,4 +82,9 @@ export class UpdateDepartmentDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Optional parent department id' })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string | null;
 }

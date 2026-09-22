@@ -982,6 +982,39 @@ paths:
           description: ''
       summary: Archive a visit
       tags: *ref_10
+  /api/visits/{id}/comments:
+    get:
+      operationId: VisitsController_listComments
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List comments for a visit
+      tags: *ref_10
+    post:
+      operationId: VisitsController_addComment
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVisitCommentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Add a comment to a visit
+      tags: *ref_10
   /api/visits/{id}/end:
     post:
       operationId: VisitsController_end
@@ -1949,7 +1982,7 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-09-17T20:30:30.682Z'
+          default: '2026-09-22T19:06:09.837Z'
         admissionType:
           type: string
           enum: &ref_22
@@ -2017,7 +2050,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-09-17T20:30:30.683Z'
+          default: '2026-09-22T19:06:09.837Z'
     CreateAppointmentDto:
       type: object
       properties:
@@ -2148,6 +2181,15 @@ components:
       required:
         - patientId
         - visitType
+    CreateVisitCommentDto:
+      type: object
+      properties:
+        comment:
+          type: string
+          description: Comment text
+        authorName:
+          type: string
+          description: Display name of the author
     EndVisitDto:
       type: object
       properties:

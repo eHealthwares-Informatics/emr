@@ -11,6 +11,7 @@ describe('PatientsService', () => {
   let service: PatientsService;
   let repo: ReturnType<typeof repoMock>;
   let audit: { record: jest.Mock };
+  let tagsService: { tagsForPatients: jest.Mock; assignToPatient: jest.Mock };
 
   const patient = {
     id: 'patient-1',
@@ -25,7 +26,11 @@ describe('PatientsService', () => {
   beforeEach(() => {
     repo = repoMock();
     audit = { record: jest.fn().mockResolvedValue({}) };
-    service = new PatientsService(repo as never, audit as never);
+    tagsService = {
+      tagsForPatients: jest.fn().mockResolvedValue(new Map()),
+      assignToPatient: jest.fn().mockResolvedValue({ patientId: 'patient-1', tags: [] }),
+    };
+    service = new PatientsService(repo as never, audit as never, tagsService as never);
   });
 
   describe('list', () => {
@@ -34,7 +39,10 @@ describe('PatientsService', () => {
       repo.qbState.total = 1;
 
       const result = await service.list(listQuery(), tenant);
-      expect(result).toEqual({ data: [patient], total: 1 });
+      expect(result).toEqual({
+        data: [{ ...patient, tags: [] }],
+        total: 1,
+      });
       // tenant scoping applied
       expect(repo.createQueryBuilder).toHaveBeenCalledWith('patient');
       const qb = repo.createQueryBuilder.mock.results[0].value;
@@ -56,9 +64,15 @@ describe('PatientsService', () => {
   });
 
   describe('get / getByPatientId', () => {
-    it('returns a scoped patient by id', async () => {
+    it('returns a scoped patient by id with its tags', async () => {
       repo.qbState.getOne = patient;
-      await expect(service.get('patient-1', tenant)).resolves.toEqual(patient);
+      tagsService.tagsForPatients.mockResolvedValue(
+        new Map([['patient-1', [{ id: 'tag-1', name: 'VIP', color: '#e64980' }]]]),
+      );
+      const result = await service.get('patient-1', tenant);
+      expect(result.tags).toEqual([
+        { id: 'tag-1', name: 'VIP', color: '#e64980' },
+      ]);
     });
 
     it('throws NotFound when the id does not resolve', async () => {

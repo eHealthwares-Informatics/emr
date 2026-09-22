@@ -15,7 +15,7 @@ import {
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applyFilters, applySort } from '../../../database/list';
+import { applyFilters, applySort, applyTimestampFilter } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 import { VisitsService } from '../../visits/services/visits.service';
 
@@ -44,6 +44,7 @@ export class AppointmentsService {
       providerId?: string;
       patientId?: string;
       patientName?: string;
+      createdAt?: string;
     },
     tenant: TenantContext,
   ) {
@@ -79,6 +80,12 @@ export class AppointmentsService {
     }
     if (Object.keys(dslFilters).length > 0) {
       applyFilters(qb, 'appointment', dslFilters);
+    }
+
+    // `created_at` is a timestamp: day-based DATE filters are expanded to
+    // full-day ranges so they match rows at any time inside the day.
+    if (query.createdAt && query.createdAt.includes('|')) {
+      applyTimestampFilter(qb, 'appointment', 'createdAt', query.createdAt);
     }
 
     if (query.status && !query.status.includes('|')) {

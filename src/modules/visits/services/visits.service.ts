@@ -6,11 +6,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VisitOrmEntity } from '../entities/visit.orm-entity';
+import { VisitCommentOrmEntity } from '../entities/visit-comment.orm-entity';
 import { CreateVisitDto, EndVisitDto, UpdateVisitDto } from '../dto/visit.dto';
+import { CreateVisitCommentDto } from '../dto/visit-comment.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applySort, dslFilterValue } from '../../../database/list';
+import { applySort, applyTimestampFilter, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 
 const SORT_ALLOW_LIST = [
@@ -28,6 +30,8 @@ export class VisitsService {
   constructor(
     @InjectRepository(VisitOrmEntity)
     private readonly repo: Repository<VisitOrmEntity>,
+    @InjectRepository(VisitCommentOrmEntity)
+    private readonly commentsRepo: Repository<VisitCommentOrmEntity>,
   ) {}
 
   async list(
@@ -35,6 +39,7 @@ export class VisitsService {
       status?: string;
       providerId?: string;
       patientId?: string;
+      createdAt?: string;
     },
     tenant: TenantContext,
   ) {
@@ -67,6 +72,12 @@ export class VisitsService {
     const patientId = dslFilterValue(query.patientId);
     if (patientId) {
       qb.andWhere('visit.patient_id = :patientId', { patientId });
+    }
+
+    // `created_at` is a timestamp: day-based DATE filters are expanded to
+    // full-day ranges so they match rows at any time inside the day.
+    if (query.createdAt && query.createdAt.includes('|')) {
+      applyTimestampFilter(qb, 'visit', 'createdAt', query.createdAt);
     }
 
     const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
@@ -153,6 +164,32 @@ export class VisitsService {
     const visit = await this.findOneScoped(id, tenant);
     await this.repo.softRemove(visit);
     return { ok: true };
+  }
+
+  async listComments(visitId: string, tenant: TenantContext) {
+    await this.findOneScoped(visitId, tenant);
+    return this.commentsRepo
+      .createQueryBuilder('comment')
+      .where('comment.visit_id = :visitId', { visitId })
+      .andWhere('comment.deleted_at IS NULL')
+      .orderBy('comment.created_at', 'ASC')
+      .getMany();
+  }
+
+  async addComment(
+    visitId: string,
+    dto: CreateVisitCommentDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
+    await this.findOneScoped(visitId, tenant);
+    const comment = this.commentsRepo.create({
+      visitId,
+      comment: dto.comment,
+      authorName: dto.authorName ?? user.username,
+      createdById: user.sub,
+    });
+    return this.commentsRepo.save(comment);
   }
 
   private async findOneScoped(id: string, tenant: TenantContext) {

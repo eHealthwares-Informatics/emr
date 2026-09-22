@@ -92,6 +92,53 @@ describe('AppointmentsService', () => {
       );
     });
 
+    it('expands createdAt EQUALS filters to a full-day range', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(
+        listQuery({ createdAt: 'EQUALS|2026-01-05|' }),
+        tenant,
+      );
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      const [sql, params] = qb.andWhere.mock.calls.find(([sql]) =>
+        String(sql).startsWith('appointment.createdAt BETWEEN'),
+      );
+      expect(sql).toMatch(/^appointment\.createdAt BETWEEN :/);
+      expect(Object.values(params)).toEqual(
+        expect.arrayContaining(['2026-01-05 00:00:00', '2026-01-05 23:59:59.999']),
+      );
+    });
+
+    it('expands createdAt BETWEEN upper bound to end of day', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(
+        listQuery({ createdAt: 'BETWEEN|2026-01-01|2026-01-31' }),
+        tenant,
+      );
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      const [, params] = qb.andWhere.mock.calls.find(([sql]) =>
+        String(sql).startsWith('appointment.createdAt BETWEEN'),
+      );
+      expect(Object.values(params)).toEqual(
+        expect.arrayContaining(['2026-01-01 00:00:00', '2026-01-31 23:59:59.999']),
+      );
+    });
+
+    it('expands createdAt TODAY filters to the current day', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(listQuery({ createdAt: 'TODAY|' }), tenant);
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      const today = new Date().toISOString().slice(0, 10);
+      const [, params] = qb.andWhere.mock.calls.find(([sql]) =>
+        String(sql).startsWith('appointment.createdAt BETWEEN'),
+      );
+      expect(Object.values(params)).toEqual(
+        expect.arrayContaining([`${today} 00:00:00`, `${today} 23:59:59.999`]),
+      );
+    });
+
     it('filters by patient free-text against name or MRN', async () => {
       repo.qbState.list = [];
       repo.qbState.total = 0;

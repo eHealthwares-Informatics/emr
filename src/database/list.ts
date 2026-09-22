@@ -214,6 +214,123 @@ export function applyFilter(
 
 const SORT_COLUMN = /^[a-zA-Z0-9_.]+$/;
 
+/**
+ * Apply a frontend DATE-filter DSL string against a timestamp column
+ * (e.g. `created_at`). Day-based shorthands and date-only boundaries are
+ * expanded to full-day ranges so they match rows at any time inside the day,
+ * mirroring the semantics the same filters have on pure date columns.
+ */
+export function applyTimestampFilter(
+  qb: SelectQueryBuilder<any>,
+  alias: string,
+  field: string,
+  raw: string,
+) {
+  if (!raw) return;
+  const { type, value, valueTo } = parseFilter(raw);
+  const column = resolveField(alias, field);
+
+  const dayStart = (v?: string) => (v && v.length === 10 ? `${v} 00:00:00` : v);
+  const dayEnd = (v?: string) => (v && v.length === 10 ? `${v} 23:59:59.999` : v);
+
+  const applyBetween = (from: string, to: string) => {
+    const param = paramName(field, 'between');
+    qb.andWhere(`${column} BETWEEN :${param}_from AND :${param}_to`, {
+      [`${param}_from`]: from,
+      [`${param}_to`]: to,
+    });
+  };
+
+  const applyOp = (op: string, sql: string, bound: string) => {
+    const param = paramName(field, op);
+    qb.andWhere(`${column} ${sql} :${param}`, { [param]: bound });
+  };
+
+  const dayRange = (day: Date) => {
+    const date = toDateString(day);
+    applyBetween(`${date} 00:00:00`, `${date} 23:59:59.999`);
+  };
+
+  switch (type) {
+    case 'TODAY':
+      dayRange(new Date());
+      break;
+    case 'YESTERDAY':
+      dayRange(addDays(new Date(), -1));
+      break;
+    case 'TOMMORROW':
+    case 'TOMORROW':
+      dayRange(addDays(new Date(), 1));
+      break;
+    case 'EQUALS':
+      if (value) dayRange(new Date(`${value}T00:00:00`));
+      break;
+    case 'NOT_EQUALS':
+      applyOp('not_equals', '!=', value);
+      break;
+    case 'GREATER_THAN':
+      applyOp('gt', '>', dayEnd(value) ?? '');
+      break;
+    case 'GREATER_THAN_OR_EQUAL':
+      applyOp('gte', '>=', dayStart(value) ?? '');
+      break;
+    case 'LESS_THAN':
+      applyOp('lt', '<', dayStart(value) ?? '');
+      break;
+    case 'LESS_THAN_OR_EQUAL':
+      applyOp('lte', '<=', dayEnd(value) ?? '');
+      break;
+    case 'BETWEEN':
+      applyBetween(dayStart(value) ?? '', dayEnd(valueTo) ?? '');
+      break;
+    case 'NEXT_24_HOURS':
+      applyBetween(
+        new Date().toISOString(),
+        addDays(new Date(), 1).toISOString(),
+      );
+      break;
+    case 'THIS_MONTH': {
+      const first = new Date();
+      first.setDate(1);
+      const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+      applyBetween(
+        `${toDateString(first)} 00:00:00`,
+        `${toDateString(last)} 23:59:59.999`,
+      );
+      break;
+    }
+    case 'LAST_MONTH': {
+      const first = new Date();
+      first.setDate(1);
+      const prev = new Date(first.getFullYear(), first.getMonth() - 1, 1);
+      const last = new Date(first.getFullYear(), first.getMonth(), 0);
+      applyBetween(
+        `${toDateString(prev)} 00:00:00`,
+        `${toDateString(last)} 23:59:59.999`,
+      );
+      break;
+    }
+    case 'NEXT_MONTH': {
+      const first = new Date();
+      first.setDate(1);
+      const next = new Date(first.getFullYear(), first.getMonth() + 1, 1);
+      const last = new Date(first.getFullYear(), first.getMonth() + 2, 0);
+      applyBetween(
+        `${toDateString(next)} 00:00:00`,
+        `${toDateString(last)} 23:59:59.999`,
+      );
+      break;
+    }
+    case 'THIS_YEAR': {
+      const year = new Date().getFullYear();
+      applyBetween(`${year}-01-01 00:00:00`, `${year}-12-31 23:59:59.999`);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
 export function applySort(
   qb: SelectQueryBuilder<any>,
   alias: string,

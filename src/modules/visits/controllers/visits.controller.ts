@@ -11,6 +11,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { VisitsService } from '../services/visits.service';
 import { CreateVisitDto, EndVisitDto, UpdateVisitDto } from '../dto/visit.dto';
+import { CreateVisitCommentDto } from '../dto/visit-comment.dto';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -31,6 +32,7 @@ export class VisitsController {
       status?: string;
       providerId?: string;
       patientId?: string;
+      createdAt?: string;
     },
     @CurrentUser() user: RequestUser,
   ) {
@@ -61,6 +63,26 @@ export class VisitsController {
   @ApiOperation({ summary: 'Start a new visit' })
   create(@Body() dto: CreateVisitDto, @CurrentUser() user: RequestUser) {
     return this.service.create(dto, tenantFromUser(user), user);
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'List comments for a visit' })
+  async listComments(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    const comments = await this.service.listComments(id, tenantFromUser(user));
+    return {
+      data: comments,
+      meta: { page: 1, limit: comments.length, total: comments.length },
+    };
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'Add a comment to a visit' })
+  addComment(
+    @Param('id') id: string,
+    @Body() dto: CreateVisitCommentDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.service.addComment(id, dto, tenantFromUser(user), user);
   }
 
   @Post(':id/end')
