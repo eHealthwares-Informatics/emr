@@ -64,6 +64,41 @@ export class AdmitPatientDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Link the admission to an existing visit; a visit is auto-created when omitted',
+  })
+  @IsUUID()
+  @IsOptional()
+  visitId?: string;
+}
+
+/** Convert an ongoing visit into an inpatient admission. */
+export class AdmitFromVisitDto {
+  @ApiPropertyOptional({ description: 'Ward to admit into' })
+  @IsUUID()
+  @IsOptional()
+  wardId?: string;
+
+  @ApiPropertyOptional({ description: 'Bed to allocate on admission' })
+  @IsUUID()
+  @IsOptional()
+  bedId?: string;
+
+  @ApiPropertyOptional({ enum: ADMISSION_TYPES, default: 'ELECTIVE' })
+  @IsIn(ADMISSION_TYPES)
+  @IsOptional()
+  admissionType?: AdmissionType;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  diagnosis?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
 }
 
 export class UpdateAdmissionDto {

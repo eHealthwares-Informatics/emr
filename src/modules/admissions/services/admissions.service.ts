@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdmissionOrmEntity } from '../entities/admission.orm-entity';
 import {
+  AdmitFromVisitDto,
   AdmitPatientDto,
   DischargeDto,
   TransferAdmissionDto,
@@ -19,6 +20,8 @@ import { applySort, dslFilterValue } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 import { WardsService } from '../../wards/services/wards.service';
 import { BedsService } from '../../beds/services/beds.service';
+import { VisitsService } from '../../visits/services/visits.service';
+import { VisitOrmEntity } from '../../visits/entities/visit.orm-entity';
 
 const SORT_ALLOW_LIST = [
   'admissionNumber',
@@ -38,6 +41,7 @@ export class AdmissionsService {
     private readonly repo: Repository<AdmissionOrmEntity>,
     private readonly wardsService: WardsService,
     private readonly bedsService: BedsService,
+    private readonly visitsService: VisitsService,
   ) {}
 
   async list(
@@ -47,11 +51,18 @@ export class AdmissionsService {
       wardId?: string;
       patientId?: string;
       bedId?: string;
+      visitId?: string;
     },
     tenant: TenantContext,
   ) {
     const qb = this.repo
       .createQueryBuilder('admission')
+      .leftJoinAndMapOne(
+        'admission.visit',
+        VisitOrmEntity,
+        'visit',
+        'visit.id = admission.visit_id AND visit.deleted_at IS NULL',
+      )
       .where('admission.deleted_at IS NULL');
 
     if (tenant.organizationId) {
@@ -89,6 +100,10 @@ export class AdmissionsService {
     if (bedId) {
       qb.andWhere('admission.bed_id = :bedId', { bedId });
     }
+    const visitId = dslFilterValue(query.visitId);
+    if (visitId) {
+      qb.andWhere('admission.visit_id = :visitId', { visitId });
+    }
 
     const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)
       ? query.sortBy
@@ -119,14 +134,37 @@ export class AdmissionsService {
       }
     }
 
+    // Admissions extend a visit: reuse the supplied visit or auto-create an
+    // inpatient visit so encounters/requests always have a home.
+    const admissionDatetime = dto.admissionDatetime
+      ? new Date(dto.admissionDatetime)
+      : new Date();
+    let visitId = dto.visitId ?? null;
+    if (visitId) {
+      await this.visitsService.get(visitId, tenant);
+      await this.assertVisitNotAdmitted(visitId, tenant);
+    } else {
+      const visit = await this.visitsService.create(
+        {
+          patientId: dto.patientId,
+          patientName: dto.patientName,
+          visitType: 'INPATIENT',
+          providerId: dto.referringProviderId,
+          providerName: dto.referringProviderName,
+          startDatetime: admissionDatetime.toISOString(),
+        },
+        tenant,
+        user,
+      );
+      visitId = visit.id;
+    }
+
     const entity = this.repo.create({
       patientId: dto.patientId,
       patientName: dto.patientName,
       wardId: dto.wardId ?? null,
       bedId: dto.bedId ?? null,
-      admissionDatetime: dto.admissionDatetime
-        ? new Date(dto.admissionDatetime)
-        : new Date(),
+      admissionDatetime,
       admissionType: dto.admissionType ?? 'ELECTIVE',
       diagnosis: dto.diagnosis ?? null,
       referringProviderId: dto.referringProviderId ?? null,
@@ -137,6 +175,7 @@ export class AdmissionsService {
       dischargeSummary: null,
       notes: dto.notes ?? null,
       admissionNumber: generateNumber('ADM'),
+      visitId,
       organizationId: tenant.organizationId,
       locationId: tenant.locationId,
       createdById: user.sub,
@@ -148,6 +187,94 @@ export class AdmissionsService {
     }
 
     return saved;
+  }
+
+  /**
+   * Convert an ongoing visit into an inpatient admission: the admission links
+   * to the existing visit (encounters/requests follow), and the visit becomes
+   * an INPATIENT visit.
+   */
+  async admitFromVisit(
+    visitId: string,
+    dto: AdmitFromVisitDto,
+    tenant: TenantContext,
+    user: RequestUser,
+  ) {
+    const visit = await this.visitsService.get(visitId, tenant);
+    if (visit.status !== 'ONGOING') {
+      throw new BadRequestException(
+        'Only ongoing visits can be converted to an admission',
+      );
+    }
+    await this.assertVisitNotAdmitted(visitId, tenant);
+
+    if (dto.wardId) {
+      await this.wardsService.get(dto.wardId, tenant);
+    }
+    if (dto.bedId) {
+      const bed = await this.bedsService.assertBedAvailable(dto.bedId, tenant);
+      if (dto.wardId && bed.wardId !== dto.wardId) {
+        throw new BadRequestException(
+          'Bed does not belong to the selected ward',
+        );
+      }
+    }
+
+    const entity = this.repo.create({
+      patientId: visit.patientId,
+      patientName: visit.patientName,
+      wardId: dto.wardId ?? null,
+      bedId: dto.bedId ?? null,
+      admissionDatetime: new Date(),
+      admissionType: dto.admissionType ?? 'ELECTIVE',
+      diagnosis: dto.diagnosis ?? null,
+      referringProviderId: visit.providerId,
+      referringProviderName: visit.providerName,
+      status: 'ADMITTED',
+      dischargeDatetime: null,
+      dischargeType: null,
+      dischargeSummary: null,
+      notes: dto.notes ?? null,
+      admissionNumber: generateNumber('ADM'),
+      visitId,
+      organizationId: tenant.organizationId,
+      locationId: tenant.locationId,
+      createdById: user.sub,
+    });
+    const saved = await this.repo.save(entity);
+
+    if (saved.bedId) {
+      await this.bedsService.setStatus(saved.bedId, 'OCCUPIED', tenant);
+    }
+
+    const updatedVisit = await this.visitsService.update(
+      visitId,
+      { visitType: 'INPATIENT' },
+      tenant,
+    );
+
+    return { admission: saved, visit: updatedVisit };
+  }
+
+  /** Rejects converting a visit that already has an active admission. */
+  private async assertVisitNotAdmitted(visitId: string, tenant: TenantContext) {
+    const qb = this.repo
+      .createQueryBuilder('admission')
+      .where('admission.visit_id = :visitId', { visitId })
+      .andWhere('admission.status = :status', { status: 'ADMITTED' })
+      .andWhere('admission.deleted_at IS NULL');
+    if (tenant.organizationId) {
+      qb.andWhere(
+        '(admission.organization_id = :orgId OR admission.organization_id IS NULL)',
+        { orgId: tenant.organizationId },
+      );
+    }
+    const existing = await qb.getOne();
+    if (existing) {
+      throw new BadRequestException(
+        `Visit already has an active admission (${existing.admissionNumber})`,
+      );
+    }
   }
 
   async update(id: string, dto: UpdateAdmissionDto, tenant: TenantContext) {
@@ -225,6 +352,15 @@ export class AdmissionsService {
 
     if (saved.bedId) {
       await this.bedsService.setStatus(saved.bedId, 'AVAILABLE', tenant);
+    }
+
+    // The stay is over: end the visit the admission extends.
+    if (saved.visitId) {
+      try {
+        await this.visitsService.end(saved.visitId, {}, tenant);
+      } catch {
+        // Visit may already be completed/cancelled — discharge still stands.
+      }
     }
     return saved;
   }

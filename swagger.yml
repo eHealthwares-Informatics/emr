@@ -211,6 +211,157 @@ paths:
           description: ''
       summary: Archive a patient
       tags: *ref_2
+  /api/patients/{id}/tags:
+    get:
+      operationId: PatientsController_getTags
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List a patient's tags
+      tags: *ref_2
+    put:
+      operationId: PatientsController_assignTags
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPatientTagsDto'
+      responses:
+        '200':
+          description: ''
+      summary: Replace a patient's tag set
+      tags: *ref_2
+  /api/tags:
+    get:
+      operationId: TagsController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: limit
+          required: false
+          in: query
+          schema:
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: search
+          required: false
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: filter
+          required: false
+          in: query
+          description: Generic filter string
+          schema:
+            type: string
+        - name: organizationId
+          required: false
+          in: query
+          description: Filter by organization (superadmin only)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List tags with pagination and search
+      tags: &ref_3
+        - tags
+    post:
+      operationId: TagsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a tag
+      tags: *ref_3
+  /api/tags/{id}:
+    get:
+      operationId: TagsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get tag by id
+      tags: *ref_3
+    patch:
+      operationId: TagsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTagDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a tag
+      tags: *ref_3
+    delete:
+      operationId: TagsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a tag
+      tags: *ref_3
   /api/payment-providers:
     get:
       operationId: PaymentProvidersController_list
@@ -267,7 +418,7 @@ paths:
         '200':
           description: ''
       summary: List payment providers with pagination and search
-      tags: &ref_3
+      tags: &ref_4
         - payment-providers
     post:
       operationId: PaymentProvidersController_create
@@ -282,7 +433,7 @@ paths:
         '201':
           description: ''
       summary: Create a payment provider
-      tags: *ref_3
+      tags: *ref_4
   /api/payment-providers/{id}:
     get:
       operationId: PaymentProvidersController_get
@@ -296,7 +447,7 @@ paths:
         '200':
           description: ''
       summary: Get payment provider by id
-      tags: *ref_3
+      tags: *ref_4
     patch:
       operationId: PaymentProvidersController_update
       parameters:
@@ -315,7 +466,7 @@ paths:
         '200':
           description: ''
       summary: Update a payment provider
-      tags: *ref_3
+      tags: *ref_4
     delete:
       operationId: PaymentProvidersController_remove
       parameters:
@@ -328,7 +479,7 @@ paths:
         '200':
           description: ''
       summary: Archive a payment provider
-      tags: *ref_3
+      tags: *ref_4
   /api/staff:
     get:
       operationId: StaffController_list
@@ -337,7 +488,7 @@ paths:
         '200':
           description: ''
       summary: List staff with search and role/category/department filters
-      tags: &ref_4
+      tags: &ref_5
         - staff
     post:
       operationId: StaffController_create
@@ -352,7 +503,7 @@ paths:
         '201':
           description: ''
       summary: Register a staff member (optionally linked to an identity user)
-      tags: *ref_4
+      tags: *ref_5
   /api/staff/{id}:
     get:
       operationId: StaffController_get
@@ -366,7 +517,7 @@ paths:
         '200':
           description: ''
       summary: Get staff member by id
-      tags: *ref_4
+      tags: *ref_5
     patch:
       operationId: StaffController_update
       parameters:
@@ -385,7 +536,7 @@ paths:
         '200':
           description: ''
       summary: Update a staff member
-      tags: *ref_4
+      tags: *ref_5
     delete:
       operationId: StaffController_remove
       parameters:
@@ -398,7 +549,7 @@ paths:
         '200':
           description: ''
       summary: Archive a staff member
-      tags: *ref_4
+      tags: *ref_5
   /api/departments:
     get:
       operationId: DepartmentsController_list
@@ -425,7 +576,7 @@ paths:
         '200':
           description: ''
       summary: List departments with search and filters
-      tags: &ref_5
+      tags: &ref_6
         - departments
     post:
       operationId: DepartmentsController_create
@@ -440,7 +591,7 @@ paths:
         '201':
           description: ''
       summary: Create a department (belongs to an identity site location)
-      tags: *ref_5
+      tags: *ref_6
   /api/departments/{id}:
     get:
       operationId: DepartmentsController_get
@@ -454,7 +605,7 @@ paths:
         '200':
           description: ''
       summary: Get department by id
-      tags: *ref_5
+      tags: *ref_6
     patch:
       operationId: DepartmentsController_update
       parameters:
@@ -473,7 +624,7 @@ paths:
         '200':
           description: ''
       summary: Update a department
-      tags: *ref_5
+      tags: *ref_6
     delete:
       operationId: DepartmentsController_remove
       parameters:
@@ -486,7 +637,7 @@ paths:
         '200':
           description: ''
       summary: Archive a department
-      tags: *ref_5
+      tags: *ref_6
   /api/wards:
     get:
       operationId: WardsController_list
@@ -495,7 +646,7 @@ paths:
         '200':
           description: ''
       summary: List wards with search and filters
-      tags: &ref_6
+      tags: &ref_7
         - wards
     post:
       operationId: WardsController_create
@@ -510,7 +661,7 @@ paths:
         '201':
           description: ''
       summary: Create a ward
-      tags: *ref_6
+      tags: *ref_7
   /api/wards/{id}:
     get:
       operationId: WardsController_get
@@ -524,7 +675,7 @@ paths:
         '200':
           description: ''
       summary: Get ward by id
-      tags: *ref_6
+      tags: *ref_7
     patch:
       operationId: WardsController_update
       parameters:
@@ -543,7 +694,7 @@ paths:
         '200':
           description: ''
       summary: Update a ward
-      tags: *ref_6
+      tags: *ref_7
     delete:
       operationId: WardsController_remove
       parameters:
@@ -556,7 +707,7 @@ paths:
         '200':
           description: ''
       summary: Archive a ward
-      tags: *ref_6
+      tags: *ref_7
   /api/beds:
     get:
       operationId: BedsController_list
@@ -565,7 +716,7 @@ paths:
         '200':
           description: ''
       summary: List beds with ward/status filters
-      tags: &ref_7
+      tags: &ref_8
         - beds
     post:
       operationId: BedsController_create
@@ -580,7 +731,7 @@ paths:
         '201':
           description: ''
       summary: Create a bed in a ward
-      tags: *ref_7
+      tags: *ref_8
   /api/beds/{id}:
     get:
       operationId: BedsController_get
@@ -594,7 +745,7 @@ paths:
         '200':
           description: ''
       summary: Get bed by id
-      tags: *ref_7
+      tags: *ref_8
     patch:
       operationId: BedsController_update
       parameters:
@@ -613,7 +764,7 @@ paths:
         '200':
           description: ''
       summary: Update a bed
-      tags: *ref_7
+      tags: *ref_8
     delete:
       operationId: BedsController_remove
       parameters:
@@ -626,7 +777,7 @@ paths:
         '200':
           description: ''
       summary: Archive a bed
-      tags: *ref_7
+      tags: *ref_8
   /api/beds/{id}/status:
     patch:
       operationId: BedsController_setStatus
@@ -640,7 +791,7 @@ paths:
         '200':
           description: ''
       summary: Set bed status directly (maintenance/out-of-service)
-      tags: *ref_7
+      tags: *ref_8
   /api/admissions:
     get:
       operationId: AdmissionsController_list
@@ -649,7 +800,7 @@ paths:
         '200':
           description: ''
       summary: List admissions with status/ward/patient filters
-      tags: &ref_8
+      tags: &ref_9
         - admissions
     post:
       operationId: AdmissionsController_admit
@@ -664,7 +815,7 @@ paths:
         '201':
           description: ''
       summary: Admit a patient (optionally with a bed allocation)
-      tags: *ref_8
+      tags: *ref_9
   /api/admissions/{id}:
     get:
       operationId: AdmissionsController_get
@@ -678,7 +829,7 @@ paths:
         '200':
           description: ''
       summary: Get admission by id
-      tags: *ref_8
+      tags: *ref_9
     patch:
       operationId: AdmissionsController_update
       parameters:
@@ -697,7 +848,7 @@ paths:
         '200':
           description: ''
       summary: Update an active admission
-      tags: *ref_8
+      tags: *ref_9
     delete:
       operationId: AdmissionsController_remove
       parameters:
@@ -710,7 +861,27 @@ paths:
         '200':
           description: ''
       summary: Archive an admission
-      tags: *ref_8
+      tags: *ref_9
+  /api/admissions/from-visit/{visitId}:
+    post:
+      operationId: AdmissionsController_admitFromVisit
+      parameters:
+        - name: visitId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdmitFromVisitDto'
+      responses:
+        '201':
+          description: ''
+      summary: Convert an ongoing visit into an inpatient admission
+      tags: *ref_9
   /api/admissions/{id}/transfer:
     post:
       operationId: AdmissionsController_transfer
@@ -730,7 +901,7 @@ paths:
         '201':
           description: ''
       summary: Transfer an admission to another ward/bed
-      tags: *ref_8
+      tags: *ref_9
   /api/admissions/{id}/discharge:
     post:
       operationId: AdmissionsController_discharge
@@ -750,158 +921,6 @@ paths:
         '201':
           description: ''
       summary: Discharge an active admission
-      tags: *ref_8
-  /api/appointments:
-    get:
-      operationId: AppointmentsController_list
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      summary: List appointments with pagination, date/status filters
-      tags: &ref_9
-        - appointments
-    post:
-      operationId: AppointmentsController_create
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAppointmentDto'
-      responses:
-        '201':
-          description: ''
-      summary: Schedule an appointment
-      tags: *ref_9
-  /api/appointments/{id}/pdf:
-    get:
-      operationId: AppointmentsController_print
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Print an appointment slip (PDF)
-      tags: *ref_9
-  /api/appointments/{id}:
-    get:
-      operationId: AppointmentsController_get
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Get appointment by id
-      tags: *ref_9
-    patch:
-      operationId: AppointmentsController_update
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateAppointmentDto'
-      responses:
-        '200':
-          description: ''
-      summary: Update an appointment
-      tags: *ref_9
-    delete:
-      operationId: AppointmentsController_remove
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Archive an appointment
-      tags: *ref_9
-  /api/appointments/{id}/check-in:
-    post:
-      operationId: AppointmentsController_checkIn
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckInAppointmentDto'
-      responses:
-        '201':
-          description: ''
-      summary: Check in appointment and start a visit
-      tags: *ref_9
-  /api/appointments/{id}/cancel:
-    post:
-      operationId: AppointmentsController_cancel
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CancelAppointmentDto'
-      responses:
-        '201':
-          description: ''
-      summary: Cancel an appointment
-      tags: *ref_9
-  /api/appointments/{id}/no-show:
-    post:
-      operationId: AppointmentsController_noShow
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '201':
-          description: ''
-      summary: Mark appointment as no-show
-      tags: *ref_9
-  /api/appointments/{id}/complete:
-    post:
-      operationId: AppointmentsController_complete
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '201':
-          description: ''
-      summary: Complete an in-progress appointment
       tags: *ref_9
   /api/visits:
     get:
@@ -1049,6 +1068,158 @@ paths:
           description: ''
       summary: Cancel an ongoing visit
       tags: *ref_10
+  /api/appointments:
+    get:
+      operationId: AppointmentsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List appointments with pagination, date/status filters
+      tags: &ref_11
+        - appointments
+    post:
+      operationId: AppointmentsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Schedule an appointment
+      tags: *ref_11
+  /api/appointments/{id}/pdf:
+    get:
+      operationId: AppointmentsController_print
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Print an appointment slip (PDF)
+      tags: *ref_11
+  /api/appointments/{id}:
+    get:
+      operationId: AppointmentsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get appointment by id
+      tags: *ref_11
+    patch:
+      operationId: AppointmentsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppointmentDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an appointment
+      tags: *ref_11
+    delete:
+      operationId: AppointmentsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive an appointment
+      tags: *ref_11
+  /api/appointments/{id}/check-in:
+    post:
+      operationId: AppointmentsController_checkIn
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Check in appointment and start a visit
+      tags: *ref_11
+  /api/appointments/{id}/cancel:
+    post:
+      operationId: AppointmentsController_cancel
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Cancel an appointment
+      tags: *ref_11
+  /api/appointments/{id}/no-show:
+    post:
+      operationId: AppointmentsController_noShow
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Mark appointment as no-show
+      tags: *ref_11
+  /api/appointments/{id}/complete:
+    post:
+      operationId: AppointmentsController_complete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Complete an in-progress appointment
+      tags: *ref_11
   /api/encounters:
     get:
       operationId: EncountersController_list
@@ -1057,7 +1228,7 @@ paths:
         '200':
           description: ''
       summary: List encounters with patient/visit filters
-      tags: &ref_11
+      tags: &ref_12
         - encounters
     post:
       operationId: EncountersController_create
@@ -1072,7 +1243,7 @@ paths:
         '201':
           description: ''
       summary: Create an encounter (optionally linked to a visit)
-      tags: *ref_11
+      tags: *ref_12
   /api/encounters/{id}:
     get:
       operationId: EncountersController_get
@@ -1086,7 +1257,7 @@ paths:
         '200':
           description: ''
       summary: Get encounter by id
-      tags: *ref_11
+      tags: *ref_12
     patch:
       operationId: EncountersController_update
       parameters:
@@ -1105,7 +1276,7 @@ paths:
         '200':
           description: ''
       summary: Update an encounter
-      tags: *ref_11
+      tags: *ref_12
     delete:
       operationId: EncountersController_remove
       parameters:
@@ -1118,7 +1289,7 @@ paths:
         '200':
           description: ''
       summary: Archive an encounter
-      tags: *ref_11
+      tags: *ref_12
   /api/encounters/{id}/requests:
     post:
       operationId: EncountersController_createRequest
@@ -1138,7 +1309,7 @@ paths:
         '201':
           description: ''
       summary: Create a request from an encounter context
-      tags: *ref_11
+      tags: *ref_12
   /api/requests:
     get:
       operationId: RequestsController_list
@@ -1147,7 +1318,7 @@ paths:
         '200':
           description: ''
       summary: List clinical requests with filters
-      tags: &ref_12
+      tags: &ref_13
         - requests
     post:
       operationId: RequestsController_create
@@ -1162,7 +1333,7 @@ paths:
         '201':
           description: ''
       summary: Create a request (optionally external-synced to LIS/pharmacy)
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}:
     get:
       operationId: RequestsController_get
@@ -1176,7 +1347,7 @@ paths:
         '200':
           description: ''
       summary: Get request by id with items
-      tags: *ref_12
+      tags: *ref_13
     patch:
       operationId: RequestsController_update
       parameters:
@@ -1195,7 +1366,7 @@ paths:
         '200':
           description: ''
       summary: Update an open request
-      tags: *ref_12
+      tags: *ref_13
     delete:
       operationId: RequestsController_remove
       parameters:
@@ -1208,7 +1379,7 @@ paths:
         '200':
           description: ''
       summary: Archive a request
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}/history:
     get:
       operationId: RequestsController_getHistory
@@ -1222,7 +1393,7 @@ paths:
         '200':
           description: ''
       summary: Get request status history only (lightweight)
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}/transition:
     post:
       operationId: RequestsController_transition
@@ -1242,7 +1413,7 @@ paths:
         '201':
           description: ''
       summary: Transition request status
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}/note:
     post:
       operationId: RequestsController_addNote
@@ -1262,7 +1433,7 @@ paths:
         '201':
           description: ''
       summary: Append a free-text note to the request timeline
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}/sync:
     post:
       operationId: RequestsController_sync
@@ -1282,7 +1453,7 @@ paths:
         '201':
           description: ''
       summary: Manually re-sync request to external system
-      tags: *ref_12
+      tags: *ref_13
   /api/requests/{id}/resend:
     post:
       operationId: RequestsController_resend
@@ -1296,7 +1467,7 @@ paths:
         '201':
           description: ''
       summary: Re-send a failed/open LAB or PRESCRIPTION request to the external system
-      tags: *ref_12
+      tags: *ref_13
   /api/form-definitions:
     get:
       operationId: FormDefinitionsController_list
@@ -1305,7 +1476,7 @@ paths:
         '200':
           description: ''
       summary: List form definitions
-      tags: &ref_13
+      tags: &ref_14
         - form-definitions
     post:
       operationId: FormDefinitionsController_create
@@ -1320,7 +1491,7 @@ paths:
         '201':
           description: ''
       summary: Create a form definition (draft)
-      tags: *ref_13
+      tags: *ref_14
   /api/form-definitions/{id}:
     get:
       operationId: FormDefinitionsController_get
@@ -1334,7 +1505,7 @@ paths:
         '200':
           description: ''
       summary: Get form definition by id
-      tags: *ref_13
+      tags: *ref_14
     patch:
       operationId: FormDefinitionsController_update
       parameters:
@@ -1353,7 +1524,7 @@ paths:
         '200':
           description: ''
       summary: Update a form definition (bumps version when schema changes)
-      tags: *ref_13
+      tags: *ref_14
     delete:
       operationId: FormDefinitionsController_remove
       parameters:
@@ -1366,7 +1537,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form definition
-      tags: *ref_13
+      tags: *ref_14
   /api/form-definitions/{id}/publish:
     post:
       operationId: FormDefinitionsController_publish
@@ -1386,7 +1557,7 @@ paths:
         '201':
           description: ''
       summary: Publish a form definition
-      tags: *ref_13
+      tags: *ref_14
   /api/form-definitions/{id}/unpublish:
     post:
       operationId: FormDefinitionsController_unpublish
@@ -1400,7 +1571,7 @@ paths:
         '201':
           description: ''
       summary: Unpublish a form definition
-      tags: *ref_13
+      tags: *ref_14
   /api/form-submissions:
     get:
       operationId: FormSubmissionsController_list
@@ -1409,7 +1580,7 @@ paths:
         '200':
           description: ''
       summary: List form submissions (filter by patient/visit/encounter/form)
-      tags: &ref_14
+      tags: &ref_15
         - form-submissions
     post:
       operationId: FormSubmissionsController_create
@@ -1424,7 +1595,7 @@ paths:
         '201':
           description: ''
       summary: Submit (or draft) a form against a patient/encounter
-      tags: *ref_14
+      tags: *ref_15
   /api/form-submissions/{id}:
     get:
       operationId: FormSubmissionsController_get
@@ -1438,7 +1609,7 @@ paths:
         '200':
           description: ''
       summary: Get form submission by id
-      tags: *ref_14
+      tags: *ref_15
     patch:
       operationId: FormSubmissionsController_update
       parameters:
@@ -1457,7 +1628,7 @@ paths:
         '200':
           description: ''
       summary: Update a draft submission
-      tags: *ref_14
+      tags: *ref_15
     delete:
       operationId: FormSubmissionsController_remove
       parameters:
@@ -1470,7 +1641,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form submission
-      tags: *ref_14
+      tags: *ref_15
   /api/form-submissions/{id}/chain:
     get:
       operationId: FormSubmissionsController_getChain
@@ -1484,7 +1655,7 @@ paths:
         '200':
           description: ''
       summary: Get the amend chain (original + all amendments) for a submission
-      tags: *ref_14
+      tags: *ref_15
   /api/form-submissions/{id}/pdf:
     get:
       operationId: FormSubmissionsController_pdf
@@ -1498,7 +1669,7 @@ paths:
         '200':
           description: ''
       summary: Render a submission as a PDF document
-      tags: *ref_14
+      tags: *ref_15
   /api/form-submissions/{id}/amend:
     post:
       operationId: FormSubmissionsController_amend
@@ -1518,7 +1689,7 @@ paths:
         '201':
           description: ''
       summary: Amend a submitted form (creates a new submission)
-      tags: *ref_14
+      tags: *ref_15
   /api/forms/available:
     get:
       operationId: FormAccessController_available
@@ -1583,6 +1754,14 @@ components:
           type: string
       required:
         - refreshToken
+    AssignPatientTagsDto:
+      type: object
+      properties:
+        tagIds:
+          description: Full set of tag ids for the patient (replaces the current set)
+          type: array
+          items:
+            type: string
     CreatePatientDto:
       type: object
       properties:
@@ -1675,6 +1854,24 @@ components:
     Object:
       type: object
       properties: {}
+    CreateTagDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Tag name (unique per organization)
+        color:
+          type: string
+          description: 'Hex color for chips (e.g. #e64980)'
+    UpdateTagDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Tag name (unique per organization)
+        color:
+          type: string
+          description: 'Hex color for chips (e.g. #e64980)'
     CreatePaymentProviderDto:
       type: object
       properties:
@@ -1684,7 +1881,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_15
+          enum: &ref_16
             - CASH
             - HMO
             - COMPANY
@@ -1709,7 +1906,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_15
+          enum: *ref_16
         description:
           type: string
         contactPhone:
@@ -1738,7 +1935,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_16
+          enum: &ref_17
             - Doctor
             - Nurse
             - Technician
@@ -1749,7 +1946,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_17
+          enum: &ref_18
             - Medical
             - Nursing
             - Allied Health
@@ -1795,10 +1992,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_16
+          enum: *ref_17
         category:
           type: string
-          enum: *ref_17
+          enum: *ref_18
         department:
           type: string
         departmentId:
@@ -1825,7 +2022,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_18
+          enum: &ref_19
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -1846,6 +2043,9 @@ components:
         isActive:
           type: boolean
           default: true
+        parentId:
+          type: object
+          description: Optional parent department id
       required:
         - code
         - name
@@ -1858,7 +2058,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_18
+          enum: *ref_19
         description:
           type: string
         locationId:
@@ -1866,6 +2066,9 @@ components:
           description: Identity location (site) id the department belongs to
         isActive:
           type: boolean
+        parentId:
+          type: object
+          description: Optional parent department id
     CreateWardDto:
       type: object
       properties:
@@ -1877,7 +2080,7 @@ components:
           description: Ward display name
         wardType:
           type: string
-          enum: &ref_19
+          enum: &ref_20
             - GENERAL
             - PRIVATE
             - ICU
@@ -1910,7 +2113,7 @@ components:
           type: string
         wardType:
           type: string
-          enum: *ref_19
+          enum: *ref_20
         departmentId:
           type: string
         departmentType:
@@ -1930,7 +2133,7 @@ components:
           description: Ward the bed belongs to
         bedType:
           type: string
-          enum: &ref_20
+          enum: &ref_21
             - STANDARD
             - ICU
             - MATERNITY
@@ -1940,7 +2143,7 @@ components:
           default: STANDARD
         status:
           type: string
-          enum: &ref_21
+          enum: &ref_22
             - AVAILABLE
             - OCCUPIED
             - MAINTENANCE
@@ -1960,10 +2163,10 @@ components:
           type: string
         bedType:
           type: string
-          enum: *ref_20
+          enum: *ref_21
         status:
           type: string
-          enum: *ref_21
+          enum: *ref_22
         notes:
           type: string
     AdmitPatientDto:
@@ -1982,10 +2185,10 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-09-22T19:06:09.837Z'
+          default: '2026-09-22T21:34:41.703Z'
         admissionType:
           type: string
-          enum: &ref_22
+          enum: &ref_23
             - EMERGENCY
             - URGENT
             - ELECTIVE
@@ -2001,9 +2204,31 @@ components:
           type: string
         notes:
           type: string
+        visitId:
+          type: string
+          description: >-
+            Link the admission to an existing visit; a visit is auto-created
+            when omitted
       required:
         - patientId
         - patientName
+    AdmitFromVisitDto:
+      type: object
+      properties:
+        wardId:
+          type: string
+          description: Ward to admit into
+        bedId:
+          type: string
+          description: Bed to allocate on admission
+        admissionType:
+          type: string
+          enum: *ref_23
+          default: ELECTIVE
+        diagnosis:
+          type: string
+        notes:
+          type: string
     UpdateAdmissionDto:
       type: object
       properties:
@@ -2015,7 +2240,7 @@ components:
           type: string
         admissionType:
           type: string
-          enum: *ref_22
+          enum: *ref_23
         diagnosis:
           type: string
         referringProviderId:
@@ -2050,109 +2275,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-09-22T19:06:09.837Z'
-    CreateAppointmentDto:
-      type: object
-      properties:
-        patientId:
-          type: string
-        patientName:
-          type: string
-        appointmentType:
-          type: string
-          enum: &ref_23
-            - CHECKUP
-            - FOLLOW_UP
-            - CONSULTATION
-            - PROCEDURE
-            - EMERGENCY
-            - SURGERY
-            - OTHER
-        date:
-          type: string
-        startTime:
-          type: string
-        endTime:
-          type: string
-        providerId:
-          type: string
-        providerName:
-          type: string
-        locationId:
-          type: string
-        scheduleLocation:
-          type: string
-        priority:
-          type: string
-          enum: &ref_24
-            - ROUTINE
-            - URGENT
-            - EMERGENCY
-          default: ROUTINE
-        reason:
-          type: string
-        notes:
-          type: string
-      required:
-        - patientId
-        - appointmentType
-        - date
-        - startTime
-    CheckInAppointmentDto:
-      type: object
-      properties:
-        locationId:
-          type: string
-        providerId:
-          type: string
-        providerName:
-          type: string
-    CancelAppointmentDto:
-      type: object
-      properties:
-        reason:
-          type: string
-    UpdateAppointmentDto:
-      type: object
-      properties:
-        patientId:
-          type: string
-        patientName:
-          type: string
-        appointmentType:
-          type: string
-          enum: *ref_23
-        date:
-          type: string
-        startTime:
-          type: string
-        endTime:
-          type: string
-        providerId:
-          type: string
-        providerName:
-          type: string
-        locationId:
-          type: string
-        scheduleLocation:
-          type: string
-        priority:
-          type: string
-          enum: *ref_24
-        status:
-          type: string
-          enum:
-            - SCHEDULED
-            - CHECKED_IN
-            - IN_PROGRESS
-            - COMPLETED
-            - CANCELLED
-            - NO_SHOW
-            - MISSED
-        reason:
-          type: string
-        notes:
-          type: string
+          default: '2026-09-22T21:34:41.704Z'
     CreateVisitDto:
       type: object
       properties:
@@ -2162,7 +2285,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_25
+          enum: &ref_24
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -2204,7 +2327,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_25
+          enum: *ref_24
         status:
           type: string
           enum:
@@ -2219,6 +2342,108 @@ components:
           type: string
         stopDatetime:
           type: string
+    CreateAppointmentDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        appointmentType:
+          type: string
+          enum: &ref_25
+            - CHECKUP
+            - FOLLOW_UP
+            - CONSULTATION
+            - PROCEDURE
+            - EMERGENCY
+            - SURGERY
+            - OTHER
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        scheduleLocation:
+          type: string
+        priority:
+          type: string
+          enum: &ref_26
+            - ROUTINE
+            - URGENT
+            - EMERGENCY
+          default: ROUTINE
+        reason:
+          type: string
+        notes:
+          type: string
+      required:
+        - patientId
+        - appointmentType
+        - date
+        - startTime
+    CheckInAppointmentDto:
+      type: object
+      properties:
+        locationId:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+    CancelAppointmentDto:
+      type: object
+      properties:
+        reason:
+          type: string
+    UpdateAppointmentDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        appointmentType:
+          type: string
+          enum: *ref_25
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        locationId:
+          type: string
+        scheduleLocation:
+          type: string
+        priority:
+          type: string
+          enum: *ref_26
+        status:
+          type: string
+          enum:
+            - SCHEDULED
+            - CHECKED_IN
+            - IN_PROGRESS
+            - COMPLETED
+            - CANCELLED
+            - NO_SHOW
+            - MISSED
+        reason:
+          type: string
+        notes:
+          type: string
     CreateEncounterDto:
       type: object
       properties:
@@ -2228,7 +2453,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_26
+          enum: &ref_27
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -2256,14 +2481,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_27
+          enum: &ref_28
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_24
+          enum: *ref_26
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2291,7 +2516,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_26
+          enum: *ref_27
         providerId:
           type: string
         providerName:
@@ -2315,10 +2540,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_27
+          enum: *ref_28
         priority:
           type: string
-          enum: *ref_24
+          enum: *ref_26
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2380,7 +2605,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_24
+          enum: *ref_26
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -2404,7 +2629,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_28
+          enum: &ref_29
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -2434,7 +2659,7 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_28
+          enum: *ref_29
         schemaJson:
           type: object
         version:

@@ -1,10 +1,11 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Index, ManyToOne } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
 import type {
   AdmissionStatus,
   AdmissionType,
   DischargeType,
 } from '../../../shared/domain/enums';
+import { VisitOrmEntity } from '../../visits/entities/visit.orm-entity';
 
 @Entity('admissions')
 export class AdmissionOrmEntity extends EmrBaseEntity {
@@ -55,4 +56,19 @@ export class AdmissionOrmEntity extends EmrBaseEntity {
 
   @Column({ name: 'created_by_id', type: 'text', nullable: true })
   createdById!: string | null;
+
+  /**
+   * Admissions are an extension of a visit: encounters and requests attach to
+   * the visit, and the admission tracks the inpatient stay on top of it.
+   * Direct admits auto-create their linked visit.
+   */
+  @Index()
+  @Column({ name: 'visit_id', type: 'text', nullable: true })
+  visitId!: string | null;
+
+  @ManyToOne(() => VisitOrmEntity, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  visit?: VisitOrmEntity | null;
 }

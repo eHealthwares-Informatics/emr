@@ -3,7 +3,7 @@ import { EmrBaseEntity } from '../../emr-base.entity';
 
 /** Join table linking patients to tags (many-to-many). */
 @Entity('patient_tags')
-@Index(['patient_id', 'tag_id'], { unique: true })
+@Index(['patientId', 'tagId'], { unique: true })
 export class PatientTagOrmEntity extends EmrBaseEntity {
   @Column({ name: 'patient_id', type: 'text' })
   patientId!: string;

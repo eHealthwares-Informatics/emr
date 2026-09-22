@@ -11,6 +11,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdmissionsService } from '../services/admissions.service';
 import {
+  AdmitFromVisitDto,
   AdmitPatientDto,
   DischargeDto,
   TransferAdmissionDto,
@@ -58,6 +59,18 @@ export class AdmissionsController {
   })
   admit(@Body() dto: AdmitPatientDto, @CurrentUser() user: RequestUser) {
     return this.service.admit(dto, tenantFromUser(user), user);
+  }
+
+  @Post('from-visit/:visitId')
+  @ApiOperation({
+    summary: 'Convert an ongoing visit into an inpatient admission',
+  })
+  admitFromVisit(
+    @Param('visitId') visitId: string,
+    @Body() dto: AdmitFromVisitDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.service.admitFromVisit(visitId, dto, tenantFromUser(user), user);
   }
 
   @Patch(':id')

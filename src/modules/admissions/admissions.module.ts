@@ -5,12 +5,14 @@ import { AdmissionsService } from './services/admissions.service';
 import { AdmissionsController } from './controllers/admissions.controller';
 import { WardsModule } from '../wards/wards.module';
 import { BedsModule } from '../beds/beds.module';
+import { VisitsModule } from '../visits/visits.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AdmissionOrmEntity]),
     WardsModule,
     BedsModule,
+    VisitsModule,
   ],
   controllers: [AdmissionsController],
   providers: [AdmissionsService],

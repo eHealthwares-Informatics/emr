@@ -15,6 +15,12 @@ describe('AdmissionsService', () => {
     assertBedAvailable: jest.Mock;
     setStatus: jest.Mock;
   };
+  let visits: {
+    get: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    end: jest.Mock;
+  };
 
   const admission = {
     id: 'adm-1',
@@ -26,6 +32,17 @@ describe('AdmissionsService', () => {
     admissionDatetime: new Date('2026-01-05T09:00:00Z'),
     admissionType: 'ELECTIVE',
     status: 'ADMITTED',
+  };
+
+  const visit = {
+    id: 'visit-1',
+    visitNumber: 'VIS-1',
+    patientId: 'patient-1',
+    patientName: 'Ada Obi',
+    visitType: 'OUTPATIENT',
+    status: 'ONGOING',
+    providerId: 'staff-1',
+    providerName: 'Dr. Ada',
   };
 
   beforeEach(() => {
@@ -40,10 +57,22 @@ describe('AdmissionsService', () => {
       }),
       setStatus: jest.fn().mockResolvedValue({}),
     };
+    visits = {
+      get: jest.fn().mockResolvedValue({ ...visit }),
+      create: jest
+        .fn()
+        .mockResolvedValue({ ...visit, id: 'visit-2', visitType: 'INPATIENT' }),
+      update: jest.fn().mockImplementation(async (_id, dto) => ({
+        ...visit,
+        ...dto,
+      })),
+      end: jest.fn().mockResolvedValue({ ...visit, status: 'COMPLETED' }),
+    };
     service = new AdmissionsService(
       repo as never,
       wards as never,
       beds as never,
+      visits as never,
     );
   });
 
@@ -95,6 +124,46 @@ describe('AdmissionsService', () => {
       expect(beds.setStatus).toHaveBeenCalledWith('bed-1', 'OCCUPIED', tenant);
     });
 
+    it('auto-creates a linked INPATIENT visit for a direct admit', async () => {
+      const saved = await service.admit(
+        {
+          patientId: 'MRN-100',
+          patientName: 'Ada Obi',
+          admissionType: 'URGENT',
+        } as never,
+        tenant,
+        user,
+      );
+      expect(visits.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          patientId: 'MRN-100',
+          visitType: 'INPATIENT',
+        }),
+        tenant,
+        user,
+      );
+      expect(saved.visitId).toBe('visit-2');
+    });
+
+    it('links a supplied visit and rejects an already-admitted one', async () => {
+      const saved = await service.admit(
+        { patientId: 'MRN-100', patientName: 'Ada Obi', visitId: 'visit-1' } as never,
+        tenant,
+        user,
+      );
+      expect(saved.visitId).toBe('visit-1');
+      expect(visits.create).not.toHaveBeenCalled();
+
+      repo.qbState.getOne = { ...admission, visitId: 'visit-1' };
+      await expect(
+        service.admit(
+          { patientId: 'MRN-100', patientName: 'Ada Obi', visitId: 'visit-1' } as never,
+          tenant,
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('rejects a bed that belongs to another ward', async () => {
       beds.assertBedAvailable.mockResolvedValue({
         id: 'bed-9',
@@ -144,6 +213,47 @@ describe('AdmissionsService', () => {
       await expect(
         service.discharge('missing', {}, tenant),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('ends the linked visit on discharge', async () => {
+      repo.qbState.getOne = { ...admission, bedId: 'bed-1', visitId: 'visit-1' };
+      await service.discharge('adm-1', {} as never, tenant);
+      expect(visits.end).toHaveBeenCalledWith('visit-1', {}, tenant);
+    });
+  });
+
+  describe('admitFromVisit', () => {
+    it('converts an ongoing visit into an INPATIENT admission', async () => {
+      const result = await service.admitFromVisit(
+        'visit-1',
+        { wardId: 'ward-1', bedId: 'bed-1', admissionType: 'URGENT' } as never,
+        tenant,
+        user,
+      );
+      expect(result.admission.patientId).toBe('patient-1');
+      expect(result.admission.visitId).toBe('visit-1');
+      expect(result.admission.referringProviderName).toBe('Dr. Ada');
+      expect(result.visit.visitType).toBe('INPATIENT');
+      expect(beds.setStatus).toHaveBeenCalledWith('bed-1', 'OCCUPIED', tenant);
+      expect(visits.update).toHaveBeenCalledWith(
+        'visit-1',
+        { visitType: 'INPATIENT' },
+        tenant,
+      );
+    });
+
+    it('rejects non-ongoing visits', async () => {
+      visits.get.mockResolvedValue({ ...visit, status: 'COMPLETED' });
+      await expect(
+        service.admitFromVisit('visit-1', {} as never, tenant, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a visit that already has an active admission', async () => {
+      repo.qbState.getOne = { ...admission, visitId: 'visit-1' };
+      await expect(
+        service.admitFromVisit('visit-1', {} as never, tenant, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 
