@@ -32,6 +32,7 @@ export class StaffController {
       category?: string;
       department?: string;
       isActive?: string;
+      userId?: string;
     },
     @CurrentUser() user: RequestUser,
   ) {

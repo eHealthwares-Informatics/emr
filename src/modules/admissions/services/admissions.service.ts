@@ -61,7 +61,8 @@ export class AdmissionsService {
         'admission.visit',
         VisitOrmEntity,
         'visit',
-        'visit.id = admission.visit_id AND visit.deleted_at IS NULL',
+        // visit_id is a text column (codebase convention); visits.id is uuid.
+        'visit.id = CAST(admission.visit_id AS uuid) AND visit.deleted_at IS NULL',
       )
       .where('admission.deleted_at IS NULL');
 

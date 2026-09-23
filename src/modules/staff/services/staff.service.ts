@@ -30,6 +30,7 @@ export class StaffService {
       category?: string;
       department?: string;
       isActive?: string;
+      userId?: string;
     },
     tenant: TenantContext,
   ) {
@@ -71,6 +72,10 @@ export class StaffService {
           isActive: active === 'true',
         });
       }
+    }
+    const userId = dslFilterValue(query.userId);
+    if (userId) {
+      qb.andWhere('staff.user_id = :userId', { userId });
     }
 
     const sortBy = SORT_ALLOW_LIST.includes(query.sortBy)

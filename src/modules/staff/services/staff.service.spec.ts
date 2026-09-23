@@ -55,6 +55,16 @@ describe('StaffService', () => {
         isActive: true,
       });
     });
+
+    it('filters by identity userId for self-scoping', async () => {
+      repo.qbState.list = [];
+      repo.qbState.total = 0;
+      await service.list(listQuery({ userId: 'user-42' }), tenant);
+      const qb = repo.createQueryBuilder.mock.results[0].value;
+      expect(qb.andWhere).toHaveBeenCalledWith('staff.user_id = :userId', {
+        userId: 'user-42',
+      });
+    });
   });
 
   describe('get / create / update / remove', () => {
