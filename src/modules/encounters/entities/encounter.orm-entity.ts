@@ -17,7 +17,7 @@ export class EncounterOrmEntity extends EmrBaseEntity {
   @Column({ name: 'encounter_type', type: 'text' })
   encounterType!: EncounterType;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', default: 'ACTIVE' })
   status!: EncounterStatus;
 
   @Column({ name: 'provider_id', type: 'text', nullable: true })
