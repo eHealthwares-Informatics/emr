@@ -9,11 +9,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 import {
+  ENCOUNTER_STATUSES,
   ENCOUNTER_TYPES,
   PRIORITIES,
   REQUEST_TYPES,
 } from '../../../shared/domain/enums';
 import type {
+  EncounterStatus,
   EncounterType,
   Priority,
   RequestType,
@@ -33,6 +35,11 @@ export class CreateEncounterDto {
   @ApiProperty({ enum: ENCOUNTER_TYPES })
   @IsEnum(ENCOUNTER_TYPES)
   encounterType!: EncounterType;
+
+  @ApiPropertyOptional({ enum: ENCOUNTER_STATUSES, default: 'ACTIVE' })
+  @IsOptional()
+  @IsEnum(ENCOUNTER_STATUSES)
+  status?: EncounterStatus;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -105,6 +112,16 @@ export class CreateEncounterRequestDto {
 }
 
 export class UpdateEncounterDto {
+  @ApiPropertyOptional({ enum: ENCOUNTER_STATUSES })
+  @IsOptional()
+  @IsEnum(ENCOUNTER_STATUSES)
+  status?: EncounterStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  endedAt?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

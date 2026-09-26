@@ -92,11 +92,18 @@ export class FormSubmissionsService {
       .skip(query.offset)
       .take(query.limit)
       .getManyAndCount();
-    return { data, total };
+
+    return {
+      data: await Promise.all(
+        data.map((entry) => this.withVersionWarning(entry, tenant)),
+      ),
+      total,
+    };
   }
 
   async get(id: string, tenant: TenantContext) {
-    return this.findOneScoped(id, tenant);
+    const submission = await this.findOneScoped(id, tenant);
+    return this.withVersionWarning(submission, tenant);
   }
 
   /** Full amend chain (original first, then every amendment) for a submission. */
@@ -126,7 +133,11 @@ export class FormSubmissionsService {
       }
     }
 
-    return { data: chain };
+    return {
+      data: await Promise.all(
+        chain.map((entry) => this.withVersionWarning(entry, tenant)),
+      ),
+    };
   }
 
   private findChildrenScoped(parentId: string, tenant: TenantContext) {
@@ -238,11 +249,14 @@ export class FormSubmissionsService {
       );
     }
 
+    // An amendment is a fresh fill: stamp the version the form is published
+    // at NOW so the amendment is never flagged as schema-outdated when the
+    // definition has moved on since the original.
     const amended = this.repo.create({
       submissionNumber: generateNumber('SUB'),
       formDefinitionId: original.formDefinitionId,
       formName: original.formName,
-      formVersion: original.formVersion,
+      formVersion: form.publishedVersion ?? form.version,
       patientId: original.patientId,
       visitId: dto.visitId ?? original.visitId,
       encounterId: dto.encounterId ?? original.encounterId,
@@ -282,5 +296,31 @@ export class FormSubmissionsService {
       throw new NotFoundException('Form submission not found');
     }
     return submission;
+  }
+
+  /**
+   * Schema-version awareness: a submission filled against an older published
+   * schema than the form definition currently exposes gets a warning flag.
+   * `publishedVersion` is the source of truth — an unpublished `version` bump
+   * is still being drafted and does not stale existing submissions.
+   */
+  private async withVersionWarning(
+    submission: FormSubmissionOrmEntity,
+    tenant: TenantContext,
+  ): Promise<FormSubmissionOrmEntity & {
+    schemaOutdated: boolean;
+    schemaCurrentVersion: number | null;
+  }> {
+    const definition = (await Promise.resolve(
+      this.formDefinitionsService.get(submission.formDefinitionId, tenant),
+    ).catch(() => null)) as
+      | { publishedVersion?: number | null; version?: number }
+      | null;
+    const currentVersion = definition?.publishedVersion ?? null;
+    const schemaOutdated = currentVersion !== null && submission.formVersion < currentVersion;
+    return Object.assign(submission, {
+      schemaOutdated,
+      schemaCurrentVersion: currentVersion,
+    });
   }
 }

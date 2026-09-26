@@ -47,6 +47,9 @@ export const ENCOUNTER_TYPES = [
 ] as const;
 export type EncounterType = (typeof ENCOUNTER_TYPES)[number];
 
+export const ENCOUNTER_STATUSES = ['ACTIVE', 'COMPLETED', 'CANCELLED'] as const;
+export type EncounterStatus = (typeof ENCOUNTER_STATUSES)[number];
+
 export const FORM_CATEGORIES = [
   'CLINICAL_NOTE',
   'VITALS',

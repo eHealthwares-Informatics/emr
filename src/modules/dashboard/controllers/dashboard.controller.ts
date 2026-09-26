@@ -24,4 +24,18 @@ export class DashboardController {
     const today = date ?? new Date().toISOString().slice(0, 10);
     return this.dashboardService.summary(tenantFromUser(user), today);
   }
+
+  @Get('attended-patients')
+  @ApiOperation({
+    summary:
+      'Distinct patients ever attended (visit or encounter), optionally scoped to a provider',
+  })
+  attendedPatients(
+    @Query('providerId') providerId: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.dashboardService
+      .attendedPatientCount(tenantFromUser(user), providerId)
+      .then((count) => ({ count }));
+  }
 }

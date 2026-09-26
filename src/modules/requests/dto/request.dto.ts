@@ -24,6 +24,15 @@ import type {
   RequestType,
 } from '../../../shared/domain/enums';
 
+/** Kind of catalog reference carried on a request item line. */
+export const REQUEST_ITEM_KINDS = [
+  'STOCK_ITEM',
+  'GENERIC_PRODUCT',
+  'GENERIC_DRUG',
+  'LOINC_TEST',
+] as const;
+export type RequestItemKind = (typeof REQUEST_ITEM_KINDS)[number];
+
 export class RequestItemDto {
   @ApiProperty()
   @IsString()
@@ -79,6 +88,23 @@ export class RequestItemDto {
   @IsOptional()
   @IsString()
   testDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    enum: REQUEST_ITEM_KINDS,
+    description:
+      'Which catalog the line was picked from (stock item, generic product, NDF/EMDEx generic drug, or LOINC test).',
+  })
+  @IsOptional()
+  @IsEnum(REQUEST_ITEM_KINDS)
+  itemKind?: RequestItemKind;
+
+  @ApiPropertyOptional({
+    description:
+      'Stable cross-system reference for the line, propagated to rxsoft orders and LIS order items.',
+  })
+  @IsOptional()
+  @IsString()
+  referenceCode?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

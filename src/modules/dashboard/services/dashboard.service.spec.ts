@@ -41,6 +41,7 @@ describe('DashboardService', () => {
       visitRepo as never,
       patientRepo as never,
       requestRepo as never,
+      repoMock() as never,
     );
   });
 

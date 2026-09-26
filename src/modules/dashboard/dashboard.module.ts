@@ -4,6 +4,7 @@ import { AppointmentOrmEntity } from '../appointments/entities/appointment.orm-e
 import { VisitOrmEntity } from '../visits/entities/visit.orm-entity';
 import { PatientOrmEntity } from '../patients/entities/patient.orm-entity';
 import { RequestOrmEntity } from '../requests/entities/request.orm-entity';
+import { EncounterOrmEntity } from '../encounters/entities/encounter.orm-entity';
 import { DashboardController } from './controllers/dashboard.controller';
 import { DashboardService } from './services/dashboard.service';
 
@@ -14,6 +15,7 @@ import { DashboardService } from './services/dashboard.service';
       VisitOrmEntity,
       PatientOrmEntity,
       RequestOrmEntity,
+      EncounterOrmEntity,
     ]),
   ],
   controllers: [DashboardController],

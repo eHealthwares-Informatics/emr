@@ -48,12 +48,33 @@ describe('FormSubmissionsService', () => {
 
   describe('list', () => {
     it('returns paginated data', async () => {
-      repo.qbState.list = [submission];
+      repo.qbState.list = [{ ...submission }];
       repo.qbState.total = 1;
-      await expect(service.list(listQuery(), tenant)).resolves.toEqual({
-        data: [submission],
-        total: 1,
-      });
+      const page = await service.list(listQuery(), tenant);
+      expect(page.total).toBe(1);
+      expect(page.data[0].submissionNumber).toBe('SUB-1');
+    });
+
+    it('flags submissions filled against an older schema version', async () => {
+      repo.qbState.list = [
+        { ...submission, formVersion: 2 },
+        { ...submission, id: 'sub-2', formVersion: 3 },
+      ];
+      repo.qbState.total = 2;
+      formDefs.get.mockResolvedValue({ ...form, publishedVersion: 3 });
+      const page = await service.list(listQuery(), tenant);
+      expect(page.data[0].schemaOutdated).toBe(true);
+      expect(page.data[0].schemaCurrentVersion).toBe(3);
+      expect(page.data[1].schemaOutdated).toBe(false);
+    });
+
+    it('does not flag when the definition has no published version', async () => {
+      repo.qbState.list = [{ ...submission, formVersion: 2 }];
+      repo.qbState.total = 1;
+      formDefs.get.mockResolvedValue({ ...form, publishedVersion: null });
+      const page = await service.list(listQuery(), tenant);
+      expect(page.data[0].schemaOutdated).toBe(false);
+      expect(page.data[0].schemaCurrentVersion).toBeNull();
     });
 
     it('filters by patient, encounter and status', async () => {
@@ -167,6 +188,20 @@ describe('FormSubmissionsService', () => {
       expect(amended.formDefinitionId).toBe('form-1');
       expect(amended.patientId).toBe('patient-1');
       expect(amended.status).toBe('SUBMITTED');
+      // Amendments are fresh fills against the currently published schema.
+      expect(amended.formVersion).toBe(form.version);
+    });
+
+    it('stamps an amendment with the current published version, not the original fill version', async () => {
+      repo.qbState.getOne = { ...submission, formVersion: 2 };
+      formDefs.get.mockResolvedValue({ ...form, version: 4, publishedVersion: 3 });
+      const amended = await service.amend(
+        'sub-1',
+        { dataJson: { name: 'Ada Obi' } },
+        tenant,
+        user,
+      );
+      expect(amended.formVersion).toBe(3);
     });
 
     it('rejects an amendment with invalid data', async () => {

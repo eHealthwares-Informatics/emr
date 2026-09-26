@@ -169,3 +169,18 @@ export class CancelAppointmentDto {
   @IsString()
   reason?: string;
 }
+
+export class RescheduleAppointmentDto {
+  @ApiProperty()
+  @IsDateString()
+  date!: string;
+
+  @ApiProperty()
+  @IsString()
+  startTime!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+}

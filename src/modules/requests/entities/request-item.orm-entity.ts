@@ -46,6 +46,14 @@ export class RequestItemOrmEntity extends EmrBaseEntity {
   @Column({ name: 'test_definition_id', type: 'text', nullable: true })
   testDefinitionId!: string | null;
 
+  /** Which catalog the line was picked from (STOCK_ITEM, GENERIC_PRODUCT, GENERIC_DRUG, LOINC_TEST). */
+  @Column({ name: 'item_kind', type: 'text', nullable: true })
+  itemKind!: string | null;
+
+  /** Stable cross-system reference, propagated to rxsoft orders and LIS order items. */
+  @Column({ name: 'reference_code', type: 'text', nullable: true })
+  referenceCode!: string | null;
+
   @Column({ name: 'sample_type', type: 'text', nullable: true })
   sampleType!: string | null;
 

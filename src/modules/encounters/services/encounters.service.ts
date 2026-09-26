@@ -73,6 +73,9 @@ export class EncountersService {
     if (query.visitId) {
       qb.andWhere('encounter.visit_id = :visitId', { visitId: query.visitId });
     }
+    if (query.status) {
+      qb.andWhere('encounter.status = :status', { status: query.status });
+    }
     if (query.encounterType) {
       qb.andWhere('encounter.encounter_type = :encounterType', {
         encounterType: query.encounterType,
@@ -121,6 +124,7 @@ export class EncountersService {
       encounterDatetime: dto.encounterDatetime
         ? new Date(dto.encounterDatetime)
         : new Date(),
+      status: dto.status ?? 'ACTIVE',
       organizationId: tenant.organizationId,
       locationId: tenant.locationId,
       createdById: user.sub,
@@ -130,7 +134,11 @@ export class EncountersService {
 
   async update(id: string, dto: UpdateEncounterDto, tenant: TenantContext) {
     const encounter = await this.findOneScoped(id, tenant);
-    Object.assign(encounter, dto);
+    const { endedAt, ...rest } = dto;
+    Object.assign(encounter, rest);
+    if (endedAt) {
+      encounter.endedAt = new Date(endedAt);
+    }
     return this.repo.save(encounter);
   }
 

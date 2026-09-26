@@ -1,6 +1,6 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
-import type { EncounterType } from '../../../shared/domain/enums';
+import type { EncounterStatus, EncounterType } from '../../../shared/domain/enums';
 
 @Entity('encounters')
 export class EncounterOrmEntity extends EmrBaseEntity {
@@ -17,6 +17,9 @@ export class EncounterOrmEntity extends EmrBaseEntity {
   @Column({ name: 'encounter_type', type: 'text' })
   encounterType!: EncounterType;
 
+  @Column({ type: 'text' })
+  status!: EncounterStatus;
+
   @Column({ name: 'provider_id', type: 'text', nullable: true })
   providerId!: string | null;
 
@@ -25,6 +28,9 @@ export class EncounterOrmEntity extends EmrBaseEntity {
 
   @Column({ name: 'encounter_datetime', type: 'timestamptz' })
   encounterDatetime!: Date;
+
+  @Column({ name: 'ended_at', type: 'timestamptz', nullable: true })
+  endedAt!: Date | null;
 
   @Column({ type: 'text', nullable: true })
   reason!: string | null;

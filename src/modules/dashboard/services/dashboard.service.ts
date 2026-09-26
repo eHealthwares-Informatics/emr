@@ -5,6 +5,7 @@ import { AppointmentOrmEntity } from '../../appointments/entities/appointment.or
 import { VisitOrmEntity } from '../../visits/entities/visit.orm-entity';
 import { PatientOrmEntity } from '../../patients/entities/patient.orm-entity';
 import { RequestOrmEntity } from '../../requests/entities/request.orm-entity';
+import { EncounterOrmEntity } from '../../encounters/entities/encounter.orm-entity';
 import { TenantContext } from '../../../common/tenant-context';
 
 const TODAY_APPOINTMENT_SORT: Record<string, string> = {
@@ -28,6 +29,8 @@ export class DashboardService {
     private readonly patientRepo: Repository<PatientOrmEntity>,
     @InjectRepository(RequestOrmEntity)
     private readonly requestRepo: Repository<RequestOrmEntity>,
+    @InjectRepository(EncounterOrmEntity)
+    private readonly encounterRepo: Repository<EncounterOrmEntity>,
   ) {}
 
   async summary(tenant: TenantContext, today: string) {
@@ -263,5 +266,42 @@ export class DashboardService {
     if (!match) return null;
     const [_, hours, minutes] = match;
     return new Date(`${date}T${hours}:${minutes}:00`);
+  }
+
+  /**
+   * Distinct patients this provider has ever attended (a visit or an
+   * encounter links them). When no providerId is given, counts every
+   * attended patient in the organization.
+   */
+  async attendedPatientCount(tenant: TenantContext, providerId?: string) {
+    const visitQb = this.visitRepo
+      .createQueryBuilder('visit')
+      .select('DISTINCT visit.patient_id', 'patientId')
+      .where('visit.deleted_at IS NULL');
+    const encounterQb = this.encounterRepo
+      .createQueryBuilder('encounter')
+      .select('DISTINCT encounter.patient_id', 'patientId')
+      .where('encounter.deleted_at IS NULL');
+
+    for (const [label, qb] of [
+      ['visit', visitQb],
+      ['encounter', encounterQb],
+    ] as const) {
+      if (tenant.organizationId) {
+        qb.andWhere(`${label}.organization_id = :orgId OR ${label}.organization_id IS NULL`, {
+          orgId: tenant.organizationId,
+        });
+      }
+      if (providerId) {
+        qb.andWhere(`${label}.provider_id = :providerId`, { providerId });
+      }
+    }
+
+    const [visitRows, encounterRows] = await Promise.all([
+      visitQb.getRawMany<{ patientId: string }>(),
+      encounterQb.getRawMany<{ patientId: string }>(),
+    ]);
+    return new Set([...visitRows, ...encounterRows].map((r) => r.patientId))
+      .size;
   }
 }

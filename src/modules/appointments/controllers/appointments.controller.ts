@@ -16,6 +16,7 @@ import {
   CancelAppointmentDto,
   CheckInAppointmentDto,
   CreateAppointmentDto,
+  RescheduleAppointmentDto,
   UpdateAppointmentDto,
 } from '../dto/appointment.dto';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
@@ -133,6 +134,16 @@ export class AppointmentsController {
   @ApiOperation({ summary: 'Complete an in-progress appointment' })
   complete(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.service.transition(id, 'COMPLETED', tenantFromUser(user));
+  }
+
+  @Post(':id/reschedule')
+  @ApiOperation({ summary: 'Reschedule an appointment to a new date/time' })
+  reschedule(
+    @Param('id') id: string,
+    @Body() dto: RescheduleAppointmentDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.service.reschedule(id, dto, tenantFromUser(user));
   }
 
   @Patch(':id')

@@ -10,6 +10,7 @@ import {
   CancelAppointmentDto,
   CheckInAppointmentDto,
   CreateAppointmentDto,
+  RescheduleAppointmentDto,
   UpdateAppointmentDto,
 } from '../dto/appointment.dto';
 import { TenantContext } from '../../../common/tenant-context';
@@ -249,6 +250,33 @@ export class AppointmentsService {
     }
     appointment.status = 'CANCELLED';
     if (dto.reason) appointment.notes = dto.reason;
+    return this.repo.save(appointment);
+  }
+
+  async reschedule(
+    id: string,
+    dto: RescheduleAppointmentDto,
+    tenant: TenantContext,
+  ) {
+    const appointment = await this.findOneScoped(id, tenant);
+
+    if (
+      appointment.status === 'COMPLETED' ||
+      appointment.status === 'CANCELLED' ||
+      appointment.status === 'NO_SHOW' ||
+      appointment.status === 'MISSED'
+    ) {
+      throw new BadRequestException(
+        `Appointment in status ${appointment.status} cannot be rescheduled`,
+      );
+    }
+
+    appointment.date = dto.date;
+    appointment.startTime = dto.startTime;
+    if (dto.endTime !== undefined) {
+      appointment.endTime = dto.endTime;
+    }
+
     return this.repo.save(appointment);
   }
 

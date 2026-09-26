@@ -83,6 +83,21 @@ describe('EncountersService', () => {
       expect(saved.encounterNumber).toMatch(/^ENC-/);
       expect(saved.encounterDatetime).toBeInstanceOf(Date);
       expect(saved.createdById).toBe('user-1');
+      // New encounters start ACTIVE unless a status is provided.
+      expect(saved.status).toBe('ACTIVE');
+    });
+
+    it('creates an encounter with the provided status', async () => {
+      const saved = await service.create(
+        {
+          patientId: 'patient-1',
+          encounterType: 'CONSULTATION',
+          status: 'COMPLETED',
+        } as never,
+        tenant,
+        user,
+      );
+      expect(saved.status).toBe('COMPLETED');
     });
 
     it('rejects a visit belonging to a different patient', async () => {

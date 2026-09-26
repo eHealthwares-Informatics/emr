@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RequestOrmEntity } from '../entities/request.orm-entity';
+import {
+  externalItemCode,
+  externalReferenceCode,
+} from './external-sync';
 
 export type ExternalSyncResult = {
   externalOrderId: string | null;
@@ -27,10 +31,17 @@ export class LisIntegrationService {
     token?: string,
   ): Promise<ExternalSyncResult> {
     const items = (request.items ?? [])
-      .map((item) => ({
-        testDefinitionId: item.testDefinitionId ?? item.code,
-        notes: item.specimenNotes ?? item.notes ?? undefined,
-      }))
+      .map((item) => {
+        const testDefinitionId =
+          item.testDefinitionId ?? item.itemKind === 'LOINC_TEST'
+            ? (item.code ?? null)
+            : (externalItemCode(item) ?? item.code ?? null);
+        return {
+          testDefinitionId,
+          referenceCode: externalReferenceCode(item),
+          notes: item.specimenNotes ?? item.notes ?? undefined,
+        };
+      })
       .filter((item) => !!item.testDefinitionId);
 
     if (items.length === 0) {
@@ -43,7 +54,9 @@ export class LisIntegrationService {
       source: 'emr-encounter-request',
       patientId: request.patientId,
       patientName: request.patientName,
+      patientNumber: request.patientId,
       internalReference: request.requestNumber,
+      referenceCode: request.requestNumber,
       requestedDate: request.requestedAt.toISOString().slice(0, 10),
       requesterName: request.orderingProviderName ?? undefined,
       diagnosis: request.diagnosis ?? undefined,

@@ -18,6 +18,8 @@ import { VisitsModule } from './modules/visits/visits.module';
 import { EncountersModule } from './modules/encounters/encounters.module';
 import { FormsModule } from './modules/forms/forms.module';
 import { RequestsModule } from './modules/requests/requests.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { MedicationsModule } from './modules/medications/medications.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { IdentityProxyModule } from './modules/identity-proxy/identity-proxy.module';
 import { AuthProxyModule } from './modules/auth-proxy/auth-proxy.module';
@@ -66,6 +68,8 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     EncountersModule,
     FormsModule,
     RequestsModule,
+    ReferralsModule,
+    MedicationsModule,
     DashboardModule,
     SeedsModule,
   ],
