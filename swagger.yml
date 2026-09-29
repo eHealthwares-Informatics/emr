@@ -1220,6 +1220,26 @@ paths:
           description: ''
       summary: Complete an in-progress appointment
       tags: *ref_11
+  /api/appointments/{id}/reschedule:
+    post:
+      operationId: AppointmentsController_reschedule
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleAppointmentDto'
+      responses:
+        '201':
+          description: ''
+      summary: Reschedule an appointment to a new date/time
+      tags: *ref_11
   /api/encounters:
     get:
       operationId: EncountersController_list
@@ -1702,6 +1722,196 @@ paths:
       summary: List published forms the current user has access to
       tags:
         - forms
+  /api/referrals:
+    get:
+      operationId: ReferralsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: >-
+        List referrals (direction=incoming|outgoing scoped to providerId, plus
+        status/patient/encounter filters)
+      tags: &ref_16
+        - referrals
+    post:
+      operationId: ReferralsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReferralDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create an outgoing referral from an encounter
+      tags: *ref_16
+  /api/referrals/{id}:
+    get:
+      operationId: ReferralsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get referral by id
+      tags: *ref_16
+    patch:
+      operationId: ReferralsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Update referral notes/priority/status
+      tags: *ref_16
+    delete:
+      operationId: ReferralsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a referral
+      tags: *ref_16
+  /api/referrals/{id}/decide:
+    post:
+      operationId: ReferralsController_decide
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecideReferralDto'
+      responses:
+        '201':
+          description: ''
+      summary: Accept or decline a pending referral
+      tags: *ref_16
+  /api/referrals/{id}/complete:
+    post:
+      operationId: ReferralsController_complete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteReferralDto'
+      responses:
+        '201':
+          description: ''
+      summary: Complete an accepted referral
+      tags: *ref_16
+  /api/medications:
+    get:
+      operationId: MedicationsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List medications (status/patient/request/encounter/administered filters)
+      tags: &ref_17
+        - medications
+    post:
+      operationId: MedicationsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMedicationDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a medication from a PRESCRIPTION request item (nurse flow)
+      tags: *ref_17
+  /api/medications/{id}:
+    get:
+      operationId: MedicationsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get medication by id
+      tags: *ref_17
+    patch:
+      operationId: MedicationsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Update a medication record
+      tags: *ref_17
+    delete:
+      operationId: MedicationsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a medication record
+      tags: *ref_17
+  /api/medications/{id}/administer:
+    post:
+      operationId: MedicationsController_administer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdministerMedicationDto'
+      responses:
+        '201':
+          description: ''
+      summary: Record administration and complete the originating prescription request
+      tags: *ref_17
   /api/dashboard:
     get:
       operationId: DashboardController_summary
@@ -1715,8 +1925,19 @@ paths:
         '200':
           description: ''
       summary: Daily operational summary for the EMR dashboard
-      tags:
+      tags: &ref_18
         - dashboard
+  /api/dashboard/attended-patients:
+    get:
+      operationId: DashboardController_attendedPatients
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: >-
+        Distinct patients ever attended (visit or encounter), optionally scoped
+        to a provider
+      tags: *ref_18
 info:
   title: EMR API
   description: >-
@@ -1881,7 +2102,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_16
+          enum: &ref_19
             - CASH
             - HMO
             - COMPANY
@@ -1906,7 +2127,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_16
+          enum: *ref_19
         description:
           type: string
         contactPhone:
@@ -1935,7 +2156,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_17
+          enum: &ref_20
             - Doctor
             - Nurse
             - Technician
@@ -1946,7 +2167,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_18
+          enum: &ref_21
             - Medical
             - Nursing
             - Allied Health
@@ -1992,10 +2213,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_17
+          enum: *ref_20
         category:
           type: string
-          enum: *ref_18
+          enum: *ref_21
         department:
           type: string
         departmentId:
@@ -2022,7 +2243,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_19
+          enum: &ref_22
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -2058,7 +2279,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_19
+          enum: *ref_22
         description:
           type: string
         locationId:
@@ -2080,7 +2301,7 @@ components:
           description: Ward display name
         wardType:
           type: string
-          enum: &ref_20
+          enum: &ref_23
             - GENERAL
             - PRIVATE
             - ICU
@@ -2113,7 +2334,7 @@ components:
           type: string
         wardType:
           type: string
-          enum: *ref_20
+          enum: *ref_23
         departmentId:
           type: string
         departmentType:
@@ -2133,7 +2354,7 @@ components:
           description: Ward the bed belongs to
         bedType:
           type: string
-          enum: &ref_21
+          enum: &ref_24
             - STANDARD
             - ICU
             - MATERNITY
@@ -2143,7 +2364,7 @@ components:
           default: STANDARD
         status:
           type: string
-          enum: &ref_22
+          enum: &ref_25
             - AVAILABLE
             - OCCUPIED
             - MAINTENANCE
@@ -2163,10 +2384,10 @@ components:
           type: string
         bedType:
           type: string
-          enum: *ref_21
+          enum: *ref_24
         status:
           type: string
-          enum: *ref_22
+          enum: *ref_25
         notes:
           type: string
     AdmitPatientDto:
@@ -2185,10 +2406,10 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-09-22T21:34:41.703Z'
+          default: '2026-09-25T23:42:56.594Z'
         admissionType:
           type: string
-          enum: &ref_23
+          enum: &ref_26
             - EMERGENCY
             - URGENT
             - ELECTIVE
@@ -2223,7 +2444,7 @@ components:
           description: Bed to allocate on admission
         admissionType:
           type: string
-          enum: *ref_23
+          enum: *ref_26
           default: ELECTIVE
         diagnosis:
           type: string
@@ -2240,7 +2461,7 @@ components:
           type: string
         admissionType:
           type: string
-          enum: *ref_23
+          enum: *ref_26
         diagnosis:
           type: string
         referringProviderId:
@@ -2275,7 +2496,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-09-22T21:34:41.704Z'
+          default: '2026-09-25T23:42:56.595Z'
     CreateVisitDto:
       type: object
       properties:
@@ -2285,7 +2506,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_24
+          enum: &ref_27
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -2327,7 +2548,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_24
+          enum: *ref_27
         status:
           type: string
           enum:
@@ -2351,7 +2572,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: &ref_25
+          enum: &ref_28
             - CHECKUP
             - FOLLOW_UP
             - CONSULTATION
@@ -2375,7 +2596,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_26
+          enum: &ref_29
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -2403,6 +2624,18 @@ components:
       properties:
         reason:
           type: string
+    RescheduleAppointmentDto:
+      type: object
+      properties:
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+      required:
+        - date
+        - startTime
     UpdateAppointmentDto:
       type: object
       properties:
@@ -2412,7 +2645,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: *ref_25
+          enum: *ref_28
         date:
           type: string
         startTime:
@@ -2429,7 +2662,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_26
+          enum: *ref_29
         status:
           type: string
           enum:
@@ -2453,7 +2686,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_27
+          enum: &ref_31
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -2463,6 +2696,13 @@ components:
             - PROCEDURE
             - ADMISSION
             - OTHER
+        status:
+          type: string
+          enum: &ref_30
+            - ACTIVE
+            - COMPLETED
+            - CANCELLED
+          default: ACTIVE
         providerId:
           type: string
         providerName:
@@ -2481,14 +2721,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_28
+          enum: &ref_32
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_26
+          enum: *ref_29
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2510,13 +2750,18 @@ components:
     UpdateEncounterDto:
       type: object
       properties:
+        status:
+          type: string
+          enum: *ref_30
+        endedAt:
+          type: string
         patientId:
           type: string
         visitId:
           type: string
         encounterType:
           type: string
-          enum: *ref_27
+          enum: *ref_31
         providerId:
           type: string
         providerName:
@@ -2540,10 +2785,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_28
+          enum: *ref_32
         priority:
           type: string
-          enum: *ref_26
+          enum: *ref_29
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2605,7 +2850,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_26
+          enum: *ref_29
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -2629,7 +2874,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_29
+          enum: &ref_33
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -2659,7 +2904,7 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_29
+          enum: *ref_33
         schemaJson:
           type: object
         version:
@@ -2701,3 +2946,96 @@ components:
             - DRAFT
             - SUBMITTED
             - AMENDED
+    CreateReferralDto:
+      type: object
+      properties:
+        patientId:
+          type: string
+        patientName:
+          type: string
+        encounterId:
+          type: string
+        visitId:
+          type: string
+        specialistProviderId:
+          type: string
+        specialistProviderName:
+          type: string
+        specialty:
+          type: string
+        reason:
+          type: string
+          minLength: 3
+        notes:
+          type: string
+        priority:
+          type: string
+          enum:
+            - ROUTINE
+            - URGENT
+          default: ROUTINE
+      required:
+        - patientId
+        - encounterId
+        - specialistProviderId
+        - reason
+    DecideReferralDto:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+            - ACCEPTED
+            - DECLINED
+        reason:
+          type: string
+      required:
+        - decision
+    CompleteReferralDto:
+      type: object
+      properties:
+        outcomeNotes:
+          type: string
+    CreateMedicationDto:
+      type: object
+      properties:
+        requestId:
+          type: string
+          description: The PRESCRIPTION request to source from
+        itemIndex:
+          type: number
+          description: The prescription item index to convert
+        name:
+          type: string
+        dose:
+          type: string
+        doseUnit:
+          type: string
+        route:
+          type: string
+        frequency:
+          type: string
+        duration:
+          type: string
+        durationUnit:
+          type: string
+        quantity:
+          type: number
+        instructions:
+          type: string
+      required:
+        - requestId
+        - itemIndex
+    AdministerMedicationDto:
+      type: object
+      properties:
+        administeredAt:
+          type: string
+        notes:
+          type: string
+        outcome:
+          type: string
+          enum:
+            - ADMINISTERED
+            - PARTIALLY_ADMINISTERED
+          default: ADMINISTERED
