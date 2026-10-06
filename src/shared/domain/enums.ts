@@ -191,6 +191,40 @@ export const ADMISSION_TYPES = [
 ] as const;
 export type AdmissionType = (typeof ADMISSION_TYPES)[number];
 
+export const MESSAGE_CONTENT_TYPES = [
+  'free_text',
+  'html',
+  'prompt',
+  'limited_text',
+  'webpage',
+] as const;
+export type MessageContentType = (typeof MESSAGE_CONTENT_TYPES)[number];
+
+export const MESSAGE_DESTINATIONS = [
+  'whatsapp',
+  'sms',
+  'inapp',
+  'email',
+  'webpage',
+  'mobile_app',
+] as const;
+export type MessageDestination = (typeof MESSAGE_DESTINATIONS)[number];
+
+export const MESSAGE_TEMPLATE_STATUSES = [
+  'draft',
+  'active',
+  'inactive',
+] as const;
+export type MessageTemplateStatus = (typeof MESSAGE_TEMPLATE_STATUSES)[number];
+
+export const NOTIFICATION_TYPES = [
+  'info',
+  'warning',
+  'error',
+  'success',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
 export const DISCHARGE_TYPES = [
   'DISCHARGED_HOME',
   'DIED',

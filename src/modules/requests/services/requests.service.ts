@@ -16,6 +16,7 @@ import {
 } from '../dto/request.dto';
 import { LisIntegrationService } from './lis-integration.service';
 import { PharmacyIntegrationService } from './pharmacy-integration.service';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 import { TenantContext } from '../../../common/tenant-context';
 import { AuditLogService } from '../../../common/audit/services/audit-log.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -55,6 +56,7 @@ export class RequestsService {
     private readonly lisIntegration: LisIntegrationService,
     private readonly pharmacyIntegration: PharmacyIntegrationService,
     private readonly auditLogService: AuditLogService,
+    private readonly notificationService: NotificationsService,
   ) {}
 
   private audit(entry: {
@@ -229,6 +231,10 @@ export class RequestsService {
         patientName: saved.patientName ?? null,
       },
     });
+    // Fire-and-forget: notification failure must never fail request creation.
+    void this.notificationService
+      .notifyRequestCreated(saved, tenant)
+      .catch(() => undefined);
     await this.syncRequest(saved, token);
     return this.get(saved.id, tenant);
   }
