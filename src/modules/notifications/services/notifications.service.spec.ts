@@ -212,4 +212,38 @@ describe('NotificationsService', () => {
       expect(recipientRepo.update).not.toHaveBeenCalled();
     });
   });
+
+  describe('subscribe', () => {
+    it('creates a subscription from the JWT tenant, ignoring body org/location', async () => {
+      subscriptionRepo.qbState.getOne = null;
+
+      await service.subscribe(
+        {
+          // Clients may echo ids; ValidationPipe + service must not use them.
+          organizationId: 'evil-org',
+          locationId: 'evil-loc',
+        },
+        tenant,
+        user,
+      );
+
+      expect(subscriptionRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          organizationId: 'org-1',
+          locationId: 'loc-1',
+        }),
+      );
+      const created = subscriptionRepo.create.mock.results[0].value;
+      expect(created.organizationId).not.toBe('evil-org');
+      expect(created.locationId).not.toBe('evil-loc');
+    });
+
+    it('accepts an empty body (mobile contract)', async () => {
+      subscriptionRepo.qbState.getOne = null;
+
+      await expect(service.subscribe({}, tenant, user)).resolves.toBeDefined();
+      expect(subscriptionRepo.save).toHaveBeenCalled();
+    });
+  });
 });
