@@ -54,8 +54,9 @@ export class TemplateRenderService {
     }
 
     // Non-null (org-scoped) rows sort before global ones.
+    // orderBy() takes TypeORM property paths (camelCase), not column names.
     qb.orderBy('(template.organization_id IS NULL)', 'ASC').addOrderBy(
-      'template.updated_at',
+      'template.updatedAt',
       'DESC',
     );
 

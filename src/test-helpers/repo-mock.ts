@@ -15,6 +15,7 @@ export interface QueryBuilderMock {
   take: jest.Mock;
   leftJoin: jest.Mock;
   innerJoin: jest.Mock;
+  innerJoinAndSelect: jest.Mock;
   leftJoinAndMapOne: jest.Mock;
   select: jest.Mock;
   getOne: jest.Mock;
@@ -32,6 +33,7 @@ export interface RepositoryMock {
   find: jest.Mock;
   create: jest.Mock;
   save: jest.Mock;
+  update: jest.Mock;
   softRemove: jest.Mock;
   delete: jest.Mock;
 }
@@ -54,6 +56,7 @@ export function repoMock(): RepositoryMock {
     take: jest.fn(() => qb),
     leftJoin: jest.fn(() => qb),
     innerJoin: jest.fn(() => qb),
+    innerJoinAndSelect: jest.fn(() => qb),
     leftJoinAndMapOne: jest.fn(() => qb),
     select: jest.fn(() => qb),
     getOne: jest.fn(() => Promise.resolve(qbState.getOne)),
@@ -74,6 +77,7 @@ export function repoMock(): RepositoryMock {
     // assigning `.items`) don't leak into the original argument.
     create: jest.fn((entity: unknown) => ({ ...(entity as object) })),
     save: jest.fn(async (entity: unknown) => entity),
+    update: jest.fn().mockResolvedValue({ affected: 0 }),
     softRemove: jest.fn(async (entity: unknown) => entity),
     delete: jest.fn().mockResolvedValue({ affected: 0 }),
   };

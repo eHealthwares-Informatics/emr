@@ -174,7 +174,7 @@ describe('VisitsService', () => {
       expect(qb.where).toHaveBeenCalledWith('comment.visit_id = :visitId', {
         visitId: 'visit-1',
       });
-      expect(qb.orderBy).toHaveBeenCalledWith('comment.created_at', 'ASC');
+      expect(qb.orderBy).toHaveBeenCalledWith('comment.createdAt', 'ASC');
     });
 
     it('rejects comments for a missing visit', async () => {

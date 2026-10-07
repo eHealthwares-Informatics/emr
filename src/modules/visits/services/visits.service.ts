@@ -98,7 +98,7 @@ export class VisitsService {
       .createQueryBuilder('visit')
       .where('visit.status = :status', { status: 'ONGOING' })
       .andWhere('visit.deleted_at IS NULL')
-      .orderBy('visit.start_datetime', 'DESC');
+      .orderBy('visit.startDatetime', 'DESC');
 
     if (tenant.organizationId) {
       qb.andWhere(
@@ -172,7 +172,7 @@ export class VisitsService {
       .createQueryBuilder('comment')
       .where('comment.visit_id = :visitId', { visitId })
       .andWhere('comment.deleted_at IS NULL')
-      .orderBy('comment.created_at', 'ASC')
+      .orderBy('comment.createdAt', 'ASC')
       .getMany();
   }
 

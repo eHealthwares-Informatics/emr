@@ -136,7 +136,11 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     this.applyTenantScope(qb, tenant);
 
     const [rows, total] = await qb
-      .orderBy('notification.created_at', 'DESC')
+      // TypeORM orderBy() resolves entity property paths, not DB column
+      // names. Using `created_at` here breaks skip/take + join pagination
+      // (createOrderByCombinedWithSelectExpression looks up
+      // findColumnWithPropertyPath and crashes on undefined.databaseName).
+      .orderBy('notification.createdAt', 'DESC')
       .skip(query.offset)
       .take(query.limit)
       .getManyAndCount();
