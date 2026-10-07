@@ -15,6 +15,7 @@ describe('RequestsService', () => {
   let lis: { createLabOrder: jest.Mock; cancelLabOrder: jest.Mock };
   let pharmacy: { createPrescriptionOrder: jest.Mock };
   let audit: { record: jest.Mock };
+  let notifications: { notifyRequestCreated: jest.Mock };
 
   const request = {
     id: 'req-1',
@@ -36,6 +37,9 @@ describe('RequestsService', () => {
     lis = { createLabOrder: jest.fn(), cancelLabOrder: jest.fn() };
     pharmacy = { createPrescriptionOrder: jest.fn() };
     audit = { record: jest.fn().mockResolvedValue({}) };
+    notifications = {
+      notifyRequestCreated: jest.fn().mockResolvedValue(undefined),
+    };
     service = new RequestsService(
       repo as never,
       itemRepo as never,
@@ -43,6 +47,7 @@ describe('RequestsService', () => {
       lis as never,
       pharmacy as never,
       audit as never,
+      notifications as never,
     );
   });
 

@@ -131,7 +131,7 @@ export class DashboardService {
       );
     }
 
-    qb.orderBy('appointment.start_time', 'ASC');
+    qb.orderBy('appointment.startTime', 'ASC');
 
     return qb.getMany();
   }
@@ -157,7 +157,7 @@ export class DashboardService {
     }
 
     qb.orderBy('appointment.date', 'ASC').addOrderBy(
-      'appointment.start_time',
+      'appointment.startTime',
       'ASC',
     );
     qb.limit(limit);

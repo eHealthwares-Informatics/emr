@@ -151,7 +151,7 @@ export class FormSubmissionsService {
         { orgId: tenant.organizationId },
       );
     }
-    return qb.orderBy('submission.created_at', 'ASC').getMany();
+    return qb.orderBy('submission.createdAt', 'ASC').getMany();
   }
 
   async create(

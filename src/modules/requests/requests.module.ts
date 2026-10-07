@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from '../../common/audit/audit.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { RequestOrmEntity } from './entities/request.orm-entity';
 import { RequestItemOrmEntity } from './entities/request-item.orm-entity';
 import { RequestStatusHistoryOrmEntity } from './entities/request-status-history.orm-entity';
@@ -19,6 +20,7 @@ import { RequestsController } from './controllers/requests.controller';
     ]),
     HttpModule,
     AuditModule,
+    NotificationsModule,
   ],
   controllers: [RequestsController],
   providers: [
