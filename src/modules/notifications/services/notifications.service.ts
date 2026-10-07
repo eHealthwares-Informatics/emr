@@ -215,6 +215,13 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     return { updated: rows.length };
   }
 
+  /**
+   * Register/heartbeat the current user's subscription.
+   *
+   * Org/location always come from the JWT (`tenant`), never from the request
+   * body — clients may echo ids for compatibility, but they are ignored so a
+   * token cannot be used to subscribe into another tenant.
+   */
   async subscribe(
     dto: SubscribeNotificationsDto,
     tenant: TenantContext,
