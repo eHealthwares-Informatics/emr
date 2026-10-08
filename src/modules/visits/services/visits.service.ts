@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VisitOrmEntity } from '../entities/visit.orm-entity';
 import { VisitCommentOrmEntity } from '../entities/visit-comment.orm-entity';
+import { AppointmentOrmEntity } from '../../appointments/entities/appointment.orm-entity';
 import { CreateVisitDto, EndVisitDto, UpdateVisitDto } from '../dto/visit.dto';
 import { CreateVisitCommentDto } from '../dto/visit-comment.dto';
 import { TenantContext } from '../../../common/tenant-context';
@@ -32,6 +33,8 @@ export class VisitsService {
     private readonly repo: Repository<VisitOrmEntity>,
     @InjectRepository(VisitCommentOrmEntity)
     private readonly commentsRepo: Repository<VisitCommentOrmEntity>,
+    @InjectRepository(AppointmentOrmEntity)
+    private readonly appointmentRepo: Repository<AppointmentOrmEntity>,
   ) {}
 
   async list(
@@ -117,19 +120,87 @@ export class VisitsService {
   }
 
   async create(dto: CreateVisitDto, tenant: TenantContext, user: RequestUser) {
+    const startDatetime = dto.startDatetime
+      ? new Date(dto.startDatetime)
+      : new Date();
     const entity = this.repo.create({
       ...dto,
       visitNumber: generateNumber('VIS'),
       patientName: dto.patientName ?? dto.patientId,
       status: 'ONGOING',
-      startDatetime: dto.startDatetime
-        ? new Date(dto.startDatetime)
-        : new Date(),
+      startDatetime,
       organizationId: tenant.organizationId,
       locationId: dto.locationId ?? tenant.locationId,
       createdById: user.sub,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+
+    // Auto-create an appointment when none exists for this patient at the
+    // visit's start time (walk-ins / direct visits without a booking).
+    if (!dto.appointmentId) {
+      await this.ensureAppointment(saved, tenant, user);
+    }
+    return saved;
+  }
+
+  /**
+   * Creates a SCHEDULED appointment for the visit's patient when no open
+   * appointment already exists for that patient on the visit's date.
+   * Best-effort: never fails the visit creation.
+   */
+  private async ensureAppointment(
+    visit: VisitOrmEntity,
+    tenant: TenantContext,
+    user: RequestUser,
+  ): Promise<void> {
+    try {
+      const visitDate = visit.startDatetime
+        ? new Date(visit.startDatetime).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+      const existing = await this.appointmentRepo
+        .createQueryBuilder('appointment')
+        .where('appointment.patient_id = :patientId', {
+          patientId: visit.patientId,
+        })
+        .andWhere('appointment.date = :date', { date: visitDate })
+        .andWhere('appointment.deleted_at IS NULL')
+        .andWhere(
+          'appointment.status NOT IN (:...closed)',
+          { closed: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] },
+        )
+        .andWhere(
+          '(appointment.organization_id = :orgId OR appointment.organization_id IS NULL)',
+          { orgId: tenant.organizationId },
+        )
+        .getOne();
+
+      if (existing) return;
+
+      const startTime = visit.startDatetime
+        ? new Date(visit.startDatetime).toTimeString().slice(0, 5)
+        : new Date().toTimeString().slice(0, 5);
+
+      await this.appointmentRepo.save(
+        this.appointmentRepo.create({
+          appointmentNumber: generateNumber('APT'),
+          patientId: visit.patientId,
+          patientName: visit.patientName,
+          appointmentType: 'CONSULTATION',
+          date: visitDate,
+          startTime,
+          status: 'SCHEDULED',
+          priority: 'ROUTINE',
+          reason: `Auto-created from visit ${visit.visitNumber}`,
+          visitId: visit.id,
+          organizationId: tenant.organizationId,
+          locationId: visit.locationId ?? tenant.locationId,
+          createdById: user.sub,
+        }),
+      );
+    } catch {
+      // Best-effort — visit creation must not fail if appointment sync fails.
+    }
   }
 
   async update(id: string, dto: UpdateVisitDto, tenant: TenantContext) {
