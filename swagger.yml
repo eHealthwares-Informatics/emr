@@ -1488,6 +1488,190 @@ paths:
           description: ''
       summary: Re-send a failed/open LAB or PRESCRIPTION request to the external system
       tags: *ref_13
+  /api/notifications:
+    get:
+      operationId: NotificationsController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: limit
+          required: false
+          in: query
+          schema:
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: search
+          required: false
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            allOf:
+              - $ref: '#/components/schemas/Object'
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: filter
+          required: false
+          in: query
+          description: Generic filter string
+          schema:
+            type: string
+        - name: organizationId
+          required: false
+          in: query
+          description: Filter by organization (superadmin only)
+          schema:
+            type: string
+        - name: since
+          required: false
+          in: query
+          description: Only return notifications created after this ISO timestamp
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: List in-app notifications for the current user (poll with ?since=)
+      tags: &ref_14
+        - notifications
+  /api/notifications/unread-count:
+    get:
+      operationId: NotificationsController_unreadCount
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: Count unread in-app notifications for the current user
+      tags: *ref_14
+  /api/notifications/read-all:
+    patch:
+      operationId: NotificationsController_readAll
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: Mark all of the current user notifications as read
+      tags: *ref_14
+  /api/notifications/{id}/read:
+    put:
+      operationId: NotificationsController_markRead
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Mark a single notification as read
+      tags: *ref_14
+  /api/notification-subscriptions:
+    post:
+      operationId: NotificationSubscriptionsController_subscribe
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeNotificationsDto'
+      responses:
+        '201':
+          description: ''
+      summary: >-
+        Register/heartbeat the current user's notification subscription for
+        their org + location
+      tags:
+        - notification-subscriptions
+  /api/message-templates:
+    get:
+      operationId: MessageTemplatesController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List message templates
+      tags: &ref_15
+        - message-templates
+    post:
+      operationId: MessageTemplatesController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageTemplateDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a message template
+      tags: *ref_15
+  /api/message-templates/{id}:
+    get:
+      operationId: MessageTemplatesController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get a message template by id
+      tags: *ref_15
+    patch:
+      operationId: MessageTemplatesController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMessageTemplateDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update a message template
+      tags: *ref_15
+    delete:
+      operationId: MessageTemplatesController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a message template
+      tags: *ref_15
   /api/form-definitions:
     get:
       operationId: FormDefinitionsController_list
@@ -1496,7 +1680,7 @@ paths:
         '200':
           description: ''
       summary: List form definitions
-      tags: &ref_14
+      tags: &ref_16
         - form-definitions
     post:
       operationId: FormDefinitionsController_create
@@ -1511,7 +1695,7 @@ paths:
         '201':
           description: ''
       summary: Create a form definition (draft)
-      tags: *ref_14
+      tags: *ref_16
   /api/form-definitions/{id}:
     get:
       operationId: FormDefinitionsController_get
@@ -1525,7 +1709,7 @@ paths:
         '200':
           description: ''
       summary: Get form definition by id
-      tags: *ref_14
+      tags: *ref_16
     patch:
       operationId: FormDefinitionsController_update
       parameters:
@@ -1544,7 +1728,7 @@ paths:
         '200':
           description: ''
       summary: Update a form definition (bumps version when schema changes)
-      tags: *ref_14
+      tags: *ref_16
     delete:
       operationId: FormDefinitionsController_remove
       parameters:
@@ -1557,7 +1741,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form definition
-      tags: *ref_14
+      tags: *ref_16
   /api/form-definitions/{id}/publish:
     post:
       operationId: FormDefinitionsController_publish
@@ -1577,7 +1761,7 @@ paths:
         '201':
           description: ''
       summary: Publish a form definition
-      tags: *ref_14
+      tags: *ref_16
   /api/form-definitions/{id}/unpublish:
     post:
       operationId: FormDefinitionsController_unpublish
@@ -1591,7 +1775,7 @@ paths:
         '201':
           description: ''
       summary: Unpublish a form definition
-      tags: *ref_14
+      tags: *ref_16
   /api/form-submissions:
     get:
       operationId: FormSubmissionsController_list
@@ -1600,7 +1784,7 @@ paths:
         '200':
           description: ''
       summary: List form submissions (filter by patient/visit/encounter/form)
-      tags: &ref_15
+      tags: &ref_17
         - form-submissions
     post:
       operationId: FormSubmissionsController_create
@@ -1615,7 +1799,7 @@ paths:
         '201':
           description: ''
       summary: Submit (or draft) a form against a patient/encounter
-      tags: *ref_15
+      tags: *ref_17
   /api/form-submissions/{id}:
     get:
       operationId: FormSubmissionsController_get
@@ -1629,7 +1813,7 @@ paths:
         '200':
           description: ''
       summary: Get form submission by id
-      tags: *ref_15
+      tags: *ref_17
     patch:
       operationId: FormSubmissionsController_update
       parameters:
@@ -1648,7 +1832,7 @@ paths:
         '200':
           description: ''
       summary: Update a draft submission
-      tags: *ref_15
+      tags: *ref_17
     delete:
       operationId: FormSubmissionsController_remove
       parameters:
@@ -1661,7 +1845,7 @@ paths:
         '200':
           description: ''
       summary: Archive a form submission
-      tags: *ref_15
+      tags: *ref_17
   /api/form-submissions/{id}/chain:
     get:
       operationId: FormSubmissionsController_getChain
@@ -1675,7 +1859,7 @@ paths:
         '200':
           description: ''
       summary: Get the amend chain (original + all amendments) for a submission
-      tags: *ref_15
+      tags: *ref_17
   /api/form-submissions/{id}/pdf:
     get:
       operationId: FormSubmissionsController_pdf
@@ -1689,7 +1873,7 @@ paths:
         '200':
           description: ''
       summary: Render a submission as a PDF document
-      tags: *ref_15
+      tags: *ref_17
   /api/form-submissions/{id}/amend:
     post:
       operationId: FormSubmissionsController_amend
@@ -1709,7 +1893,7 @@ paths:
         '201':
           description: ''
       summary: Amend a submitted form (creates a new submission)
-      tags: *ref_15
+      tags: *ref_17
   /api/forms/available:
     get:
       operationId: FormAccessController_available
@@ -1732,7 +1916,7 @@ paths:
       summary: >-
         List referrals (direction=incoming|outgoing scoped to providerId, plus
         status/patient/encounter filters)
-      tags: &ref_16
+      tags: &ref_18
         - referrals
     post:
       operationId: ReferralsController_create
@@ -1747,7 +1931,7 @@ paths:
         '201':
           description: ''
       summary: Create an outgoing referral from an encounter
-      tags: *ref_16
+      tags: *ref_18
   /api/referrals/{id}:
     get:
       operationId: ReferralsController_get
@@ -1761,7 +1945,7 @@ paths:
         '200':
           description: ''
       summary: Get referral by id
-      tags: *ref_16
+      tags: *ref_18
     patch:
       operationId: ReferralsController_update
       parameters:
@@ -1774,7 +1958,7 @@ paths:
         '200':
           description: ''
       summary: Update referral notes/priority/status
-      tags: *ref_16
+      tags: *ref_18
     delete:
       operationId: ReferralsController_remove
       parameters:
@@ -1787,7 +1971,7 @@ paths:
         '200':
           description: ''
       summary: Archive a referral
-      tags: *ref_16
+      tags: *ref_18
   /api/referrals/{id}/decide:
     post:
       operationId: ReferralsController_decide
@@ -1807,7 +1991,7 @@ paths:
         '201':
           description: ''
       summary: Accept or decline a pending referral
-      tags: *ref_16
+      tags: *ref_18
   /api/referrals/{id}/complete:
     post:
       operationId: ReferralsController_complete
@@ -1827,7 +2011,7 @@ paths:
         '201':
           description: ''
       summary: Complete an accepted referral
-      tags: *ref_16
+      tags: *ref_18
   /api/medications:
     get:
       operationId: MedicationsController_list
@@ -1836,7 +2020,7 @@ paths:
         '200':
           description: ''
       summary: List medications (status/patient/request/encounter/administered filters)
-      tags: &ref_17
+      tags: &ref_19
         - medications
     post:
       operationId: MedicationsController_create
@@ -1851,7 +2035,7 @@ paths:
         '201':
           description: ''
       summary: Create a medication from a PRESCRIPTION request item (nurse flow)
-      tags: *ref_17
+      tags: *ref_19
   /api/medications/{id}:
     get:
       operationId: MedicationsController_get
@@ -1865,7 +2049,7 @@ paths:
         '200':
           description: ''
       summary: Get medication by id
-      tags: *ref_17
+      tags: *ref_19
     patch:
       operationId: MedicationsController_update
       parameters:
@@ -1878,7 +2062,7 @@ paths:
         '200':
           description: ''
       summary: Update a medication record
-      tags: *ref_17
+      tags: *ref_19
     delete:
       operationId: MedicationsController_remove
       parameters:
@@ -1891,7 +2075,7 @@ paths:
         '200':
           description: ''
       summary: Archive a medication record
-      tags: *ref_17
+      tags: *ref_19
   /api/medications/{id}/administer:
     post:
       operationId: MedicationsController_administer
@@ -1911,7 +2095,7 @@ paths:
         '201':
           description: ''
       summary: Record administration and complete the originating prescription request
-      tags: *ref_17
+      tags: *ref_19
   /api/dashboard:
     get:
       operationId: DashboardController_summary
@@ -1925,7 +2109,7 @@ paths:
         '200':
           description: ''
       summary: Daily operational summary for the EMR dashboard
-      tags: &ref_18
+      tags: &ref_20
         - dashboard
   /api/dashboard/attended-patients:
     get:
@@ -1937,7 +2121,7 @@ paths:
       summary: >-
         Distinct patients ever attended (visit or encounter), optionally scoped
         to a provider
-      tags: *ref_18
+      tags: *ref_20
 info:
   title: EMR API
   description: >-
@@ -2102,7 +2286,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_19
+          enum: &ref_21
             - CASH
             - HMO
             - COMPANY
@@ -2127,7 +2311,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_19
+          enum: *ref_21
         description:
           type: string
         contactPhone:
@@ -2156,7 +2340,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_20
+          enum: &ref_22
             - Doctor
             - Nurse
             - Technician
@@ -2167,7 +2351,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_21
+          enum: &ref_23
             - Medical
             - Nursing
             - Allied Health
@@ -2213,10 +2397,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_20
+          enum: *ref_22
         category:
           type: string
-          enum: *ref_21
+          enum: *ref_23
         department:
           type: string
         departmentId:
@@ -2243,7 +2427,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_22
+          enum: &ref_24
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -2279,7 +2463,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_22
+          enum: *ref_24
         description:
           type: string
         locationId:
@@ -2301,7 +2485,7 @@ components:
           description: Ward display name
         wardType:
           type: string
-          enum: &ref_23
+          enum: &ref_25
             - GENERAL
             - PRIVATE
             - ICU
@@ -2334,7 +2518,7 @@ components:
           type: string
         wardType:
           type: string
-          enum: *ref_23
+          enum: *ref_25
         departmentId:
           type: string
         departmentType:
@@ -2354,7 +2538,7 @@ components:
           description: Ward the bed belongs to
         bedType:
           type: string
-          enum: &ref_24
+          enum: &ref_26
             - STANDARD
             - ICU
             - MATERNITY
@@ -2364,7 +2548,7 @@ components:
           default: STANDARD
         status:
           type: string
-          enum: &ref_25
+          enum: &ref_27
             - AVAILABLE
             - OCCUPIED
             - MAINTENANCE
@@ -2384,10 +2568,10 @@ components:
           type: string
         bedType:
           type: string
-          enum: *ref_24
+          enum: *ref_26
         status:
           type: string
-          enum: *ref_25
+          enum: *ref_27
         notes:
           type: string
     AdmitPatientDto:
@@ -2406,10 +2590,10 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-09-25T23:42:56.594Z'
+          default: '2026-10-07T14:45:49.096Z'
         admissionType:
           type: string
-          enum: &ref_26
+          enum: &ref_28
             - EMERGENCY
             - URGENT
             - ELECTIVE
@@ -2444,7 +2628,7 @@ components:
           description: Bed to allocate on admission
         admissionType:
           type: string
-          enum: *ref_26
+          enum: *ref_28
           default: ELECTIVE
         diagnosis:
           type: string
@@ -2461,7 +2645,7 @@ components:
           type: string
         admissionType:
           type: string
-          enum: *ref_26
+          enum: *ref_28
         diagnosis:
           type: string
         referringProviderId:
@@ -2496,7 +2680,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-09-25T23:42:56.595Z'
+          default: '2026-10-07T14:45:49.098Z'
     CreateVisitDto:
       type: object
       properties:
@@ -2506,7 +2690,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_27
+          enum: &ref_29
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -2548,7 +2732,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_27
+          enum: *ref_29
         status:
           type: string
           enum:
@@ -2572,7 +2756,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: &ref_28
+          enum: &ref_30
             - CHECKUP
             - FOLLOW_UP
             - CONSULTATION
@@ -2596,7 +2780,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_29
+          enum: &ref_31
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -2645,7 +2829,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: *ref_28
+          enum: *ref_30
         date:
           type: string
         startTime:
@@ -2662,7 +2846,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_29
+          enum: *ref_31
         status:
           type: string
           enum:
@@ -2686,7 +2870,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_31
+          enum: &ref_33
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -2698,7 +2882,7 @@ components:
             - OTHER
         status:
           type: string
-          enum: &ref_30
+          enum: &ref_32
             - ACTIVE
             - COMPLETED
             - CANCELLED
@@ -2721,14 +2905,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_32
+          enum: &ref_34
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_29
+          enum: *ref_31
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2752,7 +2936,7 @@ components:
       properties:
         status:
           type: string
-          enum: *ref_30
+          enum: *ref_32
         endedAt:
           type: string
         patientId:
@@ -2761,7 +2945,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_31
+          enum: *ref_33
         providerId:
           type: string
         providerName:
@@ -2785,10 +2969,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_32
+          enum: *ref_34
         priority:
           type: string
-          enum: *ref_29
+          enum: *ref_31
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2850,7 +3034,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_29
+          enum: *ref_31
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -2863,6 +3047,118 @@ components:
           type: array
           items:
             type: string
+    SubscribeNotificationsDto:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          description: >-
+            Optional session expiry (ISO timestamp). When omitted the
+            subscription does not expire.
+        organizationId:
+          type: string
+          description: >-
+            Optional org id (ignored — tenant comes from the JWT). Accepted so
+            whitelist validation does not reject clients that echo it.
+        locationId:
+          type: string
+          description: >-
+            Optional location id (ignored — tenant comes from the JWT). Accepted
+            so whitelist validation does not reject clients that echo it.
+    CreateMessageTemplateDto:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Unique template code, e.g. request_created
+        name:
+          type: string
+        description:
+          type: string
+        contentType:
+          type: string
+          enum: &ref_35
+            - free_text
+            - html
+            - prompt
+            - limited_text
+            - webpage
+          default: free_text
+        content:
+          type: string
+        maxCharacters:
+          type: number
+          description: Required/enforced when contentType is limited_text
+        destinations:
+          type: array
+          items:
+            type: string
+            enum: &ref_36
+              - whatsapp
+              - sms
+              - inapp
+              - email
+              - webpage
+              - mobile_app
+        channelCodes:
+          type: array
+          items:
+            type: string
+        heartbeatRetries:
+          type: number
+          default: 3
+        heartbeatIntervalSeconds:
+          type: number
+          default: 30
+        heartbeatExpirySeconds:
+          type: number
+          default: 86400
+        status:
+          type: string
+          enum: &ref_37
+            - draft
+            - active
+            - inactive
+          default: draft
+      required:
+        - code
+        - name
+        - contentType
+        - content
+        - destinations
+        - status
+    UpdateMessageTemplateDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        contentType:
+          type: string
+          enum: *ref_35
+        content:
+          type: string
+        maxCharacters:
+          type: object
+        destinations:
+          type: array
+          items:
+            type: string
+            enum: *ref_36
+        channelCodes:
+          type: array
+          items:
+            type: string
+        heartbeatRetries:
+          type: number
+        heartbeatIntervalSeconds:
+          type: number
+        heartbeatExpirySeconds:
+          type: number
+        status:
+          type: string
+          enum: *ref_37
     CreateFormDefinitionDto:
       type: object
       properties:
@@ -2874,7 +3170,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_33
+          enum: &ref_38
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -2904,7 +3200,7 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_33
+          enum: *ref_38
         schemaJson:
           type: object
         version:
