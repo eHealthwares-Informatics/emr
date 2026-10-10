@@ -33,6 +33,7 @@ export class SeedService implements OnApplicationBootstrap {
       this.logger.log('Seeding skipped (SEED_ON_START is not true)');
       return;
     }
+    // Starter forms + message templates (idempotent upsert).
     await this.run();
   }
 
