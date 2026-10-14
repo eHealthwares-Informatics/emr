@@ -115,4 +115,50 @@ export class AuthProxyService {
       modules: body.modules ?? [],
     };
   }
+
+  /**
+   * Google OAuth sign-in for prognocare users (EMR channel). Proxies to the
+   * identity generic endpoint with channel='emr' so identity applies the
+   * EMR-configured org/roles: any existing account role is linked by the
+   * provider-verified email; otherwise a new patient account is registered.
+   */
+  async googleSignIn(payload: {
+    accessToken?: string;
+    idToken?: string;
+  }): Promise<ProxyAuthResponse> {
+    const { data } = await firstValueFrom(
+      this.http.post(
+        `${this.baseUrl}/auth/oauth/google`,
+        { ...payload, channel: 'emr' },
+        { headers: this.headers() },
+      ),
+    );
+    const body = data?.data ?? data;
+    return {
+      accessToken: body.accessToken,
+      refreshToken: body.refreshToken,
+      accessTokenExpiresIn: body.accessTokenExpiresIn,
+      refreshTokenExpiresIn: body.refreshTokenExpiresIn,
+    };
+  }
+
+  /** Facebook OAuth sign-in for prognocare users (see googleSignIn). */
+  async facebookSignIn(payload: {
+    accessToken: string;
+  }): Promise<ProxyAuthResponse> {
+    const { data } = await firstValueFrom(
+      this.http.post(
+        `${this.baseUrl}/auth/oauth/facebook`,
+        { ...payload, channel: 'emr' },
+        { headers: this.headers() },
+      ),
+    );
+    const body = data?.data ?? data;
+    return {
+      accessToken: body.accessToken,
+      refreshToken: body.refreshToken,
+      accessTokenExpiresIn: body.accessTokenExpiresIn,
+      refreshTokenExpiresIn: body.refreshTokenExpiresIn,
+    };
+  }
 }

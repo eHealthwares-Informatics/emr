@@ -111,6 +111,39 @@ describe('AuthProxyService', () => {
     );
   });
 
+  it('proxies google and facebook oauth with the emr channel', async () => {
+    httpPost.mockReturnValue(
+      of({
+        data: {
+          accessToken: 'at-g',
+          refreshToken: 'rt-g',
+          accessTokenExpiresIn: 900,
+          refreshTokenExpiresIn: 604800,
+        },
+      }),
+    );
+
+    const result = await service.googleSignIn({ idToken: 'id-tok' });
+
+    expect(httpPost).toHaveBeenCalledWith(
+      'https://identity.test/identity/auth/oauth/google',
+      { idToken: 'id-tok', channel: 'emr' },
+      expect.objectContaining({
+        headers: { 'x-api-key': 'rxsoft-internal-key' },
+      }),
+    );
+    expect(result.accessToken).toBe('at-g');
+
+    const fbResult = await service.facebookSignIn({ accessToken: 'fb-tok' });
+
+    expect(httpPost).toHaveBeenLastCalledWith(
+      'https://identity.test/identity/auth/oauth/facebook',
+      { accessToken: 'fb-tok', channel: 'emr' },
+      expect.anything(),
+    );
+    expect(fbResult.refreshToken).toBe('rt-g');
+  });
+
   it('forwards refresh-token and logout endpoints', async () => {
     httpPost.mockReturnValue(
       of({ data: { accessToken: 'at2', refreshToken: 'rt2' } }),
