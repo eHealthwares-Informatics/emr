@@ -12,6 +12,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiProperty,
+  ApiPropertyOptional,
   ApiTags,
 } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
@@ -21,6 +22,21 @@ import {
   ProxyAuthResponse,
   ProxyMeResponse,
 } from './auth-proxy.service';
+
+class ProxyOAuthDto {
+  @ApiPropertyOptional({ description: 'Google access token' })
+  accessToken?: string;
+
+  @ApiPropertyOptional({
+    description: 'Google ID token (Android Credential Manager)',
+  })
+  idToken?: string;
+}
+
+class ProxyFacebookDto {
+  @ApiProperty({ description: 'Facebook access token' })
+  accessToken!: string;
+}
 
 class ProxyLoginDto {
   @ApiProperty({ example: 'admin', description: 'Username' })
@@ -70,6 +86,24 @@ class ProxyMeResponseDto implements ProxyMeResponse {
 @Controller('auth')
 export class AuthProxyController {
   constructor(private readonly authProxy: AuthProxyService) {}
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Google OAuth sign-in (proxied to the identity service, EMR channel)',
+  })
+  async googleSignIn(@Body() payload: ProxyOAuthDto): Promise<ProxyAuthResponse> {
+    return this.authProxy.googleSignIn(payload);
+  }
+
+  @Post('facebook')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Facebook OAuth sign-in (proxied to the identity service, EMR channel)',
+  })
+  async facebookSignIn(@Body() payload: ProxyFacebookDto): Promise<ProxyAuthResponse> {
+    return this.authProxy.facebookSignIn(payload);
+  }
 
   @Public()
   @Post('login')
