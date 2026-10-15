@@ -1,0 +1,56 @@
+name: base freshness
+
+# A branch cut before another PR merged can carry the *pre-merge* version of a
+# file. If the merge is clean, git takes the branch's side — so merging silently
+# REVERTS the earlier fix. Nothing warns:
+#
+#   - `git merge-base --is-ancestor <earlier-fix> HEAD` → true (still in the DAG)
+#   - CI → green (no test pins the tree)
+#   - the merge → clean (no conflict markers)
+#
+# That has already cost this org real downtime plus two near-misses:
+#
+#   - rxsoft-qa#803 — rxsoft `main` would not compile (duplicate `UUID_RE`,
+#     TS2451). It had been removed twice; a clean merge from a stale branch put
+#     it back and took every dev/QA environment down.
+#   - rxsoft-qa#800 — identity's `/auth/me` `permissionMode` (PR #7) was
+#     clobbered by the PR #8 merge: still an ancestor, gone from the tree.
+#   - rxsoft-qa#801 — the seed org-template parent grants, caught by diffing
+#     against current main before pushing.
+#
+# This asserts the branch CONTAINS the current base tip — the condition that was
+# violated in all three. It is the CI equivalent of GitHub's "Require branches
+# to be up to date before merging"; enable either, ideally both.
+#
+# Already running in ui (.github/workflows/base-freshness.yml, ui#156),
+# rxsoft (#93) and identity (#15).
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  base_is_current:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Branch must contain the current base tip
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF" --depth=1
+          if git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
+            echo "Base is current — merging cannot revert a merged fix."
+          else
+            echo "::error::Branch is behind origin/$BASE_REF. Update it (rebase or merge) before merging."
+            echo "A stale base merges cleanly while silently reverting a merged fix — see rxsoft-qa#801 / #803."
+            exit 1
+          fi
