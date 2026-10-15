@@ -8,22 +8,28 @@ name: base freshness
 #   - CI → green (no test pins the tree)
 #   - the merge → clean (no conflict markers)
 #
-# That has already cost this org real downtime plus two near-misses:
+# That has already cost this org real downtime:
 #
 #   - rxsoft-qa#803 — rxsoft `main` would not compile (duplicate `UUID_RE`,
-#     TS2451). It had been removed twice; a clean merge from a stale branch put
-#     it back and took every dev/QA environment down.
-#   - rxsoft-qa#800 — identity's `/auth/me` `permissionMode` (PR #7) was
-#     clobbered by the PR #8 merge: still an ancestor, gone from the tree.
+#     TS2451). Removed twice, silently reverted by a clean merge from a stale
+#     branch, and every dev/QA environment went down.
+#   - rxsoft-qa#800 — identity's `/auth/me` `permissionMode` clobbered by a merge.
 #   - rxsoft-qa#801 — the seed org-template parent grants, caught by diffing
 #     against current main before pushing.
 #
-# This asserts the branch CONTAINS the current base tip — the condition that was
-# violated in all three. It is the CI equivalent of GitHub's "Require branches
-# to be up to date before merging"; enable either, ideally both.
+# This asserts the PR BRANCH contains the current base tip — the condition
+# violated in all three. CI equivalent of GitHub's "Require branches to be up to
+# date before merging"; enable either, ideally both.
 #
-# Already running in ui (.github/workflows/base-freshness.yml, ui#156),
-# rxsoft (#93) and identity (#15).
+# ⚠️ The PR head MUST be checked out explicitly. `actions/checkout` defaults to
+# the synthetic MERGE commit (`refs/pull/N/merge`) on a pull_request event, and
+# that commit contains the base tip *by construction* — so the assertion below
+# would pass unconditionally and the job would be pure decoration. (Measured on
+# a deliberately stale branch: HEAD was `9f8cd2e1 Merge <head> into <base>`,
+# i.e. the base tip was its own first parent, and the check still passed.)
+#
+# Running in ui, rxsoft, identity, seed, conversation, concepts, interop, lims,
+# emr (rxsoft-qa#801).
 
 on:
   pull_request:
@@ -40,6 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Branch must contain the current base tip
@@ -47,6 +54,9 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           git fetch origin "$BASE_REF" --depth=1
+          echo "head       = $(git rev-parse HEAD)"
+          echo "base tip   = $(git rev-parse "origin/$BASE_REF")"
+          echo "merge-base = $(git merge-base HEAD "origin/$BASE_REF" || echo none)"
           if git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
             echo "Base is current — merging cannot revert a merged fix."
           else
