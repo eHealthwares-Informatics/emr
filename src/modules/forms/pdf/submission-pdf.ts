@@ -43,6 +43,32 @@ function renderValue(value: unknown): string {
   return escapeHtml(String(value));
 }
 
+/** Humanize a region / structure id: `right-knee` → `Right knee`. */
+function humanizeId(value: string): string {
+  const text = value.replace(/[-_]+/g, ' ').trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+/**
+ * Annotate values are stored as ids (body/organ) or a single dermatome level.
+ * Print them as readable labels rather than raw ids.
+ */
+function renderAnnotateValue(value: unknown, target: string): string {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+  if (target === 'dermatome') {
+    return escapeHtml(String(value));
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return '—';
+    }
+    return value.map((item) => escapeHtml(humanizeId(String(item)))).join(', ');
+  }
+  return escapeHtml(humanizeId(String(value)));
+}
+
 /**
  * HTML template for a submission PDF. Kept to the tag/CSS subset supported by
  * html-to-pdfmake: headings, paragraphs, spans, and tables with inline styles.
@@ -52,16 +78,29 @@ export function submissionPdfHtml(
   form?: FormDefinitionOrmEntity | null,
 ): string {
   const labels = new Map<string, string>();
+  const fieldMeta = new Map<
+    string,
+    { type?: string; annotate?: { target?: string } }
+  >();
   const collectLabels = (
-    fields: Array<{ key: string; label: string; fields?: unknown[] }>,
+    fields: Array<{
+      key: string;
+      label: string;
+      type?: string;
+      annotate?: { target?: string };
+      fields?: unknown[];
+    }>,
   ): void => {
     for (const field of fields) {
       labels.set(field.key, field.label);
+      fieldMeta.set(field.key, { type: field.type, annotate: field.annotate });
       if (Array.isArray(field.fields)) {
         collectLabels(
           field.fields as Array<{
             key: string;
             label: string;
+            type?: string;
+            annotate?: { target?: string };
             fields?: unknown[];
           }>,
         );
@@ -73,9 +112,14 @@ export function submissionPdfHtml(
   const fieldRows = Object.entries(submission.dataJson ?? {})
     .map(([key, value]) => {
       const label = labels.get(key) ?? key;
+      const meta = fieldMeta.get(key);
+      const rendered =
+        meta?.type === 'annotate'
+          ? renderAnnotateValue(value, meta.annotate?.target ?? 'body')
+          : renderValue(value);
       return `<tr>
         <td style="width: 30%; font-size: 9; color: #666666; font-weight: bold; padding: 4 8 4 0;">${escapeHtml(label)}</td>
-        <td style="font-size: 10; padding: 4 0;">${renderValue(value)}</td>
+        <td style="font-size: 10; padding: 4 0;">${rendered}</td>
       </tr>`;
     })
     .join('');

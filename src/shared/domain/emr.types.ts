@@ -113,6 +113,30 @@ export type Encounter = BaseEntityType & {
   createdById: string | null;
 };
 
+export type AnnotateTarget = 'body' | 'dermatome' | 'organ';
+
+/**
+ * Configuration for the `annotate` field type — clickable body regions,
+ * dermatome levels, or organ structures. Values submitted under the field key:
+ *   body / organ   → string[] of region/structure ids
+ *   dermatome      → string | null (a single level, e.g. "L4")
+ */
+export type AnnotateConfig = {
+  target: AnnotateTarget;
+  /** body/dermatome: which figures to show. Defaults to both. */
+  views?: Array<'front' | 'back'>;
+  /** body/organ: allow more than one selection. Defaults to true. */
+  multiple?: boolean;
+  /** dermatome: show the level labels. Defaults to true. */
+  showLabels?: boolean;
+  /** body: restrict selection to these region ids (defaults to all). */
+  regions?: string[];
+  /** organ: organ code, e.g. 'heart'. Required for target 'organ'. */
+  organ?: string;
+  /** organ: restrict selection to these structure ids (defaults to all). */
+  structures?: string[];
+};
+
 export type FormFieldSchema = {
   key: string;
   label: string;
@@ -125,6 +149,8 @@ export type FormFieldSchema = {
   columns?: { key: string; label: string; type: FormFieldType }[];
   /** Child fields — only used by the 'tab' container type. */
   fields?: FormFieldSchema[];
+  /** Configuration for the `annotate` field type. */
+  annotate?: AnnotateConfig;
 };
 
 export type FormSchema = {

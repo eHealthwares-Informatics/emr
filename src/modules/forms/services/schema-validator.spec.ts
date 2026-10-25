@@ -168,3 +168,95 @@ describe('validateFormData', () => {
     ]);
   });
 });
+
+describe('annotate fields', () => {
+  it('accepts valid body and organ annotate schemas', () => {
+    const schema: FormSchema = {
+      fields: [
+        {
+          key: 'pain',
+          label: 'Pain location',
+          type: 'annotate',
+          annotate: { target: 'body', views: ['front', 'back'] },
+        },
+        {
+          key: 'heartPart',
+          label: 'Heart part',
+          type: 'annotate',
+          annotate: { target: 'organ', organ: 'heart' },
+        },
+      ],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
+  it('rejects an annotate field without a valid target', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'pain', label: 'Pain', type: 'annotate' } as never],
+    };
+    expect(validateFormSchema(schema)).toEqual([
+      'Field pain of type annotate requires an annotate target (body, dermatome, organ)',
+    ]);
+  });
+
+  it('requires an organ when the target is organ', () => {
+    const schema: FormSchema = {
+      fields: [
+        {
+          key: 'part',
+          label: 'Part',
+          type: 'annotate',
+          annotate: { target: 'organ' },
+        },
+      ],
+    };
+    expect(validateFormSchema(schema)).toContain(
+      'Field part of type annotate with target organ requires an organ',
+    );
+  });
+
+  it('validates annotate values', () => {
+    const schema: FormSchema = {
+      fields: [
+        {
+          key: 'pain',
+          label: 'Pain',
+          type: 'annotate',
+          annotate: { target: 'body' },
+        },
+        {
+          key: 'level',
+          label: 'Level',
+          type: 'annotate',
+          annotate: { target: 'dermatome' },
+        },
+      ],
+    };
+    expect(
+      validateFormData(schema, { pain: ['right-knee'], level: 'L4' }),
+    ).toEqual([]);
+    const errors = validateFormData(schema, {
+      pain: 'right-knee',
+      level: 4,
+    });
+    expect(errors).toContain('Pain must be a list of selections');
+    expect(errors).toContain('Level must be a single dermatome level');
+  });
+
+  it('treats an empty annotate selection as missing when required', () => {
+    const schema: FormSchema = {
+      fields: [
+        {
+          key: 'pain',
+          label: 'Pain',
+          type: 'annotate',
+          required: true,
+          annotate: { target: 'body' },
+        },
+      ],
+    };
+    expect(validateFormData(schema, { pain: [] })).toContain(
+      'Pain is required',
+    );
+  });
+});

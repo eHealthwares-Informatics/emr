@@ -75,6 +75,7 @@ export const FORM_FIELD_TYPES = [
   'tab',
   'col',
   'item',
+  'annotate',
 ] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
 

@@ -10,6 +10,37 @@ paths:
       summary: Health check
       tags:
         - health
+  /api/auth/google:
+    post:
+      operationId: AuthProxyController_googleSignIn
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyOAuthDto'
+      responses:
+        '200':
+          description: ''
+      summary: Google OAuth sign-in (proxied to the identity service, EMR channel)
+      tags: &ref_0
+        - auth-proxy
+  /api/auth/facebook:
+    post:
+      operationId: AuthProxyController_facebookSignIn
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyFacebookDto'
+      responses:
+        '200':
+          description: ''
+      summary: Facebook OAuth sign-in (proxied to the identity service, EMR channel)
+      tags: *ref_0
   /api/auth/login:
     post:
       operationId: AuthProxyController_login
@@ -24,8 +55,7 @@ paths:
         '200':
           description: ''
       summary: Authenticate via the identity service and return tokens
-      tags: &ref_0
-        - auth-proxy
+      tags: *ref_0
   /api/auth/refresh-token:
     post:
       operationId: AuthProxyController_refreshToken
@@ -2138,6 +2168,23 @@ components:
       bearerFormat: JWT
       type: http
   schemas:
+    ProxyOAuthDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Google access token
+        idToken:
+          type: string
+          description: Google ID token (Android Credential Manager)
+    ProxyFacebookDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Facebook access token
+      required:
+        - accessToken
     ProxyLoginDto:
       type: object
       properties:
@@ -2590,7 +2637,7 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-10-07T14:45:49.096Z'
+          default: '2026-10-23T14:37:54.086Z'
         admissionType:
           type: string
           enum: &ref_28
@@ -2680,7 +2727,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-10-07T14:45:49.098Z'
+          default: '2026-10-23T14:37:54.088Z'
     CreateVisitDto:
       type: object
       properties:

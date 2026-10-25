@@ -15,7 +15,10 @@ const FIELD_TYPES = [
   'tab',
   'col',
   'item',
+  'annotate',
 ];
+
+const ANNOTATE_TARGETS = ['body', 'dermatome', 'organ'];
 
 const CONTAINER_TYPES = ['section', 'tab', 'col'];
 
@@ -84,6 +87,19 @@ export function validateFormSchema(schema: FormSchema): string[] {
       ) {
         errors.push(`Field ${field.key} of type table requires columns`);
       }
+
+      if (field.type === 'annotate') {
+        const cfg = field.annotate;
+        if (!cfg || !ANNOTATE_TARGETS.includes(cfg.target)) {
+          errors.push(
+            `Field ${field.key} of type annotate requires an annotate target (body, dermatome, organ)`,
+          );
+        } else if (cfg.target === 'organ' && !cfg.organ) {
+          errors.push(
+            `Field ${field.key} of type annotate with target organ requires an organ`,
+          );
+        }
+      }
     }
   };
 
@@ -112,10 +128,13 @@ export function validateFormData(
 
     const value = data?.[field.key];
 
-    if (
-      field.required &&
-      (value === undefined || value === null || value === '')
-    ) {
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      (field.type === 'annotate' && Array.isArray(value) && value.length === 0);
+
+    if (field.required && isEmpty) {
       errors.push(`${field.label || field.key} is required`);
       return;
     }
@@ -158,6 +177,28 @@ export function validateFormData(
           errors.push(`${field.label || field.key} must be a table of rows`);
         }
         break;
+      case 'annotate': {
+        const target = field.annotate?.target ?? 'body';
+        if (target === 'dermatome') {
+          if (typeof value !== 'string') {
+            errors.push(
+              `${field.label || field.key} must be a single dermatome level`,
+            );
+          }
+        } else if (
+          !Array.isArray(value) ||
+          value.some((item) => typeof item !== 'string')
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a list of selections`,
+          );
+        } else if (field.annotate?.multiple === false && value.length > 1) {
+          errors.push(
+            `${field.label || field.key} allows a single selection`,
+          );
+        }
+        break;
+      }
       default:
         if (typeof value !== 'string' && typeof value !== 'number') {
           errors.push(`${field.label || field.key} must be a text value`);
