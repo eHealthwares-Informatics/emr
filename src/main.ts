@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, type LogLevel } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -8,8 +8,24 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
+// Log verbosity from LOG_LEVEL: error | warn | log/info | debug | verbose | silent.
+const LOG_LEVELS: Record<string, LogLevel[]> = {
+  error: ['error', 'fatal'],
+  warn: ['error', 'fatal', 'warn'],
+  log: ['error', 'fatal', 'warn', 'log'],
+  info: ['error', 'fatal', 'warn', 'log'],
+  debug: ['error', 'fatal', 'warn', 'log', 'debug'],
+  verbose: ['error', 'fatal', 'warn', 'log', 'debug', 'verbose'],
+  silent: [],
+};
+
+function resolveLoggerLevels(value?: string): LogLevel[] {
+  return LOG_LEVELS[(value ?? 'log').toLowerCase()] ?? LOG_LEVELS.log;
+}
+
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { logger: resolveLoggerLevels(process.env.LOG_LEVEL) });
   const configService = app.get(ConfigService);
 
   app.useGlobalPipes(
