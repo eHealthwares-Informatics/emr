@@ -10,6 +10,9 @@ import { MessageTemplatesService } from './services/message-templates.service';
 import { NotificationsController } from './controllers/notifications.controller';
 import { NotificationSubscriptionsController } from './controllers/notification-subscriptions.controller';
 import { MessageTemplatesController } from './controllers/message-templates.controller';
+import { PatientsModule } from '../patients/patients.module';
+import { NotificationPolicyClient } from './services/notification-policy.client';
+import { ExternalNotificationsService } from './services/external-notifications.service';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import { MessageTemplatesController } from './controllers/message-templates.cont
       NotificationRecipientOrmEntity,
       NotificationSubscriptionOrmEntity,
     ]),
+    PatientsModule,
   ],
   controllers: [
     NotificationsController,
@@ -29,7 +33,14 @@ import { MessageTemplatesController } from './controllers/message-templates.cont
     NotificationsService,
     TemplateRenderService,
     MessageTemplatesService,
+    NotificationPolicyClient,
+    ExternalNotificationsService,
   ],
-  exports: [NotificationsService, TemplateRenderService],
+  exports: [
+    NotificationsService,
+    TemplateRenderService,
+    NotificationPolicyClient,
+    ExternalNotificationsService,
+  ],
 })
 export class NotificationsModule {}

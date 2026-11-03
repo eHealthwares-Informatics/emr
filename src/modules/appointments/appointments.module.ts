@@ -5,12 +5,14 @@ import { AppointmentsService } from './services/appointments.service';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { VisitsModule } from '../visits/visits.module';
 import { PdfModule } from '../pdf/pdf.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AppointmentOrmEntity]),
     VisitsModule,
     PdfModule,
+    NotificationsModule,
   ],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],

@@ -24,6 +24,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { tenantFromUser } from '../../../common/tenant-context';
 import { PdfService } from '../../pdf/pdf.service';
+import { PrintsService } from '../../prints/prints.service';
 
 @ApiTags('appointments')
 @Controller('appointments')
@@ -31,6 +32,7 @@ export class AppointmentsController {
   constructor(
     private readonly service: AppointmentsService,
     private readonly pdf: PdfService,
+    private readonly prints: PrintsService,
   ) {}
 
   @Get()
@@ -83,13 +85,31 @@ export class AppointmentsController {
         ${row('Notes', appointment.notes)}
       </table>
     </div>`;
-    const buffer = await this.pdf.renderHtml(html);
+    const cached = await this.prints.getOrGenerate(
+      {
+        organizationId:
+          appointment.organizationId ??
+          '00000000-0000-0000-0000-000000000000',
+        resourceType: 'emr_appointment',
+        resourceId: id,
+        printTemplateId: 'appointment_notification',
+        format: 'pdf',
+        fileName: `appointment-${appointment.appointmentNumber}.pdf`,
+      },
+      async () => {
+        const buffer = await this.pdf.renderHtml(html);
+        return {
+          buffer,
+          fileName: `appointment-${appointment.appointmentNumber}.pdf`,
+        };
+      },
+    );
     res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="appointment-${appointment.appointmentNumber}.pdf"`,
-      'Content-Length': String(buffer.length),
+      'Content-Type': cached.mimeType,
+      'Content-Disposition': `inline; filename="${cached.fileName}"`,
+      'Content-Length': String(cached.buffer.length),
     });
-    res.send(buffer);
+    res.send(cached.buffer);
   }
 
   @Get(':id')
