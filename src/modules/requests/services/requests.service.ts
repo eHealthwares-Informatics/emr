@@ -159,6 +159,53 @@ export class RequestsService {
     return { data, total };
   }
 
+  /**
+   * List requests and batch-load their line items. Used by read-only
+   * aggregate views (dashboard, patient insights) that need the full
+   * request payload without issuing one query per row.
+   */
+  async listWithItems(
+    query: ListQueryDto & {
+      status?: string;
+      requestType?: string;
+      priority?: string;
+      syncStatus?: string;
+      patientId?: string;
+      visitId?: string;
+      encounterId?: string;
+      providerId?: string;
+    },
+    tenant: TenantContext,
+  ) {
+    const result = await this.list(query, tenant);
+    const ids = result.data.map((request) => request.id);
+    if (ids.length === 0) {
+      return { data: [], total: result.total };
+    }
+
+    const items = await this.itemRepo
+      .createQueryBuilder('item')
+      .where('item.request_id IN (:...ids)', { ids })
+      .andWhere('item.deleted_at IS NULL')
+      .orderBy('item.created_at', 'ASC')
+      .getMany();
+
+    const itemsByRequest = new Map<string, RequestItemOrmEntity[]>();
+    for (const item of items) {
+      const list = itemsByRequest.get(item.requestId) ?? [];
+      list.push(item);
+      itemsByRequest.set(item.requestId, list);
+    }
+
+    return {
+      data: result.data.map((request) => ({
+        ...request,
+        items: itemsByRequest.get(request.id) ?? [],
+      })),
+      total: result.total,
+    };
+  }
+
   async get(id: string, tenant: TenantContext) {
     const request = await this.findOneScoped(id, tenant);
     const items = await this.itemRepo.find({
