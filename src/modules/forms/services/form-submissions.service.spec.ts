@@ -43,7 +43,9 @@ describe('FormSubmissionsService', () => {
   beforeEach(() => {
     repo = repoMock();
     formDefs = { get: jest.fn() };
-    service = new FormSubmissionsService(repo as never, formDefs as never);
+    service = new FormSubmissionsService(repo as never, formDefs as never, {
+      notifyDocumentCreated: jest.fn(),
+    } as never);
   });
 
   describe('list', () => {

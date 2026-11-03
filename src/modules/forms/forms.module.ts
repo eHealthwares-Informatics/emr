@@ -10,6 +10,7 @@ import { FormAccessService } from './services/form-access.service';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
 import { FormSubmissionsController } from './controllers/form-submissions.controller';
 import { FormAccessController } from './controllers/form-access.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { FormAccessController } from './controllers/form-access.controller';
       FormAccessOrmEntity,
     ]),
     PdfModule,
+    NotificationsModule,
   ],
   controllers: [
     FormDefinitionsController,

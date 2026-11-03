@@ -17,6 +17,7 @@ import type { RequestUser } from '../../../common/decorators/current-user.decora
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
+import { ExternalNotificationsService } from '../../notifications/services/external-notifications.service';
 
 const SORT_ALLOW_LIST = [
   'formName',
@@ -32,6 +33,7 @@ export class FormSubmissionsService {
     @InjectRepository(FormSubmissionOrmEntity)
     private readonly repo: Repository<FormSubmissionOrmEntity>,
     private readonly formDefinitionsService: FormDefinitionsService,
+    private readonly externalNotifications: ExternalNotificationsService,
   ) {}
 
   async list(
@@ -189,7 +191,9 @@ export class FormSubmissionsService {
       organizationId: tenant.organizationId,
       locationId: tenant.locationId,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    void this.externalNotifications.notifyDocumentCreated(saved, tenant);
+    return saved;
   }
 
   async update(
@@ -307,17 +311,21 @@ export class FormSubmissionsService {
   private async withVersionWarning(
     submission: FormSubmissionOrmEntity,
     tenant: TenantContext,
-  ): Promise<FormSubmissionOrmEntity & {
-    schemaOutdated: boolean;
-    schemaCurrentVersion: number | null;
-  }> {
+  ): Promise<
+    FormSubmissionOrmEntity & {
+      schemaOutdated: boolean;
+      schemaCurrentVersion: number | null;
+    }
+  > {
     const definition = (await Promise.resolve(
       this.formDefinitionsService.get(submission.formDefinitionId, tenant),
-    ).catch(() => null)) as
-      | { publishedVersion?: number | null; version?: number }
-      | null;
+    ).catch(() => null)) as {
+      publishedVersion?: number | null;
+      version?: number;
+    } | null;
     const currentVersion = definition?.publishedVersion ?? null;
-    const schemaOutdated = currentVersion !== null && submission.formVersion < currentVersion;
+    const schemaOutdated =
+      currentVersion !== null && submission.formVersion < currentVersion;
     return Object.assign(submission, {
       schemaOutdated,
       schemaCurrentVersion: currentVersion,

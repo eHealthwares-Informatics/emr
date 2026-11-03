@@ -27,7 +27,9 @@ describe('AppointmentsService', () => {
   beforeEach(() => {
     repo = repoMock();
     visitsService = { create: jest.fn() };
-    service = new AppointmentsService(repo as never, visitsService as never);
+    service = new AppointmentsService(repo as never, visitsService as never, {
+      notifyAppointment: jest.fn(),
+    } as never);
   });
 
   describe('list', () => {
