@@ -1,20 +1,17 @@
-import type { MessageTemplateOrmEntity } from '../../notifications/entities/message-template.orm-entity';
-
-export type MessageTemplateSeed = Pick<
-  MessageTemplateOrmEntity,
-  | 'code'
-  | 'name'
-  | 'description'
-  | 'contentType'
-  | 'content'
-  | 'maxCharacters'
-  | 'destinations'
-  | 'channelCodes'
-  | 'heartbeatRetries'
-  | 'heartbeatIntervalSeconds'
-  | 'heartbeatExpirySeconds'
-  | 'status'
->;
+export type MessageTemplateSeed = {
+  code: string;
+  name: string;
+  description?: string;
+  contentType: 'free_text' | 'limited_text';
+  content: string;
+  maxCharacters: number | null;
+  destinations: string[];
+  channelCodes: string[];
+  heartbeatRetries: number;
+  heartbeatIntervalSeconds: number;
+  heartbeatExpirySeconds: number;
+  status: 'draft' | 'active' | 'archived';
+};
 
 export const starterMessageTemplates: MessageTemplateSeed[] = [
   {

@@ -2,9 +2,10 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { FormDefinitionOrmEntity } from '../forms/entities/form-definition.orm-entity';
 import { FormAccessOrmEntity } from '../forms/entities/form-access.orm-entity';
-import { MessageTemplateOrmEntity } from '../notifications/entities/message-template.orm-entity';
 import {
   starterFormAccess,
   starterFormDefinitions,
@@ -19,12 +20,11 @@ export class SeedService implements OnApplicationBootstrap {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly http: HttpService,
     @InjectRepository(FormDefinitionOrmEntity)
     private readonly formRepo: Repository<FormDefinitionOrmEntity>,
     @InjectRepository(FormAccessOrmEntity)
     private readonly accessRepo: Repository<FormAccessOrmEntity>,
-    @InjectRepository(MessageTemplateOrmEntity)
-    private readonly messageTemplateRepo: Repository<MessageTemplateOrmEntity>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -33,7 +33,7 @@ export class SeedService implements OnApplicationBootstrap {
       this.logger.log('Seeding skipped (SEED_ON_START is not true)');
       return;
     }
-    // Starter forms + message templates (idempotent upsert).
+    // Starter forms + message templates (idempotent upsert via conversation API).
     await this.run();
   }
 
@@ -64,8 +64,6 @@ export class SeedService implements OnApplicationBootstrap {
           existing.schemaJson =
             seed.schemaJson as FormDefinitionOrmEntity['schemaJson'];
           existing.isPublished = seed.isPublished ?? existing.isPublished;
-          existing.publishedVersion =
-            seed.publishedVersion ?? existing.publishedVersion;
           existing.isActive = seed.isActive ?? existing.isActive;
           await this.formRepo.save(existing);
           updated += 1;
@@ -103,37 +101,48 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedMessageTemplates(): Promise<void> {
+    const baseUrl = this.config.get<string>(
+      'CONVERSATION_API_URL',
+      'http://localhost:8090/api',
+    );
+    const apiKey = this.config.get<string>('INTEROP_API_KEY', 'emr-interop-key-dev');
+
     let created = 0;
     let updated = 0;
 
     for (const seed of starterMessageTemplates) {
-      const existing = await this.messageTemplateRepo.findOne({
-        where: { code: seed.code },
-        withDeleted: true,
-      });
-
-      if (existing) {
-        existing.name = seed.name;
-        existing.description = seed.description;
-        existing.contentType = seed.contentType;
-        existing.content = seed.content;
-        existing.maxCharacters = seed.maxCharacters;
-        existing.destinations = seed.destinations;
-        existing.channelCodes = seed.channelCodes;
-        existing.heartbeatRetries = seed.heartbeatRetries;
-        existing.heartbeatIntervalSeconds = seed.heartbeatIntervalSeconds;
-        existing.heartbeatExpirySeconds = seed.heartbeatExpirySeconds;
-        existing.status = seed.status;
-        existing.deletedAt = null;
-        await this.messageTemplateRepo.save(existing);
-        updated += 1;
-        continue;
+      try {
+        await firstValueFrom(
+          this.http.post(
+            `${baseUrl}/message-templates`,
+            {
+              code: seed.code,
+              name: seed.name,
+              description: seed.description,
+              contentType: seed.contentType,
+              content: seed.content,
+              maxCharacters: seed.maxCharacters,
+              destinations: seed.destinations,
+              channelCodes: seed.channelCodes,
+              heartbeatRetries: seed.heartbeatRetries,
+              heartbeatIntervalSeconds: seed.heartbeatIntervalSeconds,
+              heartbeatExpirySeconds: seed.heartbeatExpirySeconds,
+              status: seed.status,
+            },
+            { headers: { 'x-api-key': apiKey } },
+          ),
+        );
+        created += 1;
+      } catch (err: any) {
+        // 409/400 duplicate → treat as update (conversation upserts on code)
+        if (err?.response?.status === 409 || err?.response?.status === 400) {
+          updated += 1;
+          continue;
+        }
+        this.logger.warn(
+          `Failed to seed message template ${seed.code}: ${err?.message ?? err}`,
+        );
       }
-
-      await this.messageTemplateRepo.save(
-        this.messageTemplateRepo.create(seed),
-      );
-      created += 1;
     }
 
     this.logger.log(

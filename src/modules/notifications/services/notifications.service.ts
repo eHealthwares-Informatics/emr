@@ -17,10 +17,7 @@ import {
   ListNotificationsQueryDto,
   SubscribeNotificationsDto,
 } from '../dto/notification.dto';
-import {
-  REQUEST_CREATED_TEMPLATE_CODE,
-  TemplateRenderService,
-} from './template-render.service';
+import { NotificationClientService } from './notification-client.service';
 
 const RETRY_SWEEP_INTERVAL_MS = 30_000;
 
@@ -36,7 +33,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     private readonly recipientRepo: Repository<NotificationRecipientOrmEntity>,
     @InjectRepository(NotificationSubscriptionOrmEntity)
     private readonly subscriptionRepo: Repository<NotificationSubscriptionOrmEntity>,
-    private readonly templateRenderService: TemplateRenderService,
+    private readonly templateClient: NotificationClientService,
   ) {}
 
   onModuleInit() {
@@ -74,20 +71,23 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       request.organizationId ?? tenant.organizationId ?? null;
     const locationId = request.locationId ?? tenant.locationId ?? null;
 
-    const template = await this.templateRenderService.resolveActiveTemplate(
-      REQUEST_CREATED_TEMPLATE_CODE,
-      { organizationId },
+    const template = await this.templateClient.findMessageTemplate(
+      'request_created',
+      organizationId,
     );
-    const rendered = this.templateRenderService.render(template, {
-      request_ref: request.requestNumber,
-      patient_name: request.patientName ?? '',
-      created_at: new Date(request.createdAt ?? new Date()).toISOString(),
-    });
+    const renderedBody = this.templateClient.render(
+      template?.content ?? template?.body ?? 'New request {{request_ref}} created',
+      {
+        request_ref: request.requestNumber,
+        patient_name: request.patientName ?? '',
+        created_at: new Date(request.createdAt ?? new Date()).toISOString(),
+      },
+    );
 
     const notification = await this.notificationRepo.save(
       this.notificationRepo.create({
-        title: rendered.title,
-        body: rendered.content,
+        title: template?.name ?? 'New request created',
+        body: renderedBody,
         type: 'info',
         sourceEntityType: 'request',
         sourceEntityId: request.id,
@@ -284,9 +284,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     if (pending.length === 0) return;
 
-    const template = await this.templateRenderService.resolveActiveTemplate(
-      REQUEST_CREATED_TEMPLATE_CODE,
-      { organizationId: null },
+    const template = await this.templateClient.findMessageTemplate(
+      'request_created',
+      null,
     );
     const retries = template?.heartbeatRetries ?? 3;
     const intervalSeconds = template?.heartbeatIntervalSeconds ?? 30;
