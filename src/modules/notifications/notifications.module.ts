@@ -9,6 +9,9 @@ import { NotificationClientService } from './services/notification-client.servic
 import { NotificationsController } from './controllers/notifications.controller';
 import { NotificationSubscriptionsController } from './controllers/notification-subscriptions.controller';
 import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
+import { PatientsModule } from '../patients/patients.module';
+import { NotificationPolicyClient } from './services/notification-policy.client';
+import { ExternalNotificationsService } from './services/external-notifications.service';
 
 @Module({
   imports: [
@@ -19,9 +22,20 @@ import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
       NotificationRecipientOrmEntity,
       NotificationSubscriptionOrmEntity,
     ]),
+    PatientsModule,
   ],
   controllers: [NotificationsController, NotificationSubscriptionsController],
-  providers: [NotificationsService, NotificationClientService],
-  exports: [NotificationsService, NotificationClientService],
+  providers: [
+    NotificationsService,
+    NotificationClientService,
+    NotificationPolicyClient,
+    ExternalNotificationsService,
+  ],
+  exports: [
+    NotificationsService,
+    NotificationClientService,
+    NotificationPolicyClient,
+    ExternalNotificationsService,
+  ],
 })
 export class NotificationsModule {}

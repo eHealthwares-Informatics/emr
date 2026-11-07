@@ -30,6 +30,8 @@ import { BedsModule } from './modules/beds/beds.module';
 import { AdmissionsModule } from './modules/admissions/admissions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SeedsModule } from './modules/seeds/seeds.module';
+import { PrintsModule } from './modules/prints/prints.module';
+import { PatientInsightsModule } from './modules/patient-insights/patient-insights.module';
 
 @Module({
   imports: [
@@ -74,6 +76,7 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     DashboardModule,
     NotificationsModule,
     SeedsModule,
+    PatientInsightsModule,
   ],
   controllers: [HealthController],
   providers: [

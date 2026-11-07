@@ -16,9 +16,14 @@ import {
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
-import { applyFilters, applySort, applyTimestampFilter } from '../../../database/list';
+import {
+  applyFilters,
+  applySort,
+  applyTimestampFilter,
+} from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 import { VisitsService } from '../../visits/services/visits.service';
+import { ExternalNotificationsService } from '../../notifications/services/external-notifications.service';
 
 const SORT_ALLOW_LIST = [
   'appointmentNumber',
@@ -36,6 +41,7 @@ export class AppointmentsService {
     @InjectRepository(AppointmentOrmEntity)
     private readonly repo: Repository<AppointmentOrmEntity>,
     private readonly visitsService: VisitsService,
+    private readonly externalNotifications: ExternalNotificationsService,
   ) {}
 
   async list(
@@ -148,7 +154,9 @@ export class AppointmentsService {
       locationId: dto.locationId ?? tenant.locationId,
       createdById: user.sub,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    void this.externalNotifications.notifyAppointment(saved, 'created');
+    return saved;
   }
 
   async update(id: string, dto: UpdateAppointmentDto, tenant: TenantContext) {
@@ -162,7 +170,9 @@ export class AppointmentsService {
       );
     }
     Object.assign(appointment, dto);
-    return this.repo.save(appointment);
+    const saved = await this.repo.save(appointment);
+    void this.externalNotifications.notifyAppointment(saved, 'updated');
+    return saved;
   }
 
   async checkIn(
@@ -207,6 +217,10 @@ export class AppointmentsService {
     appointment.visitId = visit.id;
     appointment.status = 'IN_PROGRESS';
     await this.repo.save(appointment);
+    void this.externalNotifications.notifyAppointment(
+      appointment,
+      'checked_in',
+    );
 
     return { appointment, visit };
   }
@@ -240,7 +254,16 @@ export class AppointmentsService {
     }
 
     appointment.status = status;
-    return this.repo.save(appointment);
+    const saved = await this.repo.save(appointment);
+    void this.externalNotifications.notifyAppointment(
+      saved,
+      status === 'CANCELLED'
+        ? 'cancelled'
+        : status === 'NO_SHOW'
+          ? 'no_show'
+          : 'completed',
+    );
+    return saved;
   }
 
   async cancel(id: string, dto: CancelAppointmentDto, tenant: TenantContext) {
@@ -250,7 +273,9 @@ export class AppointmentsService {
     }
     appointment.status = 'CANCELLED';
     if (dto.reason) appointment.notes = dto.reason;
-    return this.repo.save(appointment);
+    const saved = await this.repo.save(appointment);
+    void this.externalNotifications.notifyAppointment(saved, 'cancelled');
+    return saved;
   }
 
   async reschedule(
@@ -277,7 +302,9 @@ export class AppointmentsService {
       appointment.endTime = dto.endTime;
     }
 
-    return this.repo.save(appointment);
+    const saved = await this.repo.save(appointment);
+    void this.externalNotifications.notifyAppointment(saved, 'rescheduled');
+    return saved;
   }
 
   async remove(id: string, tenant: TenantContext) {

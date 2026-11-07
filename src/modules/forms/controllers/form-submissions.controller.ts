@@ -14,6 +14,7 @@ import type { Response } from 'express';
 import { FormSubmissionsService } from '../services/form-submissions.service';
 import { FormDefinitionsService } from '../services/form-definitions.service';
 import { PdfService } from '../../pdf/pdf.service';
+import { PrintsService } from '../../prints/prints.service';
 import { submissionPdfHtml } from '../pdf/submission-pdf';
 import {
   CreateFormSubmissionDto,
@@ -31,6 +32,7 @@ export class FormSubmissionsController {
     private readonly service: FormSubmissionsService,
     private readonly formDefinitionsService: FormDefinitionsService,
     private readonly pdfService: PdfService,
+    private readonly prints: PrintsService,
   ) {}
 
   @Get()
@@ -85,13 +87,31 @@ export class FormSubmissionsController {
         )
       : null;
     const html = submissionPdfHtml(submission, form);
-    const buffer = await this.pdfService.renderHtml(html);
+    const cached = await this.prints.getOrGenerate(
+      {
+        organizationId:
+          submission.organizationId ??
+          '00000000-0000-0000-0000-000000000000',
+        resourceType: 'emr_form_submission',
+        resourceId: id,
+        printTemplateId: null,
+        format: 'pdf',
+        fileName: `submission-${submission.submissionNumber}.pdf`,
+      },
+      async () => {
+        const buffer = await this.pdfService.renderHtml(html);
+        return {
+          buffer,
+          fileName: `submission-${submission.submissionNumber}.pdf`,
+        };
+      },
+    );
     res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="submission-${submission.submissionNumber}.pdf"`,
-      'Content-Length': String(buffer.length),
+      'Content-Type': cached.mimeType,
+      'Content-Disposition': `inline; filename="${cached.fileName}"`,
+      'Content-Length': String(cached.buffer.length),
     });
-    res.send(buffer);
+    res.send(cached.buffer);
   }
 
   @Post()
