@@ -1,44 +1,39 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MessageTemplateOrmEntity } from './entities/message-template.orm-entity';
 import { NotificationOrmEntity } from './entities/notification.orm-entity';
 import { NotificationRecipientOrmEntity } from './entities/notification-recipient.orm-entity';
 import { NotificationSubscriptionOrmEntity } from './entities/notification-subscription.orm-entity';
 import { NotificationsService } from './services/notifications.service';
-import { TemplateRenderService } from './services/template-render.service';
-import { MessageTemplatesService } from './services/message-templates.service';
+import { NotificationClientService } from './services/notification-client.service';
 import { NotificationsController } from './controllers/notifications.controller';
 import { NotificationSubscriptionsController } from './controllers/notification-subscriptions.controller';
-import { MessageTemplatesController } from './controllers/message-templates.controller';
+import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
 import { PatientsModule } from '../patients/patients.module';
 import { NotificationPolicyClient } from './services/notification-policy.client';
 import { ExternalNotificationsService } from './services/external-notifications.service';
 
 @Module({
   imports: [
+    HttpModule,
+    IdentityProxyModule,
     TypeOrmModule.forFeature([
-      MessageTemplateOrmEntity,
       NotificationOrmEntity,
       NotificationRecipientOrmEntity,
       NotificationSubscriptionOrmEntity,
     ]),
     PatientsModule,
   ],
-  controllers: [
-    NotificationsController,
-    NotificationSubscriptionsController,
-    MessageTemplatesController,
-  ],
+  controllers: [NotificationsController, NotificationSubscriptionsController],
   providers: [
     NotificationsService,
-    TemplateRenderService,
-    MessageTemplatesService,
+    NotificationClientService,
     NotificationPolicyClient,
     ExternalNotificationsService,
   ],
   exports: [
     NotificationsService,
-    TemplateRenderService,
+    NotificationClientService,
     NotificationPolicyClient,
     ExternalNotificationsService,
   ],

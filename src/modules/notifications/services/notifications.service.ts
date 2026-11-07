@@ -6,6 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NotificationOrmEntity } from '../entities/notification.orm-entity';
 import { NotificationRecipientOrmEntity } from '../entities/notification-recipient.orm-entity';
@@ -17,10 +18,11 @@ import {
   ListNotificationsQueryDto,
   SubscribeNotificationsDto,
 } from '../dto/notification.dto';
+import { NotificationClientService } from './notification-client.service';
 import {
-  REQUEST_CREATED_TEMPLATE_CODE,
-  TemplateRenderService,
-} from './template-render.service';
+  IdentityProxyService,
+  type IdentityUser,
+} from '../../identity-proxy/identity-proxy.service';
 
 const RETRY_SWEEP_INTERVAL_MS = 30_000;
 
@@ -36,7 +38,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     private readonly recipientRepo: Repository<NotificationRecipientOrmEntity>,
     @InjectRepository(NotificationSubscriptionOrmEntity)
     private readonly subscriptionRepo: Repository<NotificationSubscriptionOrmEntity>,
-    private readonly templateRenderService: TemplateRenderService,
+    private readonly templateClient: NotificationClientService,
+    private readonly identityProxy: IdentityProxyService,
+    private readonly config: ConfigService,
   ) {}
 
   onModuleInit() {
@@ -74,20 +78,25 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       request.organizationId ?? tenant.organizationId ?? null;
     const locationId = request.locationId ?? tenant.locationId ?? null;
 
-    const template = await this.templateRenderService.resolveActiveTemplate(
-      REQUEST_CREATED_TEMPLATE_CODE,
-      { organizationId },
+    const template = await this.templateClient.findMessageTemplate(
+      'request_created',
+      organizationId,
     );
-    const rendered = this.templateRenderService.render(template, {
-      request_ref: request.requestNumber,
-      patient_name: request.patientName ?? '',
-      created_at: new Date(request.createdAt ?? new Date()).toISOString(),
-    });
+    const renderedBody = this.templateClient.render(
+      template?.content ??
+        template?.body ??
+        'New request {{request_ref}} created',
+      {
+        request_ref: request.requestNumber,
+        patient_name: request.patientName ?? '',
+        created_at: new Date(request.createdAt ?? new Date()).toISOString(),
+      },
+    );
 
     const notification = await this.notificationRepo.save(
       this.notificationRepo.create({
-        title: rendered.title,
-        body: rendered.content,
+        title: template?.name ?? 'New request created',
+        body: renderedBody,
         type: 'info',
         sourceEntityType: 'request',
         sourceEntityId: request.id,
@@ -114,6 +123,100 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       }),
     );
     await this.recipientRepo.save(recipients);
+
+    await this.dispatchExternal({
+      request,
+      title: notification.title,
+      body: renderedBody,
+      userIds,
+      organizationId,
+      locationId,
+    });
+  }
+
+  /**
+   * External producer leg: sends the rendered notification through the
+   * conversation notification engine for each subscribed user that has a
+   * usable contact address. Configure destinations with
+   * `EMR_NOTIFICATION_CHANNELS` (default: `email`).
+   *
+   * In-app delivery stays authoritative; external failures are swallowed by
+   * `NotificationClientService.dispatch` and never fail request creation.
+   */
+  private async dispatchExternal(params: {
+    request: Pick<
+      RequestOrmEntity,
+      'id' | 'requestNumber' | 'patientName' | 'createdAt'
+    >;
+    title: string;
+    body: string;
+    userIds: string[];
+    organizationId: string | null;
+    locationId: string | null;
+  }): Promise<void> {
+    const channels = this.externalChannels();
+    if (!channels.length || params.userIds.length === 0) return;
+
+    for (const userId of params.userIds) {
+      let user: IdentityUser | null;
+      try {
+        user = await this.identityProxy.getUser(userId);
+      } catch (err) {
+        this.logger.warn(
+          `Notification recipient lookup failed for ${userId}: ${err}`,
+        );
+        continue;
+      }
+      if (!user) continue;
+
+      const recipients = {
+        email: user.email ?? undefined,
+        phone: user.phone ?? undefined,
+      };
+      const usable = channels.filter((channel) =>
+        channel === 'email'
+          ? Boolean(recipients.email)
+          : Boolean(recipients.phone),
+      );
+      if (!usable.length) continue;
+
+      try {
+        await this.templateClient.dispatch({
+          organizationId: params.organizationId,
+          eventKey: 'request_created',
+          channels: usable,
+          recipients,
+          subject: params.title,
+          message: params.body,
+          context: {
+            source: 'emr',
+            request_ref: params.request.requestNumber,
+            patient_name: params.request.patientName ?? '',
+            created_at: new Date(
+              params.request.createdAt ?? new Date(),
+            ).toISOString(),
+            locationId: params.locationId,
+          },
+          relatedEntityType: 'request',
+          relatedEntityId: params.request.id,
+        });
+      } catch (err) {
+        this.logger.warn(
+          `External notification dispatch failed for request ${params.request.id}: ${err}`,
+        );
+      }
+    }
+  }
+
+  private externalChannels(): string[] {
+    const configured = this.config.get<string>(
+      'EMR_NOTIFICATION_CHANNELS',
+      'email',
+    );
+    return String(configured ?? 'email')
+      .split(',')
+      .map((channel) => channel.trim().toLowerCase())
+      .filter((channel) => ['email', 'sms', 'whatsapp'].includes(channel));
   }
 
   async list(
@@ -284,9 +387,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     if (pending.length === 0) return;
 
-    const template = await this.templateRenderService.resolveActiveTemplate(
-      REQUEST_CREATED_TEMPLATE_CODE,
-      { organizationId: null },
+    const template = await this.templateClient.findMessageTemplate(
+      'request_created',
+      null,
     );
     const retries = template?.heartbeatRetries ?? 3;
     const intervalSeconds = template?.heartbeatIntervalSeconds ?? 30;
