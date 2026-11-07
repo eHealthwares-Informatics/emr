@@ -22,9 +22,34 @@ export type ConversationMessageTemplate = {
   updatedAt?: string;
 };
 
+export type NotificationDispatchPayload = {
+  organizationId?: string | null;
+  eventKey?: string | null;
+  channels: string[];
+  recipients: { phone?: string | null; email?: string | null };
+  subject?: string;
+  message?: string;
+  html?: string;
+  context?: Record<string, unknown>;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
+};
+
+export type NotificationDispatchResult = {
+  ok: boolean;
+  sent: number;
+  failed: number;
+  skipped: number;
+  deliveries: string[];
+};
+
 /**
- * HTTP client for the conversation engine's message-template endpoints.
- * emr calls this instead of accessing the message_templates table directly.
+ * HTTP client for the conversation engine: message templates + the producer
+ * notification dispatch endpoint.
+ *
+ * EMR is a producer like HealthStack, LIMS and RxSoft: it renders the message
+ * locally and sends it through `POST /notification-dispatch/payload`, letting
+ * conversation resolve channels and own the delivery ledger.
  */
 @Injectable()
 export class NotificationClientService {
@@ -35,13 +60,19 @@ export class NotificationClientService {
     private readonly config: ConfigService,
   ) {}
 
-  private messageTemplatesUrl(): string {
-    return (
-      this.config.get<string>(
-        'CONVERSATION_API_URL',
-        'http://localhost:8090/api',
-      ) + '/message-templates'
+  private baseUrl(): string {
+    return this.config.get<string>(
+      'CONVERSATION_API_URL',
+      'http://localhost:8090/api',
     );
+  }
+
+  private messageTemplatesUrl(): string {
+    return `${this.baseUrl()}/message-templates`;
+  }
+
+  private dispatchUrl(): string {
+    return `${this.baseUrl()}/notification-dispatch/payload`;
   }
 
   private apiKey(): string {
@@ -79,13 +110,78 @@ export class NotificationClientService {
       const scoped = rows.find((row) => row.organizationId != null);
       return scoped ?? rows[0] ?? null;
     } catch (err) {
-      this.logger.warn(`Conversation message-template lookup failed for ${code}: ${err}`);
+      this.logger.warn(
+        `Conversation message-template lookup failed for ${code}: ${err}`,
+      );
       return null;
     }
   }
 
+  /**
+   * Dispatch a rendered notification through the conversation notification
+   * engine. Never throws — notification failures must not fail the business
+   * operation that triggered them.
+   */
+  async dispatch(
+    payload: NotificationDispatchPayload,
+  ): Promise<NotificationDispatchResult> {
+    const channels = (payload.channels ?? []).filter(Boolean);
+    const empty: NotificationDispatchResult = {
+      ok: false,
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      deliveries: [],
+    };
+    if (!channels.length) return empty;
+
+    const hasRecipient = channels.some((channel) =>
+      channel === 'email'
+        ? Boolean(payload.recipients?.email)
+        : Boolean(payload.recipients?.phone),
+    );
+    if (!hasRecipient) return { ...empty, skipped: 1 };
+
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<{
+          sent?: number;
+          failed?: number;
+          skipped?: number;
+          deliveries?: string[];
+        }>(
+          this.dispatchUrl(),
+          { ...payload, channels },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': this.apiKey(),
+            },
+          },
+        ),
+      );
+
+      const sent = Number(data?.sent ?? 0);
+      return {
+        ok: sent > 0,
+        sent,
+        failed: Number(data?.failed ?? 0),
+        skipped: Number(data?.skipped ?? 0),
+        deliveries: Array.isArray(data?.deliveries) ? data.deliveries : [],
+      };
+    } catch (err) {
+      this.logger.warn(
+        `Conversation notification dispatch failed for ${payload.eventKey ?? 'notification'}: ${err}`,
+      );
+      return { ...empty, failed: 1 };
+    }
+  }
+
   /** Render a template body with token substitution (local copy). */
-  render(body: string | null | undefined, values: Record<string, string>): string {
+  render(
+    body: string | null | undefined,
+    values: Record<string, string>,
+  ): string {
     return String(body ?? '').replace(
       /\{\{\s*([\w.]+)\s*\}\}/g,
       (_match, key: string) => values[key] ?? '',

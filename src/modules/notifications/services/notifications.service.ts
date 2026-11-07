@@ -6,6 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NotificationOrmEntity } from '../entities/notification.orm-entity';
 import { NotificationRecipientOrmEntity } from '../entities/notification-recipient.orm-entity';
@@ -18,6 +19,10 @@ import {
   SubscribeNotificationsDto,
 } from '../dto/notification.dto';
 import { NotificationClientService } from './notification-client.service';
+import {
+  IdentityProxyService,
+  type IdentityUser,
+} from '../../identity-proxy/identity-proxy.service';
 
 const RETRY_SWEEP_INTERVAL_MS = 30_000;
 
@@ -34,6 +39,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(NotificationSubscriptionOrmEntity)
     private readonly subscriptionRepo: Repository<NotificationSubscriptionOrmEntity>,
     private readonly templateClient: NotificationClientService,
+    private readonly identityProxy: IdentityProxyService,
+    private readonly config: ConfigService,
   ) {}
 
   onModuleInit() {
@@ -76,7 +83,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       organizationId,
     );
     const renderedBody = this.templateClient.render(
-      template?.content ?? template?.body ?? 'New request {{request_ref}} created',
+      template?.content ??
+        template?.body ??
+        'New request {{request_ref}} created',
       {
         request_ref: request.requestNumber,
         patient_name: request.patientName ?? '',
@@ -114,6 +123,100 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       }),
     );
     await this.recipientRepo.save(recipients);
+
+    await this.dispatchExternal({
+      request,
+      title: notification.title,
+      body: renderedBody,
+      userIds,
+      organizationId,
+      locationId,
+    });
+  }
+
+  /**
+   * External producer leg: sends the rendered notification through the
+   * conversation notification engine for each subscribed user that has a
+   * usable contact address. Configure destinations with
+   * `EMR_NOTIFICATION_CHANNELS` (default: `email`).
+   *
+   * In-app delivery stays authoritative; external failures are swallowed by
+   * `NotificationClientService.dispatch` and never fail request creation.
+   */
+  private async dispatchExternal(params: {
+    request: Pick<
+      RequestOrmEntity,
+      'id' | 'requestNumber' | 'patientName' | 'createdAt'
+    >;
+    title: string;
+    body: string;
+    userIds: string[];
+    organizationId: string | null;
+    locationId: string | null;
+  }): Promise<void> {
+    const channels = this.externalChannels();
+    if (!channels.length || params.userIds.length === 0) return;
+
+    for (const userId of params.userIds) {
+      let user: IdentityUser | null;
+      try {
+        user = await this.identityProxy.getUser(userId);
+      } catch (err) {
+        this.logger.warn(
+          `Notification recipient lookup failed for ${userId}: ${err}`,
+        );
+        continue;
+      }
+      if (!user) continue;
+
+      const recipients = {
+        email: user.email ?? undefined,
+        phone: user.phone ?? undefined,
+      };
+      const usable = channels.filter((channel) =>
+        channel === 'email'
+          ? Boolean(recipients.email)
+          : Boolean(recipients.phone),
+      );
+      if (!usable.length) continue;
+
+      try {
+        await this.templateClient.dispatch({
+          organizationId: params.organizationId,
+          eventKey: 'request_created',
+          channels: usable,
+          recipients,
+          subject: params.title,
+          message: params.body,
+          context: {
+            source: 'emr',
+            request_ref: params.request.requestNumber,
+            patient_name: params.request.patientName ?? '',
+            created_at: new Date(
+              params.request.createdAt ?? new Date(),
+            ).toISOString(),
+            locationId: params.locationId,
+          },
+          relatedEntityType: 'request',
+          relatedEntityId: params.request.id,
+        });
+      } catch (err) {
+        this.logger.warn(
+          `External notification dispatch failed for request ${params.request.id}: ${err}`,
+        );
+      }
+    }
+  }
+
+  private externalChannels(): string[] {
+    const configured = this.config.get<string>(
+      'EMR_NOTIFICATION_CHANNELS',
+      'email',
+    );
+    return String(configured ?? 'email')
+      .split(',')
+      .map((channel) => channel.trim().toLowerCase())
+      .filter((channel) => ['email', 'sms', 'whatsapp'].includes(channel));
   }
 
   async list(

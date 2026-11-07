@@ -12,9 +12,12 @@ describe('NotificationsService', () => {
   let recipientRepo: ReturnType<typeof repoMock>;
   let subscriptionRepo: ReturnType<typeof repoMock>;
   let templateRender: {
-    resolveActiveTemplate: jest.Mock;
+    findMessageTemplate: jest.Mock;
     render: jest.Mock;
+    dispatch: jest.Mock;
   };
+  let identityProxy: { getUser: jest.Mock };
+  let config: { get: jest.Mock };
 
   const notification = {
     id: 'notif-1',
@@ -44,15 +47,114 @@ describe('NotificationsService', () => {
     recipientRepo = repoMock();
     subscriptionRepo = repoMock();
     templateRender = {
-      resolveActiveTemplate: jest.fn(),
-      render: jest.fn(),
+      findMessageTemplate: jest.fn().mockResolvedValue(null),
+      render: jest.fn((body: string) => body),
+      dispatch: jest
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          sent: 1,
+          failed: 0,
+          skipped: 0,
+          deliveries: ['d1'],
+        }),
+    };
+    identityProxy = {
+      getUser: jest.fn().mockResolvedValue({
+        id: 'user-1',
+        email: 'staff@example.com',
+        phone: null,
+      }),
+    };
+    config = {
+      get: jest.fn((key: string, defaultValue?: string) =>
+        key === 'EMR_NOTIFICATION_CHANNELS' ? defaultValue : defaultValue,
+      ),
     };
     service = new NotificationsService(
       notificationRepo as never,
       recipientRepo as never,
       subscriptionRepo as never,
       templateRender as never,
+      identityProxy as never,
+      config as never,
     );
+  });
+
+  describe('notifyRequestCreated', () => {
+    const request = {
+      id: 'req-1',
+      requestNumber: 'REQ-1',
+      patientName: 'Ada',
+      organizationId: 'org-1',
+      locationId: 'loc-1',
+      createdAt: new Date('2026-10-06T08:00:00.000Z'),
+    };
+
+    beforeEach(() => {
+      templateRender.findMessageTemplate.mockResolvedValue({
+        name: 'New request created',
+        content: 'New request {{request_ref}} created',
+      });
+      templateRender.render.mockReturnValue('New request REQ-1 created');
+      subscriptionRepo.qbState.raw = [{ userId: 'user-1' }];
+    });
+
+    it('dispatches the rendered notification through notification-dispatch', async () => {
+      await service.notifyRequestCreated(request as never, tenant);
+
+      expect(templateRender.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'org-1',
+          eventKey: 'request_created',
+          channels: ['email'],
+          recipients: { email: 'staff@example.com', phone: undefined },
+          subject: 'New request created',
+          message: 'New request REQ-1 created',
+          relatedEntityType: 'request',
+          relatedEntityId: 'req-1',
+        }),
+      );
+    });
+
+    it('skips external dispatch when the user has no contact address', async () => {
+      identityProxy.getUser.mockResolvedValue({
+        id: 'user-1',
+        email: null,
+        phone: null,
+      });
+
+      await service.notifyRequestCreated(request as never, tenant);
+
+      expect(templateRender.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('honours EMR_NOTIFICATION_CHANNELS for sms-only dispatch', async () => {
+      config.get.mockReturnValue('sms');
+      identityProxy.getUser.mockResolvedValue({
+        id: 'user-1',
+        email: 'staff@example.com',
+        phone: '+2348000000001',
+      });
+
+      await service.notifyRequestCreated(request as never, tenant);
+
+      expect(templateRender.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channels: ['sms'],
+          recipients: { email: 'staff@example.com', phone: '+2348000000001' },
+        }),
+      );
+    });
+
+    it('still creates the in-app notification when dispatch fails', async () => {
+      templateRender.dispatch.mockRejectedValue(new Error('conversation down'));
+
+      await expect(
+        service.notifyRequestCreated(request as never, tenant),
+      ).resolves.toBeUndefined();
+      expect(notificationRepo.save).toHaveBeenCalled();
+    });
   });
 
   describe('list', () => {
@@ -119,11 +221,7 @@ describe('NotificationsService', () => {
       recipientRepo.qbState.list = [];
       recipientRepo.qbState.total = 0;
 
-      await service.list(
-        listQuery({ since: 'not-a-date' }),
-        tenant,
-        user,
-      );
+      await service.list(listQuery({ since: 'not-a-date' }), tenant, user);
 
       const qb = recipientRepo.createQueryBuilder.mock.results[0].value;
       const sinceCalls = qb.andWhere.mock.calls.filter((c: unknown[]) =>
