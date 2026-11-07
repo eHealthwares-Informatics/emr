@@ -9,32 +9,45 @@ import {
   isChannelEnabled,
   isEventChannelEnabled,
   NotificationPolicyClient,
-  resolveFallbackChannel,
   type NotificationPolicyChannel,
   type NotificationPolicyEvent,
 } from './notification-policy.client';
 
-type DeliveryInput = {
-  event: NotificationPolicyEvent;
-  organizationId: string;
-  locationId?: string | null;
+export type NotificationRecipient = {
   phone?: string | null;
   email?: string | null;
-  title: string;
-  body: string;
-  relatedEntityType: string;
-  relatedEntityId: string;
-  contextId: string;
+};
+
+export type NotificationEventDispatch = {
+  /** Notification event key resolved by the conversation engine. */
+  eventCode: NotificationPolicyEvent;
+  organizationId: string;
+  locationId?: string | null;
+  /** Where to deliver. Empty values are ignored. */
+  recipient: NotificationRecipient;
+  /** Template variables rendered by the conversation engine. */
   context?: Record<string, unknown>;
+  /** Hosted PDF/document URL. When present conversation uses the media path. */
+  pdfUrl?: string | null;
+  pdfFileName?: string | null;
+  pdfMimeType?: string | null;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
+  /** Stable id forwarded to conversation for exchange dedupe. */
+  contextId?: string | null;
 };
 
 /**
  * Patient-facing appointment/document notifications.
  *
- * Delivery is opt-in: when the organisation has never saved a notification
- * policy the service stays silent, so turning this on cannot surprise existing
- * facilities. Each send honours the global channel switch, the event switch,
- * the per-event channel selection, and the channel's one-hop fallback.
+ * Callers only supply the event code, recipient, context (template variables)
+ * and an optional document URL. The conversation notification engine owns the
+ * template, channel selection and delivery ledger — this service never builds
+ * message copy.
+ *
+ * Delivery stays opt-in: when the organisation has never saved a notification
+ * policy, or the event is disabled on every channel that has a recipient, the
+ * notification is skipped.
  */
 @Injectable()
 export class ExternalNotificationsService {
@@ -66,50 +79,41 @@ export class ExternalNotificationsService {
     });
     const patientName = patient
       ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() ||
+        appointment.patientName ||
         'Patient'
       : appointment.patientName || 'Patient';
 
-    const when = [appointment.date, appointment.startTime]
-      .filter(Boolean)
-      .join(' ');
-    const state =
-      change === 'created'
-        ? `is scheduled for ${when}`
-        : change === 'rescheduled'
-          ? `has been moved to ${when}`
-          : change === 'checked_in'
-            ? 'has been checked in'
-            : change === 'cancelled'
-              ? 'has been cancelled'
-              : change === 'no_show'
-                ? 'was marked as a no-show'
-                : change === 'completed'
-                  ? 'is complete'
-                  : 'has been updated';
-
-    await this.deliver({
-      event: 'appointment',
+    await this.dispatch({
+      eventCode: 'appointment',
       organizationId: appointment.organizationId,
       locationId: appointment.locationId ?? null,
-      phone: patient?.phone ?? null,
-      email: patient?.email ?? null,
-      title: `Appointment ${appointment.appointmentNumber}`,
-      body: `Hello ${patientName}, your appointment ${appointment.appointmentNumber} ${state}.`,
+      recipient: {
+        phone: patient?.phone ?? null,
+        email: patient?.email ?? null,
+      },
+      context: {
+        patient_name: patientName,
+        change,
+        appointment_number: appointment.appointmentNumber,
+        appointment_date: appointment.date,
+        appointment_time: appointment.startTime,
+        appointment_end_time: appointment.endTime,
+        appointment_type: appointment.appointmentType,
+        appointment_status: appointment.status,
+        provider_name: appointment.providerName,
+        reason: appointment.reason,
+        location: appointment.scheduleLocation,
+      },
       relatedEntityType: 'Appointment',
       relatedEntityId: appointment.id,
       contextId: `appointment:${appointment.id}:${change}`,
-      context: {
-        appointmentNumber: appointment.appointmentNumber,
-        appointmentDate: appointment.date,
-        appointmentTime: appointment.startTime,
-        status: appointment.status,
-      },
     });
   }
 
   async notifyDocumentCreated(
     submission: FormSubmissionOrmEntity,
     tenant: TenantContext,
+    pdfUrl?: string | null,
   ): Promise<void> {
     if (submission.status === 'DRAFT') return;
 
@@ -122,22 +126,103 @@ export class ExternalNotificationsService {
         'Patient'
       : 'Patient';
 
-    await this.deliver({
-      event: 'document_creation',
+    await this.dispatch({
+      eventCode: 'document_creation',
       organizationId,
       locationId: submission.locationId ?? tenant.locationId,
-      phone: patient?.phone ?? null,
-      email: patient?.email ?? null,
-      title: 'New clinical document',
-      body: `Hello ${patientName}, a new clinical document (${submission.formName}, ${submission.submissionNumber}) has been added to your record.`,
+      recipient: {
+        phone: patient?.phone ?? null,
+        email: patient?.email ?? null,
+      },
+      context: {
+        patient_name: patientName,
+        document_name: submission.formName,
+        form_name: submission.formName,
+        submission_number: submission.submissionNumber,
+        submission_status: submission.status,
+        submitted_by: submission.submittedByName,
+        submitted_at: submission.submittedAt,
+      },
+      pdfUrl,
+      pdfFileName: pdfUrl ? `${submission.formName}.pdf` : null,
       relatedEntityType: 'FormSubmission',
       relatedEntityId: submission.id,
       contextId: `document:${submission.id}`,
-      context: {
-        formName: submission.formName,
-        submissionNumber: submission.submissionNumber,
-      },
     });
+  }
+
+  /**
+   * Sends one notification event to the conversation engine. Conversation
+   * resolves the event template and channels, renders the context and records
+   * each delivery.
+   */
+  async dispatch(input: NotificationEventDispatch): Promise<void> {
+    if (!input.organizationId) return;
+    if (!input.recipient.phone && !input.recipient.email) return;
+
+    const policy = await this.policyClient.get(input.organizationId);
+    // Never send until an admin has saved a policy for the organisation.
+    if (!policy) return;
+
+    const channels: NotificationPolicyChannel[] = ['whatsapp', 'sms', 'email'];
+    const allowed = channels.some((channel) => {
+      const recipient =
+        channel === 'email' ? input.recipient.email : input.recipient.phone;
+      return (
+        Boolean(recipient) &&
+        isChannelEnabled(policy, channel) &&
+        isEventChannelEnabled(policy, input.eventCode, channel)
+      );
+    });
+    if (!allowed) return;
+
+    try {
+      const baseUrl = this.config.get<string>(
+        'CONVERSATION_API_URL',
+        'http://localhost:8090/api',
+      );
+      const apiKey = this.config.get<string>('INTEROP_API_KEY', '');
+      await axios.post(
+        `${baseUrl.replace(/\/+$/, '')}/notification-dispatch/event`,
+        {
+          organizationId: input.organizationId,
+          eventKey: input.eventCode,
+          recipients: {
+            phone: input.recipient.phone ?? undefined,
+            email: input.recipient.email ?? undefined,
+          },
+          context: {
+            source: 'emr-notification',
+            eventType: input.eventCode,
+            locationId: input.locationId ?? null,
+            relatedEntityType: input.relatedEntityType ?? null,
+            relatedEntityId: input.relatedEntityId ?? null,
+            contextId: input.contextId ?? null,
+            ...input.context,
+          },
+          ...(input.pdfUrl
+            ? {
+                pdfUrl: input.pdfUrl,
+                pdfFileName: input.pdfFileName ?? undefined,
+                pdfMimeType: input.pdfMimeType ?? 'application/pdf',
+              }
+            : {}),
+          relatedEntityType: input.relatedEntityType ?? null,
+          relatedEntityId: input.relatedEntityId ?? null,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+          },
+          timeout: 10_000,
+        },
+      );
+    } catch (error: unknown) {
+      this.logger.warn(
+        `EMR ${input.eventCode} notification failed for ${input.relatedEntityType ?? 'entity'}/${input.relatedEntityId ?? 'unknown'}: ${(error as Error)?.message ?? error}`,
+      );
+    }
   }
 
   private async resolvePatient(patientId: string, tenant: TenantContext) {
@@ -149,84 +234,6 @@ export class ExternalNotificationsService {
         `Patient lookup failed for ${patientId}: ${(error as Error)?.message ?? error}`,
       );
       return null;
-    }
-  }
-
-  private async deliver(input: DeliveryInput): Promise<void> {
-    const policy = await this.policyClient.get(input.organizationId);
-    // Never send until an admin has saved a policy for the organisation.
-    if (!policy) return;
-
-    const channels: NotificationPolicyChannel[] = ['whatsapp', 'sms', 'email'];
-    for (const channel of channels) {
-      if (!isChannelEnabled(policy, channel)) continue;
-      if (!isEventChannelEnabled(policy, input.event, channel)) continue;
-
-      const recipient = channel === 'email' ? input.email : input.phone;
-      if (!recipient) continue;
-
-      const ok = await this.send(channel, recipient, input);
-      if (ok) continue;
-
-      const fallback = resolveFallbackChannel(policy, channel);
-      if (!fallback) continue;
-      if (!isChannelEnabled(policy, fallback)) continue;
-      if (!isEventChannelEnabled(policy, input.event, fallback)) continue;
-
-      const fallbackRecipient =
-        fallback === 'email' ? input.email : input.phone;
-      if (!fallbackRecipient) continue;
-
-      await this.send(fallback, fallbackRecipient, input);
-    }
-  }
-
-  private async send(
-    channel: NotificationPolicyChannel,
-    recipient: string,
-    input: DeliveryInput,
-  ): Promise<boolean> {
-    try {
-      const baseUrl = this.config.get<string>(
-        'CONVERSATION_API_URL',
-        'http://localhost:8090/api',
-      );
-      const apiKey = this.config.get<string>('INTEROP_API_KEY', '');
-      await axios.post(
-        `${baseUrl.replace(/\/+$/, '')}/notification-dispatch/payload`,
-        {
-          organizationId: input.organizationId,
-          eventKey: input.event,
-          channels: [channel],
-          recipients:
-            channel === 'email' ? { email: recipient } : { phone: recipient },
-          subject: input.title,
-          message: input.body,
-          context: {
-            source: 'emr-notification',
-            eventType: input.event,
-            relatedEntityType: input.relatedEntityType,
-            relatedEntityId: input.relatedEntityId,
-            contextId: input.contextId,
-            ...input.context,
-          },
-          relatedEntityType: input.relatedEntityType,
-          relatedEntityId: input.relatedEntityId,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {}),
-          },
-          timeout: 10_000,
-        },
-      );
-      return true;
-    } catch (error: unknown) {
-      this.logger.warn(
-        `EMR ${channel} notification failed for ${input.relatedEntityType}/${input.relatedEntityId}: ${(error as Error)?.message ?? error}`,
-      );
-      return false;
     }
   }
 }
