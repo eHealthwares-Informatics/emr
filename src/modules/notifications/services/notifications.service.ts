@@ -154,8 +154,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     organizationId: string | null;
     locationId: string | null;
   }): Promise<void> {
-    const channels = this.externalChannels();
-    if (!channels.length || params.userIds.length === 0) return;
+    if (params.userIds.length === 0) return;
 
     for (const userId of params.userIds) {
       let user: IdentityUser | null;
@@ -173,32 +172,26 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         email: user.email ?? undefined,
         phone: user.phone ?? undefined,
       };
-      const usable = channels.filter((channel) =>
-        channel === 'email'
-          ? Boolean(recipients.email)
-          : Boolean(recipients.phone),
-      );
-      if (!usable.length) continue;
+      if (!recipients.email && !recipients.phone) continue;
 
       try {
+        // Conversation resolves the notification template, channels and
+        // delivery ledger. EMR sends only the event and context.
         await this.templateClient.dispatch({
           organizationId: params.organizationId,
           eventKey: 'request_created',
-          channels: usable,
-          recipients,
-          subject: params.title,
-          message: params.body,
           context: {
             source: 'emr',
-            request_ref: params.request.requestNumber,
+            recipients,
             patient_name: params.request.patientName ?? '',
+            request_ref: params.request.requestNumber,
             created_at: new Date(
               params.request.createdAt ?? new Date(),
             ).toISOString(),
             locationId: params.locationId,
+            relatedEntityType: 'request',
+            relatedEntityId: params.request.id,
           },
-          relatedEntityType: 'request',
-          relatedEntityId: params.request.id,
         });
       } catch (err) {
         this.logger.warn(
@@ -206,17 +199,6 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         );
       }
     }
-  }
-
-  private externalChannels(): string[] {
-    const configured = this.config.get<string>(
-      'EMR_NOTIFICATION_CHANNELS',
-      'email',
-    );
-    return String(configured ?? 'email')
-      .split(',')
-      .map((channel) => channel.trim().toLowerCase())
-      .filter((channel) => ['email', 'sms', 'whatsapp'].includes(channel));
   }
 
   async list(

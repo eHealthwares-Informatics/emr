@@ -49,15 +49,13 @@ describe('NotificationsService', () => {
     templateRender = {
       findMessageTemplate: jest.fn().mockResolvedValue(null),
       render: jest.fn((body: string) => body),
-      dispatch: jest
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          sent: 1,
-          failed: 0,
-          skipped: 0,
-          deliveries: ['d1'],
-        }),
+      dispatch: jest.fn().mockResolvedValue({
+        ok: true,
+        sent: 1,
+        failed: 0,
+        skipped: 0,
+        deliveries: ['d1'],
+      }),
     };
     identityProxy = {
       getUser: jest.fn().mockResolvedValue({
@@ -100,19 +98,20 @@ describe('NotificationsService', () => {
       subscriptionRepo.qbState.raw = [{ userId: 'user-1' }];
     });
 
-    it('dispatches the rendered notification through notification-dispatch', async () => {
+    it('dispatches one event + context through notification-dispatch', async () => {
       await service.notifyRequestCreated(request as never, tenant);
 
       expect(templateRender.dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           organizationId: 'org-1',
           eventKey: 'request_created',
-          channels: ['email'],
-          recipients: { email: 'staff@example.com', phone: undefined },
-          subject: 'New request created',
-          message: 'New request REQ-1 created',
-          relatedEntityType: 'request',
-          relatedEntityId: 'req-1',
+          context: expect.objectContaining({
+            recipients: { email: 'staff@example.com', phone: undefined },
+            patient_name: 'Ada',
+            request_ref: 'REQ-1',
+            relatedEntityType: 'request',
+            relatedEntityId: 'req-1',
+          }),
         }),
       );
     });
@@ -129,7 +128,7 @@ describe('NotificationsService', () => {
       expect(templateRender.dispatch).not.toHaveBeenCalled();
     });
 
-    it('honours EMR_NOTIFICATION_CHANNELS for sms-only dispatch', async () => {
+    it('does not select channels in the sender app', async () => {
       config.get.mockReturnValue('sms');
       identityProxy.getUser.mockResolvedValue({
         id: 'user-1',
@@ -139,12 +138,12 @@ describe('NotificationsService', () => {
 
       await service.notifyRequestCreated(request as never, tenant);
 
-      expect(templateRender.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channels: ['sms'],
-          recipients: { email: 'staff@example.com', phone: '+2348000000001' },
-        }),
-      );
+      const payload = templateRender.dispatch.mock.calls[0][0];
+      expect(payload.channels).toBeUndefined();
+      expect(payload.context.recipients).toEqual({
+        email: 'staff@example.com',
+        phone: '+2348000000001',
+      });
     });
 
     it('still creates the in-app notification when dispatch fails', async () => {

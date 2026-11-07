@@ -22,17 +22,15 @@ export type ConversationMessageTemplate = {
   updatedAt?: string;
 };
 
-export type NotificationDispatchPayload = {
+export type NotificationEventDispatch = {
   organizationId?: string | null;
-  eventKey?: string | null;
-  channels: string[];
-  recipients: { phone?: string | null; email?: string | null };
-  subject?: string;
-  message?: string;
-  html?: string;
+  /** Notification event key/name/code/id. */
+  eventKey: string;
+  /**
+   * Template variables, recipients and related ids. EMR renders nothing and
+   * selects no channel; conversation owns templates, channels and delivery.
+   */
   context?: Record<string, unknown>;
-  relatedEntityType?: string | null;
-  relatedEntityId?: string | null;
 };
 
 export type NotificationDispatchResult = {
@@ -45,11 +43,11 @@ export type NotificationDispatchResult = {
 
 /**
  * HTTP client for the conversation engine: message templates + the producer
- * notification dispatch endpoint.
+ * notification event endpoint.
  *
- * EMR is a producer like HealthStack, LIMS and RxSoft: it renders the message
- * locally and sends it through `POST /notification-dispatch/payload`, letting
- * conversation resolve channels and own the delivery ledger.
+ * EMR is a producer like HealthStack, LIMS and RxSoft: it sends an event key
+ * plus context. Conversation resolves the notification template, channels,
+ * recipients and delivery ledger.
  */
 @Injectable()
 export class NotificationClientService {
@@ -72,7 +70,7 @@ export class NotificationClientService {
   }
 
   private dispatchUrl(): string {
-    return `${this.baseUrl()}/notification-dispatch/payload`;
+    return `${this.baseUrl()}/notification-dispatch/event`;
   }
 
   private apiKey(): string {
@@ -106,7 +104,6 @@ export class NotificationClientService {
       const rows = (data?.data ?? []).filter(
         (row) => row.code === code && (row.status ?? 'active') === 'active',
       );
-      // Org-scoped row wins over global (organizationId null).
       const scoped = rows.find((row) => row.organizationId != null);
       return scoped ?? rows[0] ?? null;
     } catch (err) {
@@ -118,29 +115,20 @@ export class NotificationClientService {
   }
 
   /**
-   * Dispatch a rendered notification through the conversation notification
-   * engine. Never throws — notification failures must not fail the business
-   * operation that triggered them.
+   * Dispatch a notification event. Never throws — notification failures must
+   * not fail the business operation that triggered them.
    */
   async dispatch(
-    payload: NotificationDispatchPayload,
+    payload: NotificationEventDispatch,
   ): Promise<NotificationDispatchResult> {
-    const channels = (payload.channels ?? []).filter(Boolean);
     const empty: NotificationDispatchResult = {
       ok: false,
       sent: 0,
       failed: 0,
-      skipped: 0,
+      skipped: 1,
       deliveries: [],
     };
-    if (!channels.length) return empty;
-
-    const hasRecipient = channels.some((channel) =>
-      channel === 'email'
-        ? Boolean(payload.recipients?.email)
-        : Boolean(payload.recipients?.phone),
-    );
-    if (!hasRecipient) return { ...empty, skipped: 1 };
+    if (!payload.eventKey) return empty;
 
     try {
       const { data } = await firstValueFrom(
@@ -151,7 +139,11 @@ export class NotificationClientService {
           deliveries?: string[];
         }>(
           this.dispatchUrl(),
-          { ...payload, channels },
+          {
+            organizationId: payload.organizationId ?? null,
+            eventKey: payload.eventKey,
+            context: payload.context ?? {},
+          },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -171,9 +163,9 @@ export class NotificationClientService {
       };
     } catch (err) {
       this.logger.warn(
-        `Conversation notification dispatch failed for ${payload.eventKey ?? 'notification'}: ${err}`,
+        `Conversation notification dispatch failed for ${payload.eventKey}: ${err}`,
       );
-      return { ...empty, failed: 1 };
+      return { ...empty, failed: 1, skipped: 0 };
     }
   }
 
