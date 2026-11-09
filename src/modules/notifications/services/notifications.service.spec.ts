@@ -12,8 +12,6 @@ describe('NotificationsService', () => {
   let recipientRepo: ReturnType<typeof repoMock>;
   let subscriptionRepo: ReturnType<typeof repoMock>;
   let templateRender: {
-    findMessageTemplate: jest.Mock;
-    render: jest.Mock;
     dispatch: jest.Mock;
   };
   let identityProxy: { getUser: jest.Mock };
@@ -47,8 +45,6 @@ describe('NotificationsService', () => {
     recipientRepo = repoMock();
     subscriptionRepo = repoMock();
     templateRender = {
-      findMessageTemplate: jest.fn().mockResolvedValue(null),
-      render: jest.fn((body: string) => body),
       dispatch: jest.fn().mockResolvedValue({
         ok: true,
         sent: 1,
@@ -90,11 +86,6 @@ describe('NotificationsService', () => {
     };
 
     beforeEach(() => {
-      templateRender.findMessageTemplate.mockResolvedValue({
-        name: 'New request created',
-        content: 'New request {{request_ref}} created',
-      });
-      templateRender.render.mockReturnValue('New request REQ-1 created');
       subscriptionRepo.qbState.raw = [{ userId: 'user-1' }];
     });
 

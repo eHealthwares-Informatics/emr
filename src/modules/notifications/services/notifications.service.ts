@@ -78,24 +78,13 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       request.organizationId ?? tenant.organizationId ?? null;
     const locationId = request.locationId ?? tenant.locationId ?? null;
 
-    const template = await this.templateClient.findMessageTemplate(
-      'request_created',
-      organizationId,
-    );
-    const renderedBody = this.templateClient.render(
-      template?.content ??
-        template?.body ??
-        'New request {{request_ref}} created',
-      {
-        request_ref: request.requestNumber,
-        patient_name: request.patientName ?? '',
-        created_at: new Date(request.createdAt ?? new Date()).toISOString(),
-      },
-    );
+    // Conversation owns notification templates. The in-app copy is rendered
+    // locally from a fixed default so EMR never fetches a template.
+    const renderedBody = `New request ${request.requestNumber} created`;
 
     const notification = await this.notificationRepo.save(
       this.notificationRepo.create({
-        title: template?.name ?? 'New request created',
+        title: 'New request created',
         body: renderedBody,
         type: 'info',
         sourceEntityType: 'request',
@@ -369,13 +358,10 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     if (pending.length === 0) return;
 
-    const template = await this.templateClient.findMessageTemplate(
-      'request_created',
-      null,
-    );
-    const retries = template?.heartbeatRetries ?? 3;
-    const intervalSeconds = template?.heartbeatIntervalSeconds ?? 30;
-    const expirySeconds = template?.heartbeatExpirySeconds ?? 86400;
+    // Fixed heartbeat policy — conversation owns template configuration.
+    const retries = 3;
+    const intervalSeconds = 30;
+    const expirySeconds = 86400;
 
     for (const recipient of pending) {
       const createdAt =

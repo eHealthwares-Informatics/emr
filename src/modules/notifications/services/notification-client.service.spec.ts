@@ -26,7 +26,7 @@ describe('NotificationClientService dispatch', () => {
     service = new NotificationClientService(http as never, config as never);
   });
 
-  it('posts one event + context to /notification-dispatch/event', async () => {
+  it('posts one event + context to /notification-dispatch/send', async () => {
     const context = {
       recipients: { email: 'staff@example.com' },
       request_ref: 'REQ-1',
@@ -39,10 +39,11 @@ describe('NotificationClientService dispatch', () => {
 
     expect(result).toMatchObject({ ok: true, sent: 1, deliveries: ['d1'] });
     expect(http.post).toHaveBeenCalledWith(
-      'http://conversation.test/api/notification-dispatch/event',
+      'http://conversation.test/api/notification-dispatch/send',
       {
         organizationId: 'org-1',
         eventKey: 'request_created',
+        recipients: { phone: null, email: 'staff@example.com' },
         context,
       },
       expect.objectContaining({
