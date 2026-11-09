@@ -4,13 +4,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationOrmEntity } from './entities/notification.orm-entity';
 import { NotificationRecipientOrmEntity } from './entities/notification-recipient.orm-entity';
 import { NotificationSubscriptionOrmEntity } from './entities/notification-subscription.orm-entity';
+import { NotificationDispatchOrmEntity } from './entities/notification-dispatch.orm-entity';
 import { NotificationsService } from './services/notifications.service';
 import { NotificationClientService } from './services/notification-client.service';
+import { NotificationDispatchService } from './services/notification-dispatch.service';
 import { NotificationsController } from './controllers/notifications.controller';
+import { NotificationDispatchesController } from './controllers/notification-dispatches.controller';
 import { NotificationSubscriptionsController } from './controllers/notification-subscriptions.controller';
 import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
 import { PatientsModule } from '../patients/patients.module';
-import { NotificationPolicyClient } from './services/notification-policy.client';
 import { ExternalNotificationsService } from './services/external-notifications.service';
 
 @Module({
@@ -21,20 +23,25 @@ import { ExternalNotificationsService } from './services/external-notifications.
       NotificationOrmEntity,
       NotificationRecipientOrmEntity,
       NotificationSubscriptionOrmEntity,
+      NotificationDispatchOrmEntity,
     ]),
     PatientsModule,
   ],
-  controllers: [NotificationsController, NotificationSubscriptionsController],
+  controllers: [
+    NotificationsController,
+    NotificationDispatchesController,
+    NotificationSubscriptionsController,
+  ],
   providers: [
     NotificationsService,
     NotificationClientService,
-    NotificationPolicyClient,
+    NotificationDispatchService,
     ExternalNotificationsService,
   ],
   exports: [
     NotificationsService,
     NotificationClientService,
-    NotificationPolicyClient,
+    NotificationDispatchService,
     ExternalNotificationsService,
   ],
 })

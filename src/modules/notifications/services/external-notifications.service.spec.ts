@@ -1,26 +1,8 @@
-import axios from 'axios';
 import { ExternalNotificationsService } from './external-notifications.service';
-import { normalizeNotificationPolicy } from './notification-policy.client';
-
-type DispatchBody = {
-  organizationId: string;
-  eventKey: string;
-  recipients: Record<string, string>;
-  context: Record<string, unknown>;
-  relatedEntityType?: string;
-  relatedEntityId?: string;
-  subject?: string;
-  message?: string;
-  pdfUrl?: string;
-};
-
-type PostOptions = { headers: Record<string, string> };
 
 describe('ExternalNotificationsService', () => {
-  let config: { get: jest.Mock };
-  let policyClient: { get: jest.Mock };
   let patients: { getByPatientId: jest.Mock };
-  let post: jest.SpyInstance;
+  let client: { dispatch: jest.Mock };
   let service: ExternalNotificationsService;
 
   const tenant = {
@@ -59,17 +41,6 @@ describe('ExternalNotificationsService', () => {
   };
 
   beforeEach(() => {
-    config = {
-      get: jest.fn((key: string, defaultValue?: string) => {
-        if (key === 'CONVERSATION_API_URL')
-          return 'http://conversation.test/api';
-        if (key === 'INTEROP_API_KEY') return 'emr-key';
-        return defaultValue;
-      }),
-    };
-    policyClient = {
-      get: jest.fn().mockResolvedValue(normalizeNotificationPolicy(null)),
-    };
     patients = {
       getByPatientId: jest.fn().mockResolvedValue({
         firstName: 'Ada',
@@ -78,41 +49,27 @@ describe('ExternalNotificationsService', () => {
         email: 'ada@example.com',
       }),
     };
-    post = jest
-      .spyOn(axios, 'post')
-      .mockResolvedValue({ data: { sent: 1, deliveries: ['d1'] } });
-    service = new ExternalNotificationsService(
-      config as never,
-      policyClient as never,
-      patients as never,
-    );
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
+    client = {
+      dispatch: jest
+        .fn()
+        .mockResolvedValue({ ok: true, sent: 1, failed: 0, skipped: 0, deliveries: ['d1'] }),
+    };
+    service = new ExternalNotificationsService(patients as never, client as never);
   });
 
   it('dispatches an appointment event with recipient + context only', async () => {
     await service.notifyAppointment(appointment as never, 'rescheduled');
 
-    expect(post).toHaveBeenCalledTimes(1);
-    const [url, body, options] = post.mock.calls[0] as [
-      string,
-      DispatchBody,
-      PostOptions,
-    ];
-    expect(url).toBe(
-      'http://conversation.test/api/notification-dispatch/event',
-    );
-    expect(options.headers).toMatchObject({ 'x-api-key': 'emr-key' });
-    expect(body).toMatchObject({
+    expect(client.dispatch).toHaveBeenCalledTimes(1);
+    const payload = client.dispatch.mock.calls[0][0];
+    expect(payload).toMatchObject({
       organizationId: 'org-1',
       eventKey: 'appointment',
       recipients: { phone: '+2348000000001', email: 'ada@example.com' },
       relatedEntityType: 'Appointment',
       relatedEntityId: 'appt-1',
     });
-    expect(body.context).toMatchObject({
+    expect(payload.context).toMatchObject({
       patient_name: 'Ada Lovelace',
       change: 'rescheduled',
       appointment_number: 'APT-1',
@@ -123,8 +80,9 @@ describe('ExternalNotificationsService', () => {
       contextId: 'appointment:appt-1:rescheduled',
     });
     // Copy is rendered by conversation from the template.
-    expect(body.subject).toBeUndefined();
-    expect(body.message).toBeUndefined();
+    expect(payload.subject).toBeUndefined();
+    expect(payload.message).toBeUndefined();
+    expect(payload.channels).toBeUndefined();
   });
 
   it('dispatches a document event with the PDF URL', async () => {
@@ -134,38 +92,34 @@ describe('ExternalNotificationsService', () => {
       'https://cdn.test/sub-1.pdf',
     );
 
-    const [, body] = post.mock.calls[0] as [string, DispatchBody];
-    expect(body.eventKey).toBe('document_creation');
-    expect(body.pdfUrl).toBe('https://cdn.test/sub-1.pdf');
-    expect(body.context).toMatchObject({
+    const payload = client.dispatch.mock.calls[0][0];
+    expect(payload.eventKey).toBe('document_creation');
+    expect(payload.pdfUrl).toBe('https://cdn.test/sub-1.pdf');
+    expect(payload.context).toMatchObject({
       patient_name: 'Ada Lovelace',
       document_name: 'Discharge summary',
       submission_number: 'SUB-1',
       submission_status: 'SUBMITTED',
     });
-    expect(body.message).toBeUndefined();
+    expect(payload.message).toBeUndefined();
+    expect(payload.channels).toBeUndefined();
   });
 
-  it('skips dispatch when the organisation has no saved policy', async () => {
-    policyClient.get.mockResolvedValue(null);
+  it('skips dispatch when there is no recipient', async () => {
+    patients.getByPatientId.mockResolvedValue({
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      phone: null,
+      email: null,
+    });
 
     await service.notifyAppointment(appointment as never, 'created');
 
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it('skips dispatch when the event is disabled on every usable channel', async () => {
-    const policy = normalizeNotificationPolicy(null);
-    policy.events.appointment.enabled = false;
-    policyClient.get.mockResolvedValue(policy);
-
-    await service.notifyAppointment(appointment as never, 'created');
-
-    expect(post).not.toHaveBeenCalled();
+    expect(client.dispatch).not.toHaveBeenCalled();
   });
 
   it('never throws when conversation is unavailable', async () => {
-    post.mockRejectedValue(new Error('gateway down'));
+    client.dispatch.mockRejectedValue(new Error('gateway down'));
 
     await expect(
       service.notifyAppointment(appointment as never, 'created'),

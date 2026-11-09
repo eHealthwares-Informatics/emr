@@ -1,17 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 import type { TenantContext } from '../../../common/tenant-context';
 import type { AppointmentOrmEntity } from '../../appointments/entities/appointment.orm-entity';
 import type { FormSubmissionOrmEntity } from '../../forms/entities/form-submission.orm-entity';
 import { PatientsService } from '../../patients/services/patients.service';
-import {
-  isChannelEnabled,
-  isEventChannelEnabled,
-  NotificationPolicyClient,
-  type NotificationPolicyChannel,
-  type NotificationPolicyEvent,
-} from './notification-policy.client';
+import { NotificationClientService } from './notification-client.service';
 
 export type NotificationRecipient = {
   phone?: string | null;
@@ -20,7 +12,7 @@ export type NotificationRecipient = {
 
 export type NotificationEventDispatch = {
   /** Notification event key resolved by the conversation engine. */
-  eventCode: NotificationPolicyEvent;
+  eventCode: string;
   organizationId: string;
   locationId?: string | null;
   /** Where to deliver. Empty values are ignored. */
@@ -54,9 +46,8 @@ export class ExternalNotificationsService {
   private readonly logger = new Logger(ExternalNotificationsService.name);
 
   constructor(
-    private readonly config: ConfigService,
-    private readonly policyClient: NotificationPolicyClient,
     private readonly patients: PatientsService,
+    private readonly client: NotificationClientService,
   ) {}
 
   async notifyAppointment(
@@ -154,70 +145,39 @@ export class ExternalNotificationsService {
   /**
    * Sends one notification event to the conversation engine. Conversation
    * resolves the event template and channels, renders the context and records
-   * each delivery.
+   * each delivery — EMR sends only the event key, recipients and context.
    */
   async dispatch(input: NotificationEventDispatch): Promise<void> {
     if (!input.organizationId) return;
     if (!input.recipient.phone && !input.recipient.email) return;
 
-    const policy = await this.policyClient.get(input.organizationId);
-    // Never send until an admin has saved a policy for the organisation.
-    if (!policy) return;
-
-    const channels: NotificationPolicyChannel[] = ['whatsapp', 'sms', 'email'];
-    const allowed = channels.some((channel) => {
-      const recipient =
-        channel === 'email' ? input.recipient.email : input.recipient.phone;
-      return (
-        Boolean(recipient) &&
-        isChannelEnabled(policy, channel) &&
-        isEventChannelEnabled(policy, input.eventCode, channel)
-      );
-    });
-    if (!allowed) return;
-
     try {
-      const baseUrl = this.config.get<string>(
-        'CONVERSATION_API_URL',
-        'http://localhost:8090/api',
-      );
-      const apiKey = this.config.get<string>('INTEROP_API_KEY', '');
-      await axios.post(
-        `${baseUrl.replace(/\/+$/, '')}/notification-dispatch/event`,
-        {
-          organizationId: input.organizationId,
-          eventKey: input.eventCode,
-          recipients: {
-            phone: input.recipient.phone ?? undefined,
-            email: input.recipient.email ?? undefined,
-          },
-          context: {
-            source: 'emr-notification',
-            eventType: input.eventCode,
-            locationId: input.locationId ?? null,
-            relatedEntityType: input.relatedEntityType ?? null,
-            relatedEntityId: input.relatedEntityId ?? null,
-            contextId: input.contextId ?? null,
-            ...input.context,
-          },
-          ...(input.pdfUrl
-            ? {
-                pdfUrl: input.pdfUrl,
-                pdfFileName: input.pdfFileName ?? undefined,
-                pdfMimeType: input.pdfMimeType ?? 'application/pdf',
-              }
-            : {}),
+      // Route through the shared client so the dispatch is recorded on the
+      // EMR sender-app ledger (and can be re-triggered from the UI).
+      await this.client.dispatch({
+        source: 'external',
+        organizationId: input.organizationId,
+        locationId: input.locationId ?? null,
+        eventKey: input.eventCode,
+        recipients: {
+          phone: input.recipient.phone ?? undefined,
+          email: input.recipient.email ?? undefined,
+        },
+        context: {
+          source: 'emr-notification',
+          eventType: input.eventCode,
+          locationId: input.locationId ?? null,
           relatedEntityType: input.relatedEntityType ?? null,
           relatedEntityId: input.relatedEntityId ?? null,
+          contextId: input.contextId ?? null,
+          ...input.context,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {}),
-          },
-          timeout: 10_000,
-        },
-      );
+        pdfUrl: input.pdfUrl ?? null,
+        pdfFileName: input.pdfFileName ?? null,
+        pdfMimeType: input.pdfMimeType ?? 'application/pdf',
+        relatedEntityType: input.relatedEntityType ?? null,
+        relatedEntityId: input.relatedEntityId ?? null,
+      });
     } catch (error: unknown) {
       this.logger.warn(
         `EMR ${input.eventCode} notification failed for ${input.relatedEntityType ?? 'entity'}/${input.relatedEntityId ?? 'unknown'}: ${(error as Error)?.message ?? error}`,
