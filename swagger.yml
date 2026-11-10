@@ -1270,254 +1270,6 @@ paths:
           description: ''
       summary: Reschedule an appointment to a new date/time
       tags: *ref_11
-  /api/encounters:
-    get:
-      operationId: EncountersController_list
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      summary: List encounters with patient/visit filters
-      tags: &ref_12
-        - encounters
-    post:
-      operationId: EncountersController_create
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateEncounterDto'
-      responses:
-        '201':
-          description: ''
-      summary: Create an encounter (optionally linked to a visit)
-      tags: *ref_12
-  /api/encounters/{id}:
-    get:
-      operationId: EncountersController_get
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Get encounter by id
-      tags: *ref_12
-    patch:
-      operationId: EncountersController_update
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateEncounterDto'
-      responses:
-        '200':
-          description: ''
-      summary: Update an encounter
-      tags: *ref_12
-    delete:
-      operationId: EncountersController_remove
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Archive an encounter
-      tags: *ref_12
-  /api/encounters/{id}/requests:
-    post:
-      operationId: EncountersController_createRequest
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateEncounterRequestDto'
-      responses:
-        '201':
-          description: ''
-      summary: Create a request from an encounter context
-      tags: *ref_12
-  /api/requests:
-    get:
-      operationId: RequestsController_list
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      summary: List clinical requests with filters
-      tags: &ref_13
-        - requests
-    post:
-      operationId: RequestsController_create
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateRequestDto'
-      responses:
-        '201':
-          description: ''
-      summary: Create a request (optionally external-synced to LIS/pharmacy)
-      tags: *ref_13
-  /api/requests/{id}:
-    get:
-      operationId: RequestsController_get
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Get request by id with items
-      tags: *ref_13
-    patch:
-      operationId: RequestsController_update
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateRequestDto'
-      responses:
-        '200':
-          description: ''
-      summary: Update an open request
-      tags: *ref_13
-    delete:
-      operationId: RequestsController_remove
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Archive a request
-      tags: *ref_13
-  /api/requests/{id}/history:
-    get:
-      operationId: RequestsController_getHistory
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      summary: Get request status history only (lightweight)
-      tags: *ref_13
-  /api/requests/{id}/transition:
-    post:
-      operationId: RequestsController_transition
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransitionRequestStatusDto'
-      responses:
-        '201':
-          description: ''
-      summary: Transition request status
-      tags: *ref_13
-  /api/requests/{id}/note:
-    post:
-      operationId: RequestsController_addNote
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddRequestNoteDto'
-      responses:
-        '201':
-          description: ''
-      summary: Append a free-text note to the request timeline
-      tags: *ref_13
-  /api/requests/{id}/sync:
-    post:
-      operationId: RequestsController_sync
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SyncRequestDto'
-      responses:
-        '201':
-          description: ''
-      summary: Manually re-sync request to external system
-      tags: *ref_13
-  /api/requests/{id}/resend:
-    post:
-      operationId: RequestsController_resend
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '201':
-          description: ''
-      summary: Re-send a failed/open LAB or PRESCRIPTION request to the external system
-      tags: *ref_13
   /api/notifications:
     get:
       operationId: NotificationsController_list
@@ -1580,7 +1332,7 @@ paths:
         '200':
           description: ''
       summary: List in-app notifications for the current user (poll with ?since=)
-      tags: &ref_14
+      tags: &ref_12
         - notifications
   /api/notifications/unread-count:
     get:
@@ -1590,7 +1342,7 @@ paths:
         '200':
           description: ''
       summary: Count unread in-app notifications for the current user
-      tags: *ref_14
+      tags: *ref_12
   /api/notifications/read-all:
     patch:
       operationId: NotificationsController_readAll
@@ -1599,7 +1351,7 @@ paths:
         '200':
           description: ''
       summary: Mark all of the current user notifications as read
-      tags: *ref_14
+      tags: *ref_12
   /api/notifications/{id}/read:
     put:
       operationId: NotificationsController_markRead
@@ -1613,7 +1365,31 @@ paths:
         '200':
           description: ''
       summary: Mark a single notification as read
-      tags: *ref_14
+      tags: *ref_12
+  /api/notifications/dispatches:
+    get:
+      operationId: NotificationDispatchesController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List notification dispatches emitted by EMR (sender-app ledger)
+      tags: &ref_13
+        - notifications
+  /api/notifications/dispatches/{id}/retrigger:
+    post:
+      operationId: NotificationDispatchesController_retrigger
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Re-send a recorded notification dispatch
+      tags: *ref_13
   /api/notification-subscriptions:
     post:
       operationId: NotificationSubscriptionsController_subscribe
@@ -1632,33 +1408,33 @@ paths:
         their org + location
       tags:
         - notification-subscriptions
-  /api/message-templates:
+  /api/encounters:
     get:
-      operationId: MessageTemplatesController_list
+      operationId: EncountersController_list
       parameters: []
       responses:
         '200':
           description: ''
-      summary: List message templates
-      tags: &ref_15
-        - message-templates
+      summary: List encounters with patient/visit filters
+      tags: &ref_14
+        - encounters
     post:
-      operationId: MessageTemplatesController_create
+      operationId: EncountersController_create
       parameters: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateMessageTemplateDto'
+              $ref: '#/components/schemas/CreateEncounterDto'
       responses:
         '201':
           description: ''
-      summary: Create a message template
-      tags: *ref_15
-  /api/message-templates/{id}:
+      summary: Create an encounter (optionally linked to a visit)
+      tags: *ref_14
+  /api/encounters/{id}:
     get:
-      operationId: MessageTemplatesController_get
+      operationId: EncountersController_get
       parameters:
         - name: id
           required: true
@@ -1668,10 +1444,10 @@ paths:
       responses:
         '200':
           description: ''
-      summary: Get a message template by id
-      tags: *ref_15
+      summary: Get encounter by id
+      tags: *ref_14
     patch:
-      operationId: MessageTemplatesController_update
+      operationId: EncountersController_update
       parameters:
         - name: id
           required: true
@@ -1683,14 +1459,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateMessageTemplateDto'
+              $ref: '#/components/schemas/UpdateEncounterDto'
       responses:
         '200':
           description: ''
-      summary: Update a message template
-      tags: *ref_15
+      summary: Update an encounter
+      tags: *ref_14
     delete:
-      operationId: MessageTemplatesController_remove
+      operationId: EncountersController_remove
       parameters:
         - name: id
           required: true
@@ -1700,7 +1476,185 @@ paths:
       responses:
         '200':
           description: ''
-      summary: Archive a message template
+      summary: Archive an encounter
+      tags: *ref_14
+  /api/encounters/{id}/requests:
+    post:
+      operationId: EncountersController_createRequest
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEncounterRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a request from an encounter context
+      tags: *ref_14
+  /api/requests:
+    get:
+      operationId: RequestsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: List clinical requests with filters
+      tags: &ref_15
+        - requests
+    post:
+      operationId: RequestsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a request (optionally external-synced to LIS/pharmacy)
+      tags: *ref_15
+  /api/requests/{id}:
+    get:
+      operationId: RequestsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get request by id with items
+      tags: *ref_15
+    patch:
+      operationId: RequestsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequestDto'
+      responses:
+        '200':
+          description: ''
+      summary: Update an open request
+      tags: *ref_15
+    delete:
+      operationId: RequestsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Archive a request
+      tags: *ref_15
+  /api/requests/{id}/history:
+    get:
+      operationId: RequestsController_getHistory
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Get request status history only (lightweight)
+      tags: *ref_15
+  /api/requests/{id}/transition:
+    post:
+      operationId: RequestsController_transition
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequestStatusDto'
+      responses:
+        '201':
+          description: ''
+      summary: Transition request status
+      tags: *ref_15
+  /api/requests/{id}/note:
+    post:
+      operationId: RequestsController_addNote
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRequestNoteDto'
+      responses:
+        '201':
+          description: ''
+      summary: Append a free-text note to the request timeline
+      tags: *ref_15
+  /api/requests/{id}/sync:
+    post:
+      operationId: RequestsController_sync
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequestDto'
+      responses:
+        '201':
+          description: ''
+      summary: Manually re-sync request to external system
+      tags: *ref_15
+  /api/requests/{id}/resend:
+    post:
+      operationId: RequestsController_resend
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Re-send a failed/open LAB or PRESCRIPTION request to the external system
       tags: *ref_15
   /api/form-definitions:
     get:
@@ -2152,6 +2106,233 @@ paths:
         Distinct patients ever attended (visit or encounter), optionally scoped
         to a provider
       tags: *ref_20
+  /api/prints:
+    get:
+      operationId: PrintsController_list
+      parameters:
+        - name: resourceType
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: resourceId
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: page
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: limit
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security: &ref_21
+        - bearer: []
+      summary: List cached prints
+      tags: &ref_22
+        - prints
+  /api/prints/{id}:
+    get:
+      operationId: PrintsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security: *ref_21
+      summary: Get a cached print record
+      tags: *ref_22
+  /api/prints/{id}/upload/cloudinary:
+    post:
+      operationId: PrintsController_uploadCloudinary
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security: *ref_21
+      summary: Manually upload a cached print to Cloudinary
+      tags: *ref_22
+  /api/prints/{id}/upload/s3:
+    post:
+      operationId: PrintsController_uploadS3
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security: *ref_21
+      summary: Manually upload a cached print to S3
+      tags: *ref_22
+  /api/prints/{id}/upload:
+    post:
+      operationId: PrintsController_uploadBoth
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security: *ref_21
+      summary: Manually upload a cached print to both Cloudinary and S3
+      tags: *ref_22
+  /api/patients/{patientRef}/insights/biodata:
+    get:
+      operationId: PatientInsightsController_biodata
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Patient biodata, age, gender and marital status
+      tags: &ref_23
+        - patient-insights
+  /api/patients/{patientRef}/insights/current-diagnosis:
+    get:
+      operationId: PatientInsightsController_currentDiagnosis
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Most recent diagnosis for the patient
+      tags: *ref_23
+  /api/patients/{patientRef}/insights/diagnosis-history:
+    get:
+      operationId: PatientInsightsController_diagnosisHistory
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+      responses:
+        '200':
+          description: ''
+      summary: Diagnosis history from notes, admissions and requests
+      tags: *ref_23
+  /api/patients/{patientRef}/insights/current-vitals:
+    get:
+      operationId: PatientInsightsController_currentVitals
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Latest submitted vitals for the patient
+      tags: *ref_23
+  /api/patients/{patientRef}/insights/current-medications:
+    get:
+      operationId: PatientInsightsController_currentMedications
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+      responses:
+        '200':
+          description: ''
+      summary: Current non-cancelled medications
+      tags: *ref_23
+  /api/patients/{patientRef}/insights/current-prescriptions:
+    get:
+      operationId: PatientInsightsController_currentPrescriptions
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+      responses:
+        '200':
+          description: ''
+      summary: Active prescription requests with items
+      tags: *ref_23
+  /api/patients/{patientRef}/insights/current-laboratory-requests:
+    get:
+      operationId: PatientInsightsController_currentLaboratoryRequests
+      parameters:
+        - name: patientRef
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            allOf:
+              - $ref: '#/components/schemas/Object'
+      responses:
+        '200':
+          description: ''
+      summary: Active laboratory requests with items
+      tags: *ref_23
 info:
   title: EMR API
   description: >-
@@ -2333,7 +2514,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_21
+          enum: &ref_24
             - CASH
             - HMO
             - COMPANY
@@ -2358,7 +2539,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_21
+          enum: *ref_24
         description:
           type: string
         contactPhone:
@@ -2387,7 +2568,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_22
+          enum: &ref_25
             - Doctor
             - Nurse
             - Technician
@@ -2398,7 +2579,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_23
+          enum: &ref_26
             - Medical
             - Nursing
             - Allied Health
@@ -2444,10 +2625,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_22
+          enum: *ref_25
         category:
           type: string
-          enum: *ref_23
+          enum: *ref_26
         department:
           type: string
         departmentId:
@@ -2474,7 +2655,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_24
+          enum: &ref_27
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -2510,7 +2691,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_24
+          enum: *ref_27
         description:
           type: string
         locationId:
@@ -2532,7 +2713,7 @@ components:
           description: Ward display name
         wardType:
           type: string
-          enum: &ref_25
+          enum: &ref_28
             - GENERAL
             - PRIVATE
             - ICU
@@ -2565,7 +2746,7 @@ components:
           type: string
         wardType:
           type: string
-          enum: *ref_25
+          enum: *ref_28
         departmentId:
           type: string
         departmentType:
@@ -2585,7 +2766,7 @@ components:
           description: Ward the bed belongs to
         bedType:
           type: string
-          enum: &ref_26
+          enum: &ref_29
             - STANDARD
             - ICU
             - MATERNITY
@@ -2595,7 +2776,7 @@ components:
           default: STANDARD
         status:
           type: string
-          enum: &ref_27
+          enum: &ref_30
             - AVAILABLE
             - OCCUPIED
             - MAINTENANCE
@@ -2615,10 +2796,10 @@ components:
           type: string
         bedType:
           type: string
-          enum: *ref_26
+          enum: *ref_29
         status:
           type: string
-          enum: *ref_27
+          enum: *ref_30
         notes:
           type: string
     AdmitPatientDto:
@@ -2637,10 +2818,10 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-11-01T06:28:44.722Z'
+          default: '2026-11-10T02:30:56.561Z'
         admissionType:
           type: string
-          enum: &ref_28
+          enum: &ref_31
             - EMERGENCY
             - URGENT
             - ELECTIVE
@@ -2675,7 +2856,7 @@ components:
           description: Bed to allocate on admission
         admissionType:
           type: string
-          enum: *ref_28
+          enum: *ref_31
           default: ELECTIVE
         diagnosis:
           type: string
@@ -2692,7 +2873,7 @@ components:
           type: string
         admissionType:
           type: string
-          enum: *ref_28
+          enum: *ref_31
         diagnosis:
           type: string
         referringProviderId:
@@ -2727,7 +2908,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-11-01T06:28:44.723Z'
+          default: '2026-11-10T02:30:56.562Z'
     CreateVisitDto:
       type: object
       properties:
@@ -2737,7 +2918,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_29
+          enum: &ref_32
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -2779,7 +2960,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_29
+          enum: *ref_32
         status:
           type: string
           enum:
@@ -2803,7 +2984,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: &ref_30
+          enum: &ref_33
             - CHECKUP
             - FOLLOW_UP
             - CONSULTATION
@@ -2827,7 +3008,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_31
+          enum: &ref_34
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -2876,7 +3057,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: *ref_30
+          enum: *ref_33
         date:
           type: string
         startTime:
@@ -2893,7 +3074,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_31
+          enum: *ref_34
         status:
           type: string
           enum:
@@ -2908,6 +3089,24 @@ components:
           type: string
         notes:
           type: string
+    SubscribeNotificationsDto:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          description: >-
+            Optional session expiry (ISO timestamp). When omitted the
+            subscription does not expire.
+        organizationId:
+          type: string
+          description: >-
+            Optional org id (ignored — tenant comes from the JWT). Accepted so
+            whitelist validation does not reject clients that echo it.
+        locationId:
+          type: string
+          description: >-
+            Optional location id (ignored — tenant comes from the JWT). Accepted
+            so whitelist validation does not reject clients that echo it.
     CreateEncounterDto:
       type: object
       properties:
@@ -2917,7 +3116,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_33
+          enum: &ref_36
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -2929,7 +3128,7 @@ components:
             - OTHER
         status:
           type: string
-          enum: &ref_32
+          enum: &ref_35
             - ACTIVE
             - COMPLETED
             - CANCELLED
@@ -2952,14 +3151,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_34
+          enum: &ref_37
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_31
+          enum: *ref_34
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -2983,7 +3182,7 @@ components:
       properties:
         status:
           type: string
-          enum: *ref_32
+          enum: *ref_35
         endedAt:
           type: string
         patientId:
@@ -2992,7 +3191,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_33
+          enum: *ref_36
         providerId:
           type: string
         providerName:
@@ -3016,10 +3215,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_34
+          enum: *ref_37
         priority:
           type: string
-          enum: *ref_31
+          enum: *ref_34
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -3081,7 +3280,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_31
+          enum: *ref_34
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -3094,118 +3293,6 @@ components:
           type: array
           items:
             type: string
-    SubscribeNotificationsDto:
-      type: object
-      properties:
-        expiresAt:
-          type: string
-          description: >-
-            Optional session expiry (ISO timestamp). When omitted the
-            subscription does not expire.
-        organizationId:
-          type: string
-          description: >-
-            Optional org id (ignored — tenant comes from the JWT). Accepted so
-            whitelist validation does not reject clients that echo it.
-        locationId:
-          type: string
-          description: >-
-            Optional location id (ignored — tenant comes from the JWT). Accepted
-            so whitelist validation does not reject clients that echo it.
-    CreateMessageTemplateDto:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Unique template code, e.g. request_created
-        name:
-          type: string
-        description:
-          type: string
-        contentType:
-          type: string
-          enum: &ref_35
-            - free_text
-            - html
-            - prompt
-            - limited_text
-            - webpage
-          default: free_text
-        content:
-          type: string
-        maxCharacters:
-          type: number
-          description: Required/enforced when contentType is limited_text
-        destinations:
-          type: array
-          items:
-            type: string
-            enum: &ref_36
-              - whatsapp
-              - sms
-              - inapp
-              - email
-              - webpage
-              - mobile_app
-        channelCodes:
-          type: array
-          items:
-            type: string
-        heartbeatRetries:
-          type: number
-          default: 3
-        heartbeatIntervalSeconds:
-          type: number
-          default: 30
-        heartbeatExpirySeconds:
-          type: number
-          default: 86400
-        status:
-          type: string
-          enum: &ref_37
-            - draft
-            - active
-            - inactive
-          default: draft
-      required:
-        - code
-        - name
-        - contentType
-        - content
-        - destinations
-        - status
-    UpdateMessageTemplateDto:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        contentType:
-          type: string
-          enum: *ref_35
-        content:
-          type: string
-        maxCharacters:
-          type: object
-        destinations:
-          type: array
-          items:
-            type: string
-            enum: *ref_36
-        channelCodes:
-          type: array
-          items:
-            type: string
-        heartbeatRetries:
-          type: number
-        heartbeatIntervalSeconds:
-          type: number
-        heartbeatExpirySeconds:
-          type: number
-        status:
-          type: string
-          enum: *ref_37
     CreateFormDefinitionDto:
       type: object
       properties:

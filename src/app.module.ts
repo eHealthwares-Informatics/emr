@@ -76,6 +76,7 @@ import { PatientInsightsModule } from './modules/patient-insights/patient-insigh
     DashboardModule,
     NotificationsModule,
     SeedsModule,
+    PrintsModule,
     PatientInsightsModule,
   ],
   controllers: [HealthController],
