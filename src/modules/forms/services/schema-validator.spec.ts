@@ -260,3 +260,33 @@ describe('annotate fields', () => {
     );
   });
 });
+
+describe('catalogue item controls', () => {
+  it('accepts the item control types in a schema', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'stock', label: 'Stock', type: 'inventory-item' },
+        { key: 'product', label: 'Product', type: 'generic-product' },
+        { key: 'drug', label: 'Drug', type: 'generic-drug' },
+        { key: 'any', label: 'Any', type: 'item' },
+      ],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
+  it('requires a picked catalogue entry', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'drug', label: 'Drug', type: 'generic-drug', required: true },
+      ],
+    };
+    expect(validateFormData(schema, { drug: 'Paracetamol' })).toEqual([
+      'Drug must be a catalogue item',
+    ]);
+    expect(
+      validateFormData(schema, {
+        drug: { id: 'g1', label: 'Paracetamol', kind: 'GENERIC_DRUG' },
+      }),
+    ).toEqual([]);
+  });
+});

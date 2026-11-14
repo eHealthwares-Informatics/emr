@@ -15,6 +15,10 @@ const FIELD_TYPES = [
   'tab',
   'col',
   'item',
+  'inventory-item',
+  'generic-product',
+  'generic-drug',
+  'loinc-test',
   'annotate',
 ];
 
@@ -175,6 +179,22 @@ export function validateFormData(
       case 'table':
         if (!Array.isArray(value)) {
           errors.push(`${field.label || field.key} must be a table of rows`);
+        }
+        break;
+      case 'item':
+      case 'inventory-item':
+      case 'generic-product':
+      case 'generic-drug':
+      case 'loinc-test':
+        // Catalogue pickers store the picked entry ({ id, label, kind, code }).
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          !(value as Record<string, unknown>).id
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a catalogue item`,
+          );
         }
         break;
       case 'annotate': {

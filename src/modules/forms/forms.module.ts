@@ -11,6 +11,8 @@ import { FormDefinitionsController } from './controllers/form-definitions.contro
 import { FormSubmissionsController } from './controllers/form-submissions.controller';
 import { FormAccessController } from './controllers/form-access.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { EncountersModule } from '../encounters/encounters.module';
+import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     ]),
     PdfModule,
     NotificationsModule,
+    EncountersModule,
+    IdentityProxyModule,
   ],
   controllers: [
     FormDefinitionsController,

@@ -13,7 +13,7 @@ describe('RequestsService', () => {
   let itemRepo: ReturnType<typeof repoMock>;
   let historyRepo: ReturnType<typeof repoMock>;
   let lis: { createLabOrder: jest.Mock; cancelLabOrder: jest.Mock };
-  let pharmacy: { createPrescriptionOrder: jest.Mock };
+  let pharmacy: { syncPrescription: jest.Mock };
   let audit: { record: jest.Mock };
   let notifications: { notifyRequestCreated: jest.Mock };
 
@@ -35,7 +35,7 @@ describe('RequestsService', () => {
     itemRepo = repoMock();
     historyRepo = repoMock();
     lis = { createLabOrder: jest.fn(), cancelLabOrder: jest.fn() };
-    pharmacy = { createPrescriptionOrder: jest.fn() };
+    pharmacy = { syncPrescription: jest.fn() };
     audit = { record: jest.fn().mockResolvedValue({}) };
     notifications = {
       notifyRequestCreated: jest.fn().mockResolvedValue(undefined),
@@ -357,7 +357,7 @@ describe('RequestsService', () => {
       });
       itemRepo.find.mockResolvedValue([]);
       historyRepo.find.mockResolvedValue([]);
-      pharmacy.createPrescriptionOrder.mockResolvedValue({
+      pharmacy.syncPrescription.mockResolvedValue({
         externalOrderId: 'rx-1',
         externalReference: 'REF-RX-1',
       });
@@ -369,14 +369,15 @@ describe('RequestsService', () => {
       expect(saved.externalOrderId).toBe('rx-1');
       expect(saved.sendAttemptCount).toBe(1);
       expect(saved.sentAt).toBeInstanceOf(Date);
-      expect(pharmacy.createPrescriptionOrder).toHaveBeenCalledWith(
+      expect(pharmacy.syncPrescription).toHaveBeenCalledWith(
         expect.anything(),
         'token',
+        undefined,
       );
     });
 
     it('keeps FAILED + increments attempts when the external service errors', async () => {
-      pharmacy.createPrescriptionOrder.mockRejectedValue(
+      pharmacy.syncPrescription.mockRejectedValue(
         new Error('Pharmacy down'),
       );
       const saved = await service.resend('req-1', tenant, user);

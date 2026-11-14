@@ -6,6 +6,7 @@ import type {
   RequestType,
   SyncStatus,
   Priority,
+  PharmacySyncTarget,
 } from '../../../shared/domain/enums';
 
 @Entity('requests')
@@ -47,6 +48,17 @@ export class RequestOrmEntity extends EmrBaseEntity {
   @Column({ name: 'clinical_notes', type: 'text', nullable: true })
   clinicalNotes!: string | null;
 
+  /** Published REQUEST form this request was captured with. */
+  @Column({ name: 'form_definition_id', type: 'text', nullable: true })
+  formDefinitionId!: string | null;
+
+  /**
+   * Raw answers from that form. Items are derived from them at capture time;
+   * the payload is kept for printing and audit.
+   */
+  @Column({ name: 'form_data', type: 'simple-json', nullable: true })
+  formData!: Record<string, unknown> | null;
+
   @Column({ name: 'external_order_id', type: 'text', nullable: true })
   externalOrderId!: string | null;
 
@@ -55,6 +67,13 @@ export class RequestOrmEntity extends EmrBaseEntity {
 
   @Column({ name: 'sync_status', type: 'text', default: 'NONE' })
   syncStatus!: SyncStatus;
+
+  /**
+   * Where this request is sent in rxsoft when it is a PRESCRIPTION.
+   * Null falls back to the EMR_PHARMACY_SYNC_MODE setting.
+   */
+  @Column({ name: 'pharmacy_sync_target', type: 'text', nullable: true })
+  pharmacySyncTarget!: PharmacySyncTarget | null;
 
   @Column({ name: 'sync_error', type: 'text', nullable: true })
   syncError!: string | null;

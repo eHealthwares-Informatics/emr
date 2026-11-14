@@ -18,6 +18,8 @@ import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
 import { generateNumber } from '../../../shared/utils/numbers';
 import { ExternalNotificationsService } from '../../notifications/services/external-notifications.service';
+import { EncountersService } from '../../encounters/services/encounters.service';
+import { IdentityProxyService } from '../../identity-proxy/identity-proxy.service';
 
 const SORT_ALLOW_LIST = [
   'formName',
@@ -34,6 +36,8 @@ export class FormSubmissionsService {
     private readonly repo: Repository<FormSubmissionOrmEntity>,
     private readonly formDefinitionsService: FormDefinitionsService,
     private readonly externalNotifications: ExternalNotificationsService,
+    private readonly encountersService: EncountersService,
+    private readonly identityProxy: IdentityProxyService,
   ) {}
 
   async list(
@@ -179,8 +183,25 @@ export class FormSubmissionsService {
       }
     }
 
+    // Feature-session flow: verify the encounter belongs to this patient
+    // before creating the record, then close it once the record exists.
+    if (dto.closeEncounter && dto.encounterId) {
+      const encounter = await this.encountersService.get(
+        dto.encounterId,
+        tenant,
+      );
+      if (encounter.patientId !== dto.patientId) {
+        throw new BadRequestException(
+          'Encounter belongs to a different patient than the submission',
+        );
+      }
+    }
+
+    const { closeEncounter: _closeEncounter, ...payload } = dto;
+    const tenancy = await this.resolveTenancy(tenant, user);
+
     const entity = this.repo.create({
-      ...dto,
+      ...payload,
       submissionNumber: generateNumber('SUB'),
       formName: form.name,
       formVersion: form.version,
@@ -188,10 +209,19 @@ export class FormSubmissionsService {
       submittedAt: dto.status === 'DRAFT' ? null : new Date(),
       submittedById: user.sub,
       submittedByName: user.username ?? null,
-      organizationId: tenant.organizationId,
-      locationId: tenant.locationId,
+      organizationId: tenancy.organizationId,
+      locationId: tenancy.locationId,
     });
     const saved = await this.repo.save(entity);
+
+    if (dto.closeEncounter && dto.encounterId) {
+      await this.encountersService.update(
+        dto.encounterId,
+        { status: 'COMPLETED', endedAt: new Date().toISOString() },
+        tenant,
+      );
+    }
+
     void this.externalNotifications.notifyDocumentCreated(saved, tenant);
     return saved;
   }
@@ -256,6 +286,7 @@ export class FormSubmissionsService {
     // An amendment is a fresh fill: stamp the version the form is published
     // at NOW so the amendment is never flagged as schema-outdated when the
     // definition has moved on since the original.
+    const tenancy = await this.resolveTenancy(tenant, user);
     const amended = this.repo.create({
       submissionNumber: generateNumber('SUB'),
       formDefinitionId: original.formDefinitionId,
@@ -270,8 +301,8 @@ export class FormSubmissionsService {
       submittedById: user.sub,
       submittedByName: user.username ?? null,
       amendedFromId: original.id,
-      organizationId: tenant.organizationId,
-      locationId: tenant.locationId,
+      organizationId: tenancy.organizationId,
+      locationId: tenancy.locationId,
     });
     return this.repo.save(amended);
   }
@@ -280,6 +311,28 @@ export class FormSubmissionsService {
     const submission = await this.findOneScoped(id, tenant);
     await this.repo.softRemove(submission);
     return { ok: true };
+  }
+
+  /**
+   * A submission belongs to the user recording it: the token's organisation and
+   * location, completed from the identity record when the token omits either
+   * (e.g. a location assigned after the token was issued). Never inferred from
+   * the encounter — the site that recorded the note is the user's site.
+   */
+  private async resolveTenancy(
+    tenant: TenantContext,
+    user: RequestUser,
+  ): Promise<{ organizationId: string | null; locationId: string | null }> {
+    let organizationId = tenant.organizationId;
+    let locationId = tenant.locationId;
+    if ((!organizationId || !locationId) && user?.sub) {
+      const account = await this.identityProxy
+        .getUser(user.sub)
+        .catch(() => null);
+      organizationId = organizationId ?? account?.organizationId ?? null;
+      locationId = locationId ?? account?.locationId ?? null;
+    }
+    return { organizationId, locationId };
   }
 
   private async findOneScoped(id: string, tenant: TenantContext) {

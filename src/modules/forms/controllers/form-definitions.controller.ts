@@ -12,10 +12,10 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FormDefinitionsService } from '../services/form-definitions.service';
 import {
   CreateFormDefinitionDto,
+  ListFormDefinitionsQueryDto,
   PublishFormDto,
   UpdateFormDefinitionDto,
 } from '../dto/form.dto';
-import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { tenantFromUser } from '../../../common/tenant-context';
@@ -28,7 +28,7 @@ export class FormDefinitionsController {
   @Get()
   @ApiOperation({ summary: 'List form definitions' })
   async list(
-    @Query() query: ListQueryDto & { category?: string; published?: string },
+    @Query() query: ListFormDefinitionsQueryDto,
     @CurrentUser() user: RequestUser,
   ) {
     const result = await this.service.list(query, tenantFromUser(user));

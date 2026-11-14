@@ -1,7 +1,7 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
 import type { FormSchema } from '../../../shared/domain/emr.types';
-import type { FormCategory } from '../../../shared/domain/enums';
+import type { FormCategory, RequestType } from '../../../shared/domain/enums';
 
 @Entity('form_definitions')
 export class FormDefinitionOrmEntity extends EmrBaseEntity {
@@ -20,6 +20,14 @@ export class FormDefinitionOrmEntity extends EmrBaseEntity {
 
   @Column({ type: 'text' })
   category!: FormCategory;
+
+  /**
+   * Request type this form fulfils (REQUEST category only). Requests render the
+   * published form whose requestType matches the type being created.
+   */
+  @Index('idx_form_definitions_request_type', ['requestType'])
+  @Column({ name: 'request_type', type: 'text', nullable: true })
+  requestType!: RequestType | null;
 
   @Column({ name: 'schema_json', type: 'simple-json' })
   schemaJson!: FormSchema;

@@ -15,6 +15,8 @@ describe('FormSubmissionsService', () => {
   let service: FormSubmissionsService;
   let repo: ReturnType<typeof repoMock>;
   let formDefs: { get: jest.Mock };
+  let encounters: { get: jest.Mock; update: jest.Mock };
+  let identity: { getUser: jest.Mock };
 
   const form = {
     id: 'form-1',
@@ -43,9 +45,20 @@ describe('FormSubmissionsService', () => {
   beforeEach(() => {
     repo = repoMock();
     formDefs = { get: jest.fn() };
-    service = new FormSubmissionsService(repo as never, formDefs as never, {
-      notifyDocumentCreated: jest.fn(),
-    } as never);
+    encounters = {
+      get: jest.fn(),
+      update: jest.fn().mockResolvedValue({}),
+    };
+    identity = { getUser: jest.fn().mockResolvedValue(null) };
+    service = new FormSubmissionsService(
+      repo as never,
+      formDefs as never,
+      {
+        notifyDocumentCreated: jest.fn(),
+      } as never,
+      encounters as never,
+      identity as never,
+    );
   });
 
   describe('list', () => {
@@ -123,6 +136,61 @@ describe('FormSubmissionsService', () => {
       expect(saved.submittedByName).toBe('dr.ade');
     });
 
+    it('stamps the submitting user’s organisation and location', async () => {
+      formDefs.get.mockResolvedValue(form);
+      const saved = await service.create(
+        {
+          formDefinitionId: 'form-1',
+          patientId: 'patient-1',
+          dataJson: { name: 'Ada' },
+        },
+        tenant,
+        user,
+      );
+      expect(saved.organizationId).toBe('org-1');
+      expect(saved.locationId).toBe('loc-1');
+      expect(identity.getUser).not.toHaveBeenCalled();
+    });
+
+    it('completes a missing token location from the current user record', async () => {
+      formDefs.get.mockResolvedValue(form);
+      identity.getUser.mockResolvedValue({
+        id: 'user-1',
+        organizationId: 'org-1',
+        locationId: 'loc-2',
+      });
+      const saved = await service.create(
+        {
+          formDefinitionId: 'form-1',
+          patientId: 'patient-1',
+          dataJson: { name: 'Ada' },
+        },
+        { ...tenant, locationId: null },
+        user,
+      );
+      expect(identity.getUser).toHaveBeenCalledWith('user-1');
+      expect(saved.organizationId).toBe('org-1');
+      expect(saved.locationId).toBe('loc-2');
+    });
+
+    it('never infers tenancy from the encounter', async () => {
+      formDefs.get.mockResolvedValue(form);
+      identity.getUser.mockResolvedValue(null);
+      const saved = await service.create(
+        {
+          formDefinitionId: 'form-1',
+          patientId: 'patient-1',
+          encounterId: 'enc-1',
+          dataJson: { name: 'Ada' },
+        },
+        { ...tenant, organizationId: null, locationId: null },
+        user,
+      );
+      expect(encounters.get).not.toHaveBeenCalled();
+      expect(saved.organizationId).toBeNull();
+      expect(saved.locationId).toBeNull();
+    });
+
     it('rejects submitting against an unpublished form', async () => {
       formDefs.get.mockResolvedValue({ ...form, isPublished: false });
       await expect(
@@ -148,6 +216,55 @@ describe('FormSubmissionsService', () => {
           user,
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('closes the linked encounter when closeEncounter is set', async () => {
+      formDefs.get.mockResolvedValue(form);
+      encounters.get.mockResolvedValue({
+        id: 'enc-1',
+        patientId: 'patient-1',
+      });
+
+      await service.create(
+        {
+          formDefinitionId: 'form-1',
+          patientId: 'patient-1',
+          encounterId: 'enc-1',
+          dataJson: { name: 'Ada' },
+          closeEncounter: true,
+        } as never,
+        tenant,
+        user,
+      );
+
+      expect(encounters.update).toHaveBeenCalledWith(
+        'enc-1',
+        expect.objectContaining({ status: 'COMPLETED' }),
+        tenant,
+      );
+    });
+
+    it('rejects closing an encounter that belongs to another patient', async () => {
+      formDefs.get.mockResolvedValue(form);
+      encounters.get.mockResolvedValue({
+        id: 'enc-1',
+        patientId: 'other-patient',
+      });
+
+      await expect(
+        service.create(
+          {
+            formDefinitionId: 'form-1',
+            patientId: 'patient-1',
+            encounterId: 'enc-1',
+            dataJson: { name: 'Ada' },
+            closeEncounter: true,
+          } as never,
+          tenant,
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(encounters.update).not.toHaveBeenCalled();
     });
   });
 
@@ -196,7 +313,11 @@ describe('FormSubmissionsService', () => {
 
     it('stamps an amendment with the current published version, not the original fill version', async () => {
       repo.qbState.getOne = { ...submission, formVersion: 2 };
-      formDefs.get.mockResolvedValue({ ...form, version: 4, publishedVersion: 3 });
+      formDefs.get.mockResolvedValue({
+        ...form,
+        version: 4,
+        publishedVersion: 3,
+      });
       const amended = await service.amend(
         'sub-1',
         { dataJson: { name: 'Ada Obi' } },

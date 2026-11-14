@@ -43,6 +43,7 @@ export const ENCOUNTER_TYPES = [
   'DISCHARGE',
   'PROCEDURE',
   'ADMISSION',
+  'ANTENATAL',
   'OTHER',
 ] as const;
 export type EncounterType = (typeof ENCOUNTER_TYPES)[number];
@@ -56,6 +57,7 @@ export const FORM_CATEGORIES = [
   'ASSESSMENT',
   'SCREENING',
   'PROCEDURE',
+  'REQUEST',
   'OTHER',
 ] as const;
 export type FormCategory = (typeof FORM_CATEGORIES)[number];
@@ -75,6 +77,10 @@ export const FORM_FIELD_TYPES = [
   'tab',
   'col',
   'item',
+  'inventory-item',
+  'generic-product',
+  'generic-drug',
+  'loinc-test',
   'annotate',
 ] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
@@ -135,6 +141,15 @@ export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 
 export const SYNC_STATUSES = ['NONE', 'PENDING', 'SYNCED', 'FAILED'] as const;
 export type SyncStatus = (typeof SYNC_STATUSES)[number];
+
+/**
+ * Where a PRESCRIPTION request is sent in rxsoft:
+ *  - `prescription`: the prescriptions queue (pharmacist transcribes/verifies
+ *    before dispensing — carries dosing detail).
+ *  - `order`: the legacy storefront order route (dispense queue).
+ */
+export const PHARMACY_SYNC_TARGETS = ['prescription', 'order'] as const;
+export type PharmacySyncTarget = (typeof PHARMACY_SYNC_TARGETS)[number];
 
 export const PAYMENT_PROVIDER_TYPES = [
   'CASH',
