@@ -186,6 +186,11 @@ export class FormSubmissionsService {
     // Feature-session flow: verify the encounter belongs to this patient
     // before creating the record, then close it once the record exists.
     if (dto.closeEncounter && dto.encounterId) {
+      if (!dto.patientId) {
+        throw new BadRequestException(
+          'An encounter-linked submission requires a patient',
+        );
+      }
       const encounter = await this.encountersService.get(
         dto.encounterId,
         tenant,
@@ -202,6 +207,7 @@ export class FormSubmissionsService {
 
     const entity = this.repo.create({
       ...payload,
+      patientId: payload.patientId ?? null,
       submissionNumber: generateNumber('SUB'),
       formName: form.name,
       formVersion: form.version,

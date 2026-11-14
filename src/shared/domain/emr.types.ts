@@ -151,6 +151,20 @@ export type FormFieldSchema = {
   fields?: FormFieldSchema[];
   /** Configuration for the `annotate` field type. */
   annotate?: AnnotateConfig;
+  /** Readonly HTML content (`html` field type). */
+  html?: string;
+  /** Hidden value template (`hidden` field type), e.g. `{{patient.mrn}}`. */
+  valueTemplate?: string;
+  /** How a hidden value is coerced. */
+  valueType?: 'string' | 'number' | 'boolean';
+  /** Preferred print body for the `print` action control. */
+  printFormat?: 'a4_print' | 'pos_print';
+  /** Channels offered by the `send-form` action control. */
+  channels?: Array<'email' | 'sms'>;
+  /** Link target for `qr-code`: auto resolves instance → patient → template. */
+  qrMode?: 'auto' | 'template' | 'instance';
+  qrSize?: number;
+  caption?: string;
 };
 
 export type FormSchema = {
@@ -163,6 +177,8 @@ export type FormDefinition = BaseEntityType & {
   description: string | null;
   version: number;
   category: FormCategory;
+  /** Notification event used by print/send controls. */
+  eventKey: string | null;
   schemaJson: FormSchema;
   isPublished: boolean;
   publishedVersion: number | null;
@@ -177,7 +193,7 @@ export type FormSubmission = BaseEntityType & {
   formDefinitionId: string;
   formName: string;
   formVersion: number;
-  patientId: string;
+  patientId: string | null;
   visitId: string | null;
   encounterId: string | null;
   dataJson: Record<string, unknown>;

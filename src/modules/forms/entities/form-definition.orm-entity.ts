@@ -32,6 +32,10 @@ export class FormDefinitionOrmEntity extends EmrBaseEntity {
   @Column({ name: 'schema_json', type: 'simple-json' })
   schemaJson!: FormSchema;
 
+  /** Notification event used by the form's print/send controls. */
+  @Column({ name: 'event_key', type: 'text', nullable: true })
+  eventKey!: string | null;
+
   @Column({ name: 'is_published', type: 'boolean', default: false })
   isPublished!: boolean;
 
