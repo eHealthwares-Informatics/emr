@@ -85,16 +85,13 @@ describe('ExternalNotificationsService', () => {
     expect(payload.channels).toBeUndefined();
   });
 
-  it('dispatches a document event with the PDF URL', async () => {
-    await service.notifyDocumentCreated(
-      submission as never,
-      tenant,
-      'https://cdn.test/sub-1.pdf',
-    );
+  it('dispatches a document event without a caller-supplied PDF URL', async () => {
+    await service.notifyDocumentCreated(submission as never, tenant);
 
     const payload = client.dispatch.mock.calls[0][0];
     expect(payload.eventKey).toBe('document_creation');
-    expect(payload.pdfUrl).toBe('https://cdn.test/sub-1.pdf');
+    // The PDF is rendered by conversation from the template's print bodies.
+    expect(payload.pdfUrl).toBeUndefined();
     expect(payload.context).toMatchObject({
       patient_name: 'Ada Lovelace',
       document_name: 'Discharge summary',

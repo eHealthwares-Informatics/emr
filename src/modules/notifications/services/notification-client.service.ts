@@ -23,9 +23,7 @@ export type NotificationEventDispatch = {
   subject?: string | null;
   message?: string | null;
   html?: string | null;
-  pdfUrl?: string | null;
-  pdfFileName?: string | null;
-  pdfMimeType?: string | null;
+  printFormat?: 'a4_print' | 'pos_print' | null;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
   contextId?: string | null;
@@ -41,6 +39,8 @@ export type NotificationDispatchResult = {
   failed: number;
   skipped: number;
   deliveries: string[];
+  /** Print artifacts generated from the template's a4_print/pos_print bodies. */
+  prints?: Record<string, unknown> | null;
 };
 
 /**
@@ -116,13 +116,7 @@ export class NotificationClientService {
             eventKey: payload.eventKey,
             recipients,
             context,
-            ...(payload.pdfUrl
-              ? {
-                  pdfUrl: payload.pdfUrl,
-                  pdfFileName: payload.pdfFileName ?? undefined,
-                  pdfMimeType: payload.pdfMimeType ?? 'application/pdf',
-                }
-              : {}),
+            ...(payload.printFormat ? { printFormat: payload.printFormat } : {}),
           },
           {
             headers: {
@@ -144,6 +138,7 @@ export class NotificationClientService {
         failed,
         skipped,
         deliveries,
+        prints: (data as { prints?: Record<string, unknown> | null })?.prints ?? null,
       };
       await this.finishLedger(ledger, result);
       return result;

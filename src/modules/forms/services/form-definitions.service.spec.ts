@@ -45,12 +45,12 @@ describe('FormDefinitionsService', () => {
       repo.qbState.list = [];
       repo.qbState.total = 0;
       await service.list(
-        listQuery({ category: 'CLINICAL', published: 'true' }),
+        listQuery({ category: 'CLINICAL_NOTE', published: 'true' }),
         tenant,
       );
       const qb = repo.createQueryBuilder.mock.results[0].value;
       expect(qb.andWhere).toHaveBeenCalledWith('form.category = :category', {
-        category: 'CLINICAL',
+        category: 'CLINICAL_NOTE',
       });
       expect(qb.andWhere).toHaveBeenCalledWith(
         'form.is_published = :published',

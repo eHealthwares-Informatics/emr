@@ -19,10 +19,8 @@ export type NotificationEventDispatch = {
   recipient: NotificationRecipient;
   /** Template variables rendered by the conversation engine. */
   context?: Record<string, unknown>;
-  /** Hosted PDF/document URL. When present conversation uses the media path. */
-  pdfUrl?: string | null;
-  pdfFileName?: string | null;
-  pdfMimeType?: string | null;
+  /** Print body to render (`a4_print` | `pos_print`). Omit to render all. */
+  printFormat?: 'a4_print' | 'pos_print' | null;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
   /** Stable id forwarded to conversation for exchange dedupe. */
@@ -104,7 +102,6 @@ export class ExternalNotificationsService {
   async notifyDocumentCreated(
     submission: FormSubmissionOrmEntity,
     tenant: TenantContext,
-    pdfUrl?: string | null,
   ): Promise<void> {
     if (submission.status === 'DRAFT') return;
 
@@ -134,8 +131,6 @@ export class ExternalNotificationsService {
         submitted_by: submission.submittedByName,
         submitted_at: submission.submittedAt,
       },
-      pdfUrl,
-      pdfFileName: pdfUrl ? `${submission.formName}.pdf` : null,
       relatedEntityType: 'FormSubmission',
       relatedEntityId: submission.id,
       contextId: `document:${submission.id}`,
@@ -172,9 +167,7 @@ export class ExternalNotificationsService {
           contextId: input.contextId ?? null,
           ...input.context,
         },
-        pdfUrl: input.pdfUrl ?? null,
-        pdfFileName: input.pdfFileName ?? null,
-        pdfMimeType: input.pdfMimeType ?? 'application/pdf',
+        ...(input.printFormat ? { printFormat: input.printFormat } : {}),
         relatedEntityType: input.relatedEntityType ?? null,
         relatedEntityId: input.relatedEntityId ?? null,
       });

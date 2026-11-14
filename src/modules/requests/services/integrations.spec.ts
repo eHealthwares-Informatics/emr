@@ -27,6 +27,7 @@ function makeRequest(overrides: Partial<RequestOrmEntity> = {}): RequestOrmEntit
     requestType: 'LAB',
     patientId: 'PAT-77',
     patientName: 'Ada Obi',
+    organizationId: 'org-1',
     requestedAt: new Date('2026-01-01T00:00:00Z'),
     items: [],
     ...overrides,
@@ -137,9 +138,11 @@ describe('LisIntegrationService', () => {
 describe('PharmacyIntegrationService', () => {
   let service: PharmacyIntegrationService;
   let httpPost: jest.Mock;
+  let configValues: Record<string, string | undefined>;
 
   beforeEach(async () => {
     httpPost = jest.fn();
+    configValues = { EMR_PHARMACY_API_URL: 'https://rx.test/api' };
     const moduleRef = await Test.createTestingModule({
       providers: [
         PharmacyIntegrationService,
@@ -147,8 +150,7 @@ describe('PharmacyIntegrationService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: (key: string, fallback?: string) =>
-              key === 'EMR_PHARMACY_API_URL' ? 'https://rx.test/api' : fallback,
+            get: (key: string, fallback?: string) => configValues[key] ?? fallback,
           },
         },
       ],
@@ -221,5 +223,146 @@ describe('PharmacyIntegrationService', () => {
       service.createPrescriptionOrder(makeRequest({ requestType: 'PRESCRIPTION', items: [] })),
     ).rejects.toThrow('No prescription items provided');
     expect(httpPost).not.toHaveBeenCalled();
+  });
+
+  // ── Prescription route (default) ──────────────────────────────────────────
+
+  it('syncs to the prescriptions queue by default', async () => {
+    httpPost.mockReturnValue(of({ data: { id: 'rx-1', externalReference: 'REQ-1001' } }));
+
+    const result = await service.syncPrescription(
+      makeRequest({
+        requestType: 'PRESCRIPTION',
+        items: [makeItem({ itemKind: 'STOCK_ITEM', code: 'item-uuid-1' })],
+      }),
+    );
+
+    expect(httpPost.mock.calls[0][0]).toBe('https://rx.test/api/website/prescriptions');
+    expect(result).toEqual({
+      externalOrderId: 'rx-1',
+      externalReference: 'REQ-1001',
+    });
+  });
+
+  it('maps dosing detail and catalogue references onto prescription lines', async () => {
+    httpPost.mockReturnValue(of({ data: { id: 'rx-1' } }));
+
+    await service.createPrescription(
+      makeRequest({
+        requestType: 'PRESCRIPTION',
+        orderingProviderName: 'Dr Bello',
+        clinicalNotes: 'Review after 3 days',
+        items: [
+          makeItem({
+            name: 'Paracetamol 500mg — PMC-001',
+            itemKind: 'STOCK_ITEM',
+            code: 'PMC-001',
+            dose: '500',
+            doseUnit: 'mg',
+            frequency: 'TDS',
+            route: 'Oral',
+            duration: '7',
+            durationUnit: 'days',
+            instructions: 'After food',
+            quantity: 21,
+          }),
+          makeItem({
+            name: 'Amoxicillin — GENP-1',
+            itemKind: 'GENERIC_PRODUCT',
+            code: 'GENP-1',
+            quantity: 10,
+          }),
+          makeItem({
+            name: 'Artemether — NDF-9',
+            itemKind: 'GENERIC_DRUG',
+            code: 'NDF-9',
+            quantity: 6,
+          }),
+        ],
+      }),
+    );
+
+    const payload = httpPost.mock.calls[0][1];
+    expect(payload).toEqual(
+      expect.objectContaining({
+        organizationId: 'org-1',
+        externalReference: 'REQ-1001',
+        prescriberName: 'Dr Bello',
+        notes: 'Review after 3 days',
+      }),
+    );
+    expect(payload.lines[0]).toEqual(
+      expect.objectContaining({
+        lineNumber: 1,
+        itemId: 'PMC-001',
+        freetextName: 'Paracetamol 500mg — PMC-001',
+        quantity: 21,
+        strength: '500mg',
+        frequency: 'TDS',
+        instruction: 'Route: Oral — After food',
+        durationDays: 7,
+        referenceCode: 'STOCK_ITEM:PMC-001',
+      }),
+    );
+    expect(payload.lines[1]).toEqual(
+      expect.objectContaining({
+        genericItemCode: 'GENP-1',
+        referenceCode: 'GENERIC_PRODUCT:GENP-1',
+      }),
+    );
+    expect(payload.lines[2]).toEqual(
+      expect.objectContaining({
+        genericDrugCode: 'NDF-9',
+        referenceCode: 'GENERIC_DRUG:NDF-9',
+      }),
+    );
+    expect(payload.lines[1].itemId).toBeUndefined();
+    expect(payload.lines[2].genericItemCode).toBeUndefined();
+  });
+
+  it('honours a per-request order target', async () => {
+    httpPost.mockReturnValue(of({ data: { id: 'ord-1', orderNumber: 'EMRORD-1001' } }));
+
+    await service.syncPrescription(
+      makeRequest({
+        requestType: 'PRESCRIPTION',
+        pharmacySyncTarget: 'order',
+        items: [makeItem({ itemKind: 'STOCK_ITEM', code: 'item-uuid-1' })],
+      }),
+      undefined,
+      'order',
+    );
+
+    expect(httpPost.mock.calls[0][0]).toBe('https://rx.test/api/website/orders');
+  });
+
+  it('falls back to EMR_PHARMACY_SYNC_MODE when the request has no target', async () => {
+    configValues.EMR_PHARMACY_SYNC_MODE = 'order';
+    httpPost.mockReturnValue(of({ data: { id: 'ord-1', orderNumber: 'EMRORD-1001' } }));
+
+    await service.syncPrescription(
+      makeRequest({
+        requestType: 'PRESCRIPTION',
+        items: [makeItem({ itemKind: 'STOCK_ITEM', code: 'item-uuid-1' })],
+      }),
+    );
+
+    expect(httpPost.mock.calls[0][0]).toBe('https://rx.test/api/website/orders');
+  });
+
+  it('defaults to the prescription route when the request target is null', async () => {
+    httpPost.mockReturnValue(of({ data: { id: 'rx-1' } }));
+
+    await service.syncPrescription(
+      makeRequest({
+        requestType: 'PRESCRIPTION',
+        pharmacySyncTarget: null,
+        items: [makeItem({ itemKind: 'STOCK_ITEM', code: 'item-uuid-1' })],
+      }),
+      undefined,
+      null,
+    );
+
+    expect(httpPost.mock.calls[0][0]).toBe('https://rx.test/api/website/prescriptions');
   });
 });

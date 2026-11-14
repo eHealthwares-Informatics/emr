@@ -17,6 +17,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { VisitsModule } from './modules/visits/visits.module';
 import { EncountersModule } from './modules/encounters/encounters.module';
 import { FormsModule } from './modules/forms/forms.module';
+import { SubModulesModule } from './modules/sub-modules/sub-modules.module';
 import { RequestsModule } from './modules/requests/requests.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { MedicationsModule } from './modules/medications/medications.module';
@@ -70,6 +71,7 @@ import { PatientInsightsModule } from './modules/patient-insights/patient-insigh
     VisitsModule,
     EncountersModule,
     FormsModule,
+    SubModulesModule,
     RequestsModule,
     ReferralsModule,
     MedicationsModule,

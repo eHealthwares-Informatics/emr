@@ -8,11 +8,11 @@ import { IsNull, Repository } from 'typeorm';
 import { FormDefinitionOrmEntity } from '../entities/form-definition.orm-entity';
 import {
   CreateFormDefinitionDto,
+  ListFormDefinitionsQueryDto,
   UpdateFormDefinitionDto,
 } from '../dto/form.dto';
 import { TenantContext } from '../../../common/tenant-context';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
-import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort } from '../../../database/list';
 import { validateFormSchema } from './schema-validator';
 
@@ -32,10 +32,7 @@ export class FormDefinitionsService {
     private readonly repo: Repository<FormDefinitionOrmEntity>,
   ) {}
 
-  async list(
-    query: ListQueryDto & { category?: string; published?: string },
-    tenant: TenantContext,
-  ) {
+  async list(query: ListFormDefinitionsQueryDto, tenant: TenantContext) {
     const qb = this.repo
       .createQueryBuilder('form')
       .where('form.deleted_at IS NULL');
@@ -57,6 +54,11 @@ export class FormDefinitionsService {
     }
     if (query.category) {
       qb.andWhere('form.category = :category', { category: query.category });
+    }
+    if (query.requestType) {
+      qb.andWhere('form.request_type = :requestType', {
+        requestType: query.requestType,
+      });
     }
     if (query.published) {
       qb.andWhere('form.is_published = :published', {
@@ -157,6 +159,7 @@ export class FormDefinitionsService {
     if (dto.name !== undefined) form.name = dto.name;
     if (dto.description !== undefined) form.description = dto.description;
     if (dto.category !== undefined) form.category = dto.category;
+    if (dto.requestType !== undefined) form.requestType = dto.requestType;
 
     return this.repo.save(form);
   }

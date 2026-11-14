@@ -122,6 +122,33 @@ export class AdmissionsService {
     return this.findOneScoped(id, tenant);
   }
 
+  /**
+   * The patient's current (undischarged) admission, if any. Used by feature
+   * sessions to attach an encounter to an inpatient visit when one exists.
+   */
+  async getCurrentForPatient(
+    patientId: string,
+    tenant: TenantContext,
+  ): Promise<AdmissionOrmEntity | null> {
+    const qb = this.repo
+      .createQueryBuilder('admission')
+      .where('admission.patient_id = :patientId', { patientId })
+      .andWhere('admission.status = :status', { status: 'ADMITTED' })
+      .andWhere('admission.discharge_datetime IS NULL')
+      .andWhere('admission.deleted_at IS NULL')
+      .andWhere('admission.admission_datetime <= :now', { now: new Date() })
+      .orderBy('admission.admission_datetime', 'DESC');
+
+    if (tenant.organizationId) {
+      qb.andWhere(
+        '(admission.organization_id = :orgId OR admission.organization_id IS NULL)',
+        { orgId: tenant.organizationId },
+      );
+    }
+
+    return qb.getOne();
+  }
+
   async admit(dto: AdmitPatientDto, tenant: TenantContext, user: RequestUser) {
     if (dto.wardId) {
       await this.wardsService.get(dto.wardId, tenant);
