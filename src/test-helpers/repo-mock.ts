@@ -14,9 +14,11 @@ export interface QueryBuilderMock {
   skip: jest.Mock;
   take: jest.Mock;
   leftJoin: jest.Mock;
+  leftJoinAndSelect: jest.Mock;
   innerJoin: jest.Mock;
   innerJoinAndSelect: jest.Mock;
   leftJoinAndMapOne: jest.Mock;
+  loadRelationCountAndMap: jest.Mock;
   select: jest.Mock;
   getOne: jest.Mock;
   getMany: jest.Mock;
@@ -55,9 +57,11 @@ export function repoMock(): RepositoryMock {
     skip: jest.fn(() => qb),
     take: jest.fn(() => qb),
     leftJoin: jest.fn(() => qb),
+    leftJoinAndSelect: jest.fn(() => qb),
     innerJoin: jest.fn(() => qb),
     innerJoinAndSelect: jest.fn(() => qb),
     leftJoinAndMapOne: jest.fn(() => qb),
+    loadRelationCountAndMap: jest.fn(() => qb),
     select: jest.fn(() => qb),
     getOne: jest.fn(() => Promise.resolve(qbState.getOne)),
     getMany: jest.fn(() => Promise.resolve(qbState.list)),

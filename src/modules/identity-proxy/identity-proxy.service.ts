@@ -93,6 +93,38 @@ export class IdentityProxyService {
     return users.find((u) => u.id === id) ?? null;
   }
 
+  /**
+   * Identity roles for the feature-role picker. Forwards the caller's token
+   * to identity's public `/roles/catalog` endpoint so the result is scoped to
+   * their organization; falls back to the service key for background calls.
+   */
+  async listRoles(
+    token?: string,
+    organizationId?: string | null,
+  ): Promise<Array<{ code: string; name: string }>> {
+    const cacheKey = token
+      ? `roles:token:${token.slice(-12)}`
+      : `roles:${organizationId ?? 'all'}`;
+    return this.cached(cacheKey, 60_000, async () => {
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : this.systemHeaders();
+      const { data } = await firstValueFrom(
+        this.http.get(`${this.baseUrl}/roles/catalog`, { headers }),
+      );
+      const roles = (data?.data ?? data ?? []) as Array<{
+        code?: string;
+        name?: string;
+      }>;
+      return roles
+        .filter((role) => Boolean(role.code))
+        .map((role) => ({
+          code: role.code as string,
+          name: role.name ?? (role.code as string),
+        }));
+    });
+  }
+
   async listLocations(token?: string): Promise<IdentityLocation[]> {
     const headers = token
       ? { Authorization: `Bearer ${token}` }
