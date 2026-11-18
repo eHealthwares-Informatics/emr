@@ -23,6 +23,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { EncountersModule } from '../encounters/encounters.module';
 import { IdentityProxyModule } from '../identity-proxy/identity-proxy.module';
 import { PatientsModule } from '../patients/patients.module';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { PatientsModule } from '../patients/patients.module';
     EncountersModule,
     IdentityProxyModule,
     PatientsModule,
+    UploadsModule,
   ],
   controllers: [
     FormDefinitionsController,

@@ -27,6 +27,7 @@ const FIELD_TYPES = [
   'print',
   'send-form',
   'qr-code',
+  'file',
   'annotate',
 ];
 
@@ -249,6 +250,21 @@ export function validateFormData(
           errors.push(`${field.label || field.key} must be a boolean`);
         }
         break;
+      case 'file': {
+        const values = Array.isArray(value) ? value : [value];
+        const valid = values.every(
+          (entry) =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            typeof (entry as Record<string, unknown>).url === 'string',
+        );
+        if (!valid) {
+          errors.push(
+            `${field.label || field.key} must contain uploaded file URLs`,
+          );
+        }
+        break;
+      }
       case 'item':
       case 'inventory-item':
       case 'generic-product':

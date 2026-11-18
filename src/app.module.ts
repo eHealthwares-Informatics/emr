@@ -33,6 +33,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { SeedsModule } from './modules/seeds/seeds.module';
 import { PrintsModule } from './modules/prints/prints.module';
 import { PatientInsightsModule } from './modules/patient-insights/patient-insights.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { PatientInsightsModule } from './modules/patient-insights/patient-insigh
     SeedsModule,
     PrintsModule,
     PatientInsightsModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
   providers: [

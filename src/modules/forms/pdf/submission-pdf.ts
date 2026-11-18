@@ -38,6 +38,12 @@ function renderValue(value: unknown): string {
     return value.map((item) => renderValue(item)).join(', ');
   }
   if (typeof value === 'object') {
+    const file = value as { url?: unknown; name?: unknown };
+    if (typeof file.url === 'string') {
+      return `<a href="${escapeHtml(file.url)}">${escapeHtml(
+        typeof file.name === 'string' ? file.name : file.url,
+      )}</a>`;
+    }
     return escapeHtml(JSON.stringify(value));
   }
   return escapeHtml(String(value));

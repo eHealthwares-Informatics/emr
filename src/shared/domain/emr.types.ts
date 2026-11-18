@@ -165,6 +165,10 @@ export type FormFieldSchema = {
   qrMode?: 'auto' | 'template' | 'instance';
   qrSize?: number;
   caption?: string;
+  /** File upload config (`file` field type). */
+  accept?: string;
+  multiple?: boolean;
+  maxSizeMb?: number;
 };
 
 export type FormSchema = {

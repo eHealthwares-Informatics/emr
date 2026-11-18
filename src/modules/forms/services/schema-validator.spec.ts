@@ -83,6 +83,20 @@ describe('validateFormSchema', () => {
     );
   });
 
+  it('validates file uploads by URL', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'doc', label: 'Document', type: 'file' }],
+    };
+    expect(
+      validateFormData(schema, {
+        doc: { url: 'https://cdn.test/a.pdf', name: 'a.pdf' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { doc: { name: 'a.pdf' } })).toContain(
+      'Document must contain uploaded file URLs',
+    );
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [

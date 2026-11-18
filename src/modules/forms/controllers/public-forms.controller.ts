@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
 import {
   PublicSubmitFormDto,
@@ -7,11 +16,21 @@ import {
   VerifyPatientOtpDto,
 } from '../dto/share.dto';
 import { PublicFormsService } from '../services/public-forms.service';
+import { FormShareLinksService } from '../services/form-share-links.service';
+import {
+  assertUpload,
+  MAX_UPLOAD_BYTES,
+} from '../../uploads/uploads.controller';
+import { UploadsService, type UploadedFileInput } from '../../uploads/uploads.service';
 
 @ApiTags('public-forms')
 @Controller('public/forms')
 export class PublicFormsController {
-  constructor(private readonly service: PublicFormsService) {}
+  constructor(
+    private readonly service: PublicFormsService,
+    private readonly shareLinks: FormShareLinksService,
+    private readonly uploads: UploadsService,
+  ) {}
 
   @Public()
   @Get(':token')
@@ -55,5 +74,20 @@ export class PublicFormsController {
     @Body() dto: RequestPatientOtpDto,
   ) {
     return this.service.verifyIdentity(token, dto);
+  }
+
+  @Public()
+  @Post(':token/uploads')
+  @ApiOperation({ summary: 'Upload a file for a public form' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
+  )
+  async upload(
+    @Param('token') token: string,
+    @UploadedFile() file: UploadedFileInput,
+  ) {
+    const link = await this.shareLinks.resolve(token);
+    return this.uploads.store(assertUpload(file), link.organizationId);
   }
 }
