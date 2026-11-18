@@ -38,6 +38,14 @@ function renderValue(value: unknown): string {
     return value.map((item) => renderValue(item)).join(', ');
   }
   if (typeof value === 'object') {
+    const staff = value as { staffName?: unknown; staffId?: unknown };
+    if (typeof staff.staffName === 'string') {
+      return `${escapeHtml(staff.staffName)}${
+        typeof staff.staffId === 'string' && staff.staffId
+          ? ` (${escapeHtml(staff.staffId)})`
+          : ''
+      }`;
+    }
     const file = value as { url?: unknown; name?: unknown };
     if (typeof file.url === 'string') {
       return `<a href="${escapeHtml(file.url)}">${escapeHtml(

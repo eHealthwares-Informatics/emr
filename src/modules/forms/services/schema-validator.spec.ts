@@ -97,6 +97,20 @@ describe('validateFormSchema', () => {
     );
   });
 
+  it('validates practitioner selections', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'practitioner', label: 'Practitioner', type: 'practitioner' }],
+    };
+    expect(
+      validateFormData(schema, {
+        practitioner: { id: 'staff-1', staffId: 'STF-1', staffName: 'Dr Ada' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { practitioner: {} })).toContain(
+      'Practitioner must be a selected practitioner',
+    );
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [

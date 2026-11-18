@@ -28,6 +28,7 @@ const FIELD_TYPES = [
   'send-form',
   'qr-code',
   'file',
+  'practitioner',
   'annotate',
 ];
 
@@ -265,6 +266,20 @@ export function validateFormData(
         }
         break;
       }
+      case 'practitioner':
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          !(
+            (value as Record<string, unknown>).id ||
+            (value as Record<string, unknown>).staffId
+          )
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected practitioner`,
+          );
+        }
+        break;
       case 'item':
       case 'inventory-item':
       case 'generic-product':

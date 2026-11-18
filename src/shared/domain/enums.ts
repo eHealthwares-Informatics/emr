@@ -93,6 +93,7 @@ export const FORM_FIELD_TYPES = [
   'send-form',
   'qr-code',
   'file',
+  'practitioner',
   'annotate',
 ] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
