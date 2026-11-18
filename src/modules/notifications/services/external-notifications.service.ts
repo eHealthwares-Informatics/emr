@@ -106,7 +106,7 @@ export class ExternalNotificationsService {
     if (submission.status === 'DRAFT') return;
 
     const organizationId = submission.organizationId ?? tenant.organizationId;
-    if (!organizationId) return;
+    if (!organizationId || !submission.patientId) return;
 
     const patient = await this.resolvePatient(submission.patientId, tenant);
     const patientName = patient

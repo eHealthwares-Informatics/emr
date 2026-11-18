@@ -47,6 +47,56 @@ describe('validateFormSchema', () => {
     expect(validateFormSchema(schema)).toEqual([]);
   });
 
+  it('accepts the new form controls', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'patient', label: 'Patient', type: 'patient' },
+        { key: 'verified', label: 'Verified patient', type: 'auth-patient' },
+        { key: 'dicom', label: 'DICOM', type: 'dicom-test' },
+        { key: 'loinc', label: 'LOINC', type: 'loinc-test' },
+        { key: 'consent', label: 'Consent', type: 'html', html: '<p>Yes</p>' },
+        {
+          key: 'hidden',
+          label: 'Hidden',
+          type: 'hidden',
+          valueTemplate: '{{patient.mrn}}',
+        },
+        { key: 'print', label: 'Print', type: 'print' },
+        { key: 'send', label: 'Send', type: 'send-form' },
+        { key: 'qr', label: 'QR', type: 'qr-code' },
+      ],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
+  it('requires content for html and hidden controls', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'consent', label: 'Consent', type: 'html' },
+        { key: 'hidden', label: 'Hidden', type: 'hidden' },
+      ],
+    };
+    const errors = validateFormSchema(schema);
+    expect(errors).toContain('Field consent of type html requires html content');
+    expect(errors).toContain(
+      'Field hidden of type hidden requires a value template',
+    );
+  });
+
+  it('validates file uploads by URL', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'doc', label: 'Document', type: 'file' }],
+    };
+    expect(
+      validateFormData(schema, {
+        doc: { url: 'https://cdn.test/a.pdf', name: 'a.pdf' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { doc: { name: 'a.pdf' } })).toContain(
+      'Document must contain uploaded file URLs',
+    );
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [

@@ -65,6 +65,14 @@ export class CreateFormDefinitionDto {
   @IsEnum(REQUEST_TYPES)
   requestType?: RequestType;
 
+  @ApiPropertyOptional({
+    description:
+      'Notification event used by the form print/send controls (e.g. document_creation).',
+  })
+  @IsOptional()
+  @IsString()
+  eventKey?: string;
+
   @ApiProperty()
   @IsObject()
   schemaJson!: FormSchema;
@@ -99,6 +107,11 @@ export class UpdateFormDefinitionDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  eventKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsObject()
   schemaJson?: FormSchema;
 
@@ -121,9 +134,12 @@ export class CreateFormSubmissionDto {
   @IsString()
   formDefinitionId!: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Patient MRN. Optional for anonymous public submissions.',
+  })
+  @IsOptional()
   @IsString()
-  patientId!: string;
+  patientId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

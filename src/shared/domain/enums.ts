@@ -44,6 +44,9 @@ export const ENCOUNTER_TYPES = [
   'PROCEDURE',
   'ADMISSION',
   'ANTENATAL',
+  'ADMINISTRATIVE',
+  'FINANCE',
+  'PHARMACY',
   'OTHER',
 ] as const;
 export type EncounterType = (typeof ENCOUNTER_TYPES)[number];
@@ -81,6 +84,15 @@ export const FORM_FIELD_TYPES = [
   'generic-product',
   'generic-drug',
   'loinc-test',
+  'dicom-test',
+  'patient',
+  'auth-patient',
+  'html',
+  'hidden',
+  'print',
+  'send-form',
+  'qr-code',
+  'file',
   'annotate',
 ] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];

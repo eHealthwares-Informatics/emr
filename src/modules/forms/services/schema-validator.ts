@@ -19,6 +19,15 @@ const FIELD_TYPES = [
   'generic-product',
   'generic-drug',
   'loinc-test',
+  'dicom-test',
+  'patient',
+  'auth-patient',
+  'html',
+  'hidden',
+  'print',
+  'send-form',
+  'qr-code',
+  'file',
   'annotate',
 ];
 
@@ -104,6 +113,16 @@ export function validateFormSchema(schema: FormSchema): string[] {
           );
         }
       }
+
+      if (field.type === 'html' && !field.html?.trim()) {
+        errors.push(`Field ${field.key} of type html requires html content`);
+      }
+
+      if (field.type === 'hidden' && !field.valueTemplate?.trim()) {
+        errors.push(
+          `Field ${field.key} of type hidden requires a value template`,
+        );
+      }
     }
   };
 
@@ -131,6 +150,16 @@ export function validateFormData(
     }
 
     const value = data?.[field.key];
+
+    // Action/layout fields do not carry submission data.
+    if (
+      field.type === 'html' ||
+      field.type === 'print' ||
+      field.type === 'send-form' ||
+      field.type === 'qr-code'
+    ) {
+      return;
+    }
 
     const isEmpty =
       value === undefined ||
@@ -181,11 +210,65 @@ export function validateFormData(
           errors.push(`${field.label || field.key} must be a table of rows`);
         }
         break;
+      case 'patient':
+      case 'auth-patient':
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          !(value as Record<string, unknown>).patientId
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected patient`,
+          );
+        }
+        break;
+      case 'dicom-test':
+      case 'loinc-test':
+        // Concept pickers accept a catalogue entry or free text; both carry a
+        // display name.
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          !(
+            (value as Record<string, unknown>).name ||
+            (value as Record<string, unknown>).code
+          )
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected or typed test`,
+          );
+        }
+        break;
+      case 'hidden':
+        if (
+          field.valueType === 'number' &&
+          (typeof value !== 'number' || Number.isNaN(value))
+        ) {
+          errors.push(`${field.label || field.key} must be a number`);
+        }
+        if (field.valueType === 'boolean' && typeof value !== 'boolean') {
+          errors.push(`${field.label || field.key} must be a boolean`);
+        }
+        break;
+      case 'file': {
+        const values = Array.isArray(value) ? value : [value];
+        const valid = values.every(
+          (entry) =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            typeof (entry as Record<string, unknown>).url === 'string',
+        );
+        if (!valid) {
+          errors.push(
+            `${field.label || field.key} must contain uploaded file URLs`,
+          );
+        }
+        break;
+      }
       case 'item':
       case 'inventory-item':
       case 'generic-product':
       case 'generic-drug':
-      case 'loinc-test':
         // Catalogue pickers store the picked entry ({ id, label, kind, code }).
         if (
           typeof value !== 'object' ||

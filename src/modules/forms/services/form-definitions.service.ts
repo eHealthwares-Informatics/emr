@@ -127,6 +127,7 @@ export class FormDefinitionsService {
 
     const entity = this.repo.create({
       ...dto,
+      eventKey: dto.eventKey || null,
       version: dto.version ?? 1,
       isPublished: false,
       publishedVersion: null,
@@ -160,6 +161,7 @@ export class FormDefinitionsService {
     if (dto.description !== undefined) form.description = dto.description;
     if (dto.category !== undefined) form.category = dto.category;
     if (dto.requestType !== undefined) form.requestType = dto.requestType;
+    if (dto.eventKey !== undefined) form.eventKey = dto.eventKey || null;
 
     return this.repo.save(form);
   }

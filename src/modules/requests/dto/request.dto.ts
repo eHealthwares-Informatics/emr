@@ -33,6 +33,7 @@ export const REQUEST_ITEM_KINDS = [
   'GENERIC_PRODUCT',
   'GENERIC_DRUG',
   'LOINC_TEST',
+  'DICOM_TEST',
 ] as const;
 export type RequestItemKind = (typeof REQUEST_ITEM_KINDS)[number];
 

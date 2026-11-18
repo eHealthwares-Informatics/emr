@@ -1970,6 +1970,222 @@ paths:
       summary: List published forms the current user has access to
       tags:
         - forms
+  /api/form-definitions/{id}/share-links:
+    post:
+      operationId: FormShareLinksController_create
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFormShareLinkDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a public form link (template or instance)
+      tags: &ref_18
+        - form-share-links
+  /api/patient-auth/otp:
+    post:
+      operationId: FormShareLinksController_requestOtp
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Send an OTP to a patient phone number
+      tags: *ref_18
+  /api/patient-auth/otp/verify:
+    post:
+      operationId: FormShareLinksController_verifyOtp
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Verify a patient OTP
+      tags: *ref_18
+  /api/patient-auth/verify:
+    post:
+      operationId: FormShareLinksController_verifyIdentity
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Verify a patient with phone + MRN/date of birth (no OTP)
+      tags: *ref_18
+  /api/public/forms/{token}:
+    get:
+      operationId: PublicFormsController_get
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      summary: Load a public form link and its current values
+      tags: &ref_19
+        - public-forms
+  /api/public/forms/{token}/submissions:
+    post:
+      operationId: PublicFormsController_submit
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicSubmitFormDto'
+      responses:
+        '201':
+          description: ''
+      summary: Submit or amend a public form
+      tags: *ref_19
+  /api/public/forms/{token}/otp:
+    post:
+      operationId: PublicFormsController_requestOtp
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Send an OTP for a public form
+      tags: *ref_19
+  /api/public/forms/{token}/otp/verify:
+    post:
+      operationId: PublicFormsController_verifyOtp
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Verify an OTP for a public form
+      tags: *ref_19
+  /api/public/forms/{token}/verify:
+    post:
+      operationId: PublicFormsController_verifyIdentity
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatientOtpDto'
+      responses:
+        '201':
+          description: ''
+      summary: Verify a patient by phone + MRN/DOB
+      tags: *ref_19
+  /api/public/forms/{token}/uploads:
+    post:
+      operationId: PublicFormsController_upload
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+      summary: Upload a file for a public form
+      tags: *ref_19
+  /api/form-notifications/share:
+    post:
+      operationId: FormNotificationsController_share
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareFormLinkDto'
+      responses:
+        '201':
+          description: ''
+      summary: Create a public form link and send it by email/SMS
+      tags: &ref_20
+        - form-notifications
+  /api/form-notifications/send:
+    post:
+      operationId: FormNotificationsController_send
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispatchFormNotificationDto'
+      responses:
+        '201':
+          description: ''
+      summary: Dispatch a form notification (print and/or email/SMS)
+      tags: *ref_20
+  /api/uploads:
+    post:
+      operationId: UploadsController_upload
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      summary: Upload a file to Cloudinary and S3
+      tags:
+        - uploads
   /api/sub-modules:
     get:
       operationId: SubModulesController_list
@@ -2026,7 +2242,7 @@ paths:
         '200':
           description: ''
       summary: List EMR sub-modules
-      tags: &ref_18
+      tags: &ref_21
         - sub-modules
     post:
       operationId: SubModulesController_create
@@ -2041,7 +2257,7 @@ paths:
         '201':
           description: ''
       summary: Create a sub-module
-      tags: *ref_18
+      tags: *ref_21
   /api/sub-modules/navigation:
     get:
       operationId: SubModulesController_navigation
@@ -2050,7 +2266,7 @@ paths:
         '200':
           description: ''
       summary: Menu tree of active sub-modules, features and their forms
-      tags: *ref_18
+      tags: *ref_21
   /api/sub-modules/role-options:
     get:
       operationId: SubModulesController_roleOptions
@@ -2064,7 +2280,7 @@ paths:
         '200':
           description: ''
       summary: Identity roles available for feature access
-      tags: *ref_18
+      tags: *ref_21
   /api/sub-modules/{id}:
     get:
       operationId: SubModulesController_get
@@ -2078,7 +2294,7 @@ paths:
         '200':
           description: ''
       summary: Get a sub-module with its features
-      tags: *ref_18
+      tags: *ref_21
     patch:
       operationId: SubModulesController_update
       parameters:
@@ -2097,7 +2313,7 @@ paths:
         '200':
           description: ''
       summary: Update a sub-module
-      tags: *ref_18
+      tags: *ref_21
     delete:
       operationId: SubModulesController_remove
       parameters:
@@ -2110,7 +2326,7 @@ paths:
         '200':
           description: ''
       summary: Archive a sub-module
-      tags: *ref_18
+      tags: *ref_21
   /api/features:
     get:
       operationId: FeaturesController_list
@@ -2119,7 +2335,7 @@ paths:
         '200':
           description: ''
       summary: List features (optionally by sub-module)
-      tags: &ref_19
+      tags: &ref_22
         - features
     post:
       operationId: FeaturesController_create
@@ -2134,7 +2350,7 @@ paths:
         '201':
           description: ''
       summary: Create a feature (form + configuration)
-      tags: *ref_19
+      tags: *ref_22
   /api/features/{id}:
     get:
       operationId: FeaturesController_get
@@ -2148,7 +2364,7 @@ paths:
         '200':
           description: ''
       summary: Get a feature with its form and sub-module
-      tags: *ref_19
+      tags: *ref_22
     patch:
       operationId: FeaturesController_update
       parameters:
@@ -2167,7 +2383,7 @@ paths:
         '200':
           description: ''
       summary: Update a feature
-      tags: *ref_19
+      tags: *ref_22
     delete:
       operationId: FeaturesController_remove
       parameters:
@@ -2180,7 +2396,7 @@ paths:
         '200':
           description: ''
       summary: Archive a feature
-      tags: *ref_19
+      tags: *ref_22
   /api/features/{id}/sessions:
     post:
       operationId: FeaturesController_startSession
@@ -2202,7 +2418,7 @@ paths:
       summary: >-
         Start a same-day session: ensure appointment, visit/admission and
         encounter
-      tags: *ref_19
+      tags: *ref_22
   /api/referrals:
     get:
       operationId: ReferralsController_list
@@ -2213,7 +2429,7 @@ paths:
       summary: >-
         List referrals (direction=incoming|outgoing scoped to providerId, plus
         status/patient/encounter filters)
-      tags: &ref_20
+      tags: &ref_23
         - referrals
     post:
       operationId: ReferralsController_create
@@ -2228,7 +2444,7 @@ paths:
         '201':
           description: ''
       summary: Create an outgoing referral from an encounter
-      tags: *ref_20
+      tags: *ref_23
   /api/referrals/{id}:
     get:
       operationId: ReferralsController_get
@@ -2242,7 +2458,7 @@ paths:
         '200':
           description: ''
       summary: Get referral by id
-      tags: *ref_20
+      tags: *ref_23
     patch:
       operationId: ReferralsController_update
       parameters:
@@ -2255,7 +2471,7 @@ paths:
         '200':
           description: ''
       summary: Update referral notes/priority/status
-      tags: *ref_20
+      tags: *ref_23
     delete:
       operationId: ReferralsController_remove
       parameters:
@@ -2268,7 +2484,7 @@ paths:
         '200':
           description: ''
       summary: Archive a referral
-      tags: *ref_20
+      tags: *ref_23
   /api/referrals/{id}/decide:
     post:
       operationId: ReferralsController_decide
@@ -2288,7 +2504,7 @@ paths:
         '201':
           description: ''
       summary: Accept or decline a pending referral
-      tags: *ref_20
+      tags: *ref_23
   /api/referrals/{id}/complete:
     post:
       operationId: ReferralsController_complete
@@ -2308,7 +2524,7 @@ paths:
         '201':
           description: ''
       summary: Complete an accepted referral
-      tags: *ref_20
+      tags: *ref_23
   /api/medications:
     get:
       operationId: MedicationsController_list
@@ -2317,7 +2533,7 @@ paths:
         '200':
           description: ''
       summary: List medications (status/patient/request/encounter/administered filters)
-      tags: &ref_21
+      tags: &ref_24
         - medications
     post:
       operationId: MedicationsController_create
@@ -2332,7 +2548,7 @@ paths:
         '201':
           description: ''
       summary: Create a medication from a PRESCRIPTION request item (nurse flow)
-      tags: *ref_21
+      tags: *ref_24
   /api/medications/{id}:
     get:
       operationId: MedicationsController_get
@@ -2346,7 +2562,7 @@ paths:
         '200':
           description: ''
       summary: Get medication by id
-      tags: *ref_21
+      tags: *ref_24
     patch:
       operationId: MedicationsController_update
       parameters:
@@ -2359,7 +2575,7 @@ paths:
         '200':
           description: ''
       summary: Update a medication record
-      tags: *ref_21
+      tags: *ref_24
     delete:
       operationId: MedicationsController_remove
       parameters:
@@ -2372,7 +2588,7 @@ paths:
         '200':
           description: ''
       summary: Archive a medication record
-      tags: *ref_21
+      tags: *ref_24
   /api/medications/{id}/administer:
     post:
       operationId: MedicationsController_administer
@@ -2392,7 +2608,7 @@ paths:
         '201':
           description: ''
       summary: Record administration and complete the originating prescription request
-      tags: *ref_21
+      tags: *ref_24
   /api/dashboard:
     get:
       operationId: DashboardController_summary
@@ -2406,7 +2622,7 @@ paths:
         '200':
           description: ''
       summary: Daily operational summary for the EMR dashboard
-      tags: &ref_22
+      tags: &ref_25
         - dashboard
   /api/dashboard/attended-patients:
     get:
@@ -2418,7 +2634,7 @@ paths:
       summary: >-
         Distinct patients ever attended (visit or encounter), optionally scoped
         to a provider
-      tags: *ref_22
+      tags: *ref_25
   /api/prints:
     get:
       operationId: PrintsController_list
@@ -2446,10 +2662,10 @@ paths:
       responses:
         '200':
           description: ''
-      security: &ref_23
+      security: &ref_26
         - bearer: []
       summary: List cached prints
-      tags: &ref_24
+      tags: &ref_27
         - prints
   /api/prints/{id}:
     get:
@@ -2463,9 +2679,9 @@ paths:
       responses:
         '200':
           description: ''
-      security: *ref_23
+      security: *ref_26
       summary: Get a cached print record
-      tags: *ref_24
+      tags: *ref_27
   /api/prints/{id}/upload/cloudinary:
     post:
       operationId: PrintsController_uploadCloudinary
@@ -2478,9 +2694,9 @@ paths:
       responses:
         '200':
           description: ''
-      security: *ref_23
+      security: *ref_26
       summary: Manually upload a cached print to Cloudinary
-      tags: *ref_24
+      tags: *ref_27
   /api/prints/{id}/upload/s3:
     post:
       operationId: PrintsController_uploadS3
@@ -2493,9 +2709,9 @@ paths:
       responses:
         '200':
           description: ''
-      security: *ref_23
+      security: *ref_26
       summary: Manually upload a cached print to S3
-      tags: *ref_24
+      tags: *ref_27
   /api/prints/{id}/upload:
     post:
       operationId: PrintsController_uploadBoth
@@ -2508,9 +2724,9 @@ paths:
       responses:
         '200':
           description: ''
-      security: *ref_23
+      security: *ref_26
       summary: Manually upload a cached print to both Cloudinary and S3
-      tags: *ref_24
+      tags: *ref_27
   /api/patients/{patientRef}/insights/biodata:
     get:
       operationId: PatientInsightsController_biodata
@@ -2524,7 +2740,7 @@ paths:
         '200':
           description: ''
       summary: Patient biodata, age, gender and marital status
-      tags: &ref_25
+      tags: &ref_28
         - patient-insights
   /api/patients/{patientRef}/insights/current-diagnosis:
     get:
@@ -2539,7 +2755,7 @@ paths:
         '200':
           description: ''
       summary: Most recent diagnosis for the patient
-      tags: *ref_25
+      tags: *ref_28
   /api/patients/{patientRef}/insights/diagnosis-history:
     get:
       operationId: PatientInsightsController_diagnosisHistory
@@ -2562,7 +2778,7 @@ paths:
         '200':
           description: ''
       summary: Diagnosis history from notes, admissions and requests
-      tags: *ref_25
+      tags: *ref_28
   /api/patients/{patientRef}/insights/current-vitals:
     get:
       operationId: PatientInsightsController_currentVitals
@@ -2576,7 +2792,7 @@ paths:
         '200':
           description: ''
       summary: Latest submitted vitals for the patient
-      tags: *ref_25
+      tags: *ref_28
   /api/patients/{patientRef}/insights/current-medications:
     get:
       operationId: PatientInsightsController_currentMedications
@@ -2599,7 +2815,7 @@ paths:
         '200':
           description: ''
       summary: Current non-cancelled medications
-      tags: *ref_25
+      tags: *ref_28
   /api/patients/{patientRef}/insights/current-prescriptions:
     get:
       operationId: PatientInsightsController_currentPrescriptions
@@ -2622,7 +2838,7 @@ paths:
         '200':
           description: ''
       summary: Active prescription requests with items
-      tags: *ref_25
+      tags: *ref_28
   /api/patients/{patientRef}/insights/current-laboratory-requests:
     get:
       operationId: PatientInsightsController_currentLaboratoryRequests
@@ -2645,7 +2861,7 @@ paths:
         '200':
           description: ''
       summary: Active laboratory requests with items
-      tags: *ref_25
+      tags: *ref_28
 info:
   title: EMR API
   description: >-
@@ -2827,7 +3043,7 @@ components:
           type: string
         type:
           type: string
-          enum: &ref_26
+          enum: &ref_29
             - CASH
             - HMO
             - COMPANY
@@ -2852,7 +3068,7 @@ components:
           type: string
         type:
           type: string
-          enum: *ref_26
+          enum: *ref_29
         description:
           type: string
         contactPhone:
@@ -2881,7 +3097,7 @@ components:
           type: string
         roleType:
           type: string
-          enum: &ref_27
+          enum: &ref_30
             - Doctor
             - Nurse
             - Technician
@@ -2892,7 +3108,7 @@ components:
             - Finance
         category:
           type: string
-          enum: &ref_28
+          enum: &ref_31
             - Medical
             - Nursing
             - Allied Health
@@ -2938,10 +3154,10 @@ components:
           type: string
         roleType:
           type: string
-          enum: *ref_27
+          enum: *ref_30
         category:
           type: string
-          enum: *ref_28
+          enum: *ref_31
         department:
           type: string
         departmentId:
@@ -2968,7 +3184,7 @@ components:
           example: Radiology
         departmentType:
           type: string
-          enum: &ref_29
+          enum: &ref_32
             - OPD
             - INPATIENT
             - EMERGENCY
@@ -3004,7 +3220,7 @@ components:
           type: string
         departmentType:
           type: string
-          enum: *ref_29
+          enum: *ref_32
         description:
           type: string
         locationId:
@@ -3026,7 +3242,7 @@ components:
           description: Ward display name
         wardType:
           type: string
-          enum: &ref_30
+          enum: &ref_33
             - GENERAL
             - PRIVATE
             - ICU
@@ -3059,7 +3275,7 @@ components:
           type: string
         wardType:
           type: string
-          enum: *ref_30
+          enum: *ref_33
         departmentId:
           type: string
         departmentType:
@@ -3079,7 +3295,7 @@ components:
           description: Ward the bed belongs to
         bedType:
           type: string
-          enum: &ref_31
+          enum: &ref_34
             - STANDARD
             - ICU
             - MATERNITY
@@ -3089,7 +3305,7 @@ components:
           default: STANDARD
         status:
           type: string
-          enum: &ref_32
+          enum: &ref_35
             - AVAILABLE
             - OCCUPIED
             - MAINTENANCE
@@ -3109,10 +3325,10 @@ components:
           type: string
         bedType:
           type: string
-          enum: *ref_31
+          enum: *ref_34
         status:
           type: string
-          enum: *ref_32
+          enum: *ref_35
         notes:
           type: string
     AdmitPatientDto:
@@ -3131,10 +3347,10 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-11-13T20:10:34.339Z'
+          default: '2026-11-18T08:28:36.828Z'
         admissionType:
           type: string
-          enum: &ref_33
+          enum: &ref_36
             - EMERGENCY
             - URGENT
             - ELECTIVE
@@ -3169,7 +3385,7 @@ components:
           description: Bed to allocate on admission
         admissionType:
           type: string
-          enum: *ref_33
+          enum: *ref_36
           default: ELECTIVE
         diagnosis:
           type: string
@@ -3186,7 +3402,7 @@ components:
           type: string
         admissionType:
           type: string
-          enum: *ref_33
+          enum: *ref_36
         diagnosis:
           type: string
         referringProviderId:
@@ -3221,7 +3437,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-11-13T20:10:34.340Z'
+          default: '2026-11-18T08:28:36.829Z'
     CreateVisitDto:
       type: object
       properties:
@@ -3231,7 +3447,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: &ref_34
+          enum: &ref_37
             - OUTPATIENT
             - INPATIENT
             - EMERGENCY
@@ -3273,7 +3489,7 @@ components:
           type: string
         visitType:
           type: string
-          enum: *ref_34
+          enum: *ref_37
         status:
           type: string
           enum:
@@ -3297,7 +3513,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: &ref_35
+          enum: &ref_38
             - CHECKUP
             - FOLLOW_UP
             - CONSULTATION
@@ -3321,7 +3537,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_36
+          enum: &ref_39
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -3370,7 +3586,7 @@ components:
           type: string
         appointmentType:
           type: string
-          enum: *ref_35
+          enum: *ref_38
         date:
           type: string
         startTime:
@@ -3387,7 +3603,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_36
+          enum: *ref_39
         status:
           type: string
           enum:
@@ -3429,7 +3645,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_38
+          enum: &ref_41
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -3439,10 +3655,13 @@ components:
             - PROCEDURE
             - ADMISSION
             - ANTENATAL
+            - ADMINISTRATIVE
+            - FINANCE
+            - PHARMACY
             - OTHER
         status:
           type: string
-          enum: &ref_37
+          enum: &ref_40
             - ACTIVE
             - COMPLETED
             - CANCELLED
@@ -3465,14 +3684,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_39
+          enum: &ref_42
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_36
+          enum: *ref_39
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -3492,7 +3711,7 @@ components:
           description: Raw answers from that form.
         pharmacySyncTarget:
           type: string
-          enum: &ref_40
+          enum: &ref_43
             - prescription
             - order
         items:
@@ -3507,7 +3726,7 @@ components:
       properties:
         status:
           type: string
-          enum: *ref_37
+          enum: *ref_40
         endedAt:
           type: string
         patientId:
@@ -3516,7 +3735,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_38
+          enum: *ref_41
         providerId:
           type: string
         providerName:
@@ -3540,10 +3759,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_39
+          enum: *ref_42
         priority:
           type: string
-          enum: *ref_36
+          enum: *ref_39
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -3565,7 +3784,7 @@ components:
           description: Raw answers from that form, kept for print and audit.
         pharmacySyncTarget:
           type: string
-          enum: *ref_40
+          enum: *ref_43
           description: >-
             PRESCRIPTION only: send to the pharmacy prescriptions queue
             (`prescription`) or as a storefront order (`order`). Defaults to
@@ -3620,7 +3839,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_36
+          enum: *ref_39
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -3639,7 +3858,7 @@ components:
           description: Raw answers from that form, kept for print and audit.
         pharmacySyncTarget:
           type: string
-          enum: *ref_40
+          enum: *ref_43
           description: >-
             PRESCRIPTION only: change where a later (re)send goes —
             prescriptions queue or pharmacy order.
@@ -3658,7 +3877,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_41
+          enum: &ref_44
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -3668,10 +3887,15 @@ components:
             - OTHER
         requestType:
           type: string
-          enum: *ref_39
+          enum: *ref_42
           description: >-
             Required for REQUEST forms: the request type whose items this form
             captures.
+        eventKey:
+          type: string
+          description: >-
+            Notification event used by the form print/send controls (e.g.
+            document_creation).
         schemaJson:
           type: object
         version:
@@ -3695,10 +3919,12 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_41
+          enum: *ref_44
         requestType:
           type: string
-          enum: *ref_39
+          enum: *ref_42
+        eventKey:
+          type: string
         schemaJson:
           type: object
         version:
@@ -3710,6 +3936,7 @@ components:
           type: string
         patientId:
           type: string
+          description: Patient MRN. Optional for anonymous public submissions.
         visitId:
           type: string
         encounterId:
@@ -3725,7 +3952,6 @@ components:
           type: boolean
       required:
         - formDefinitionId
-        - patientId
         - dataJson
     UpdateFormSubmissionDto:
       type: object
@@ -3742,6 +3968,102 @@ components:
             - DRAFT
             - SUBMITTED
             - AMENDED
+    CreateFormShareLinkDto:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum:
+            - template
+            - instance
+        patientId:
+          type: string
+          description: Patient MRN for a patient-bound link
+        submissionId:
+          type: string
+          description: Existing submission to reopen
+        expiresInHours:
+          type: number
+          default: 48
+    RequestPatientOtpDto:
+      type: object
+      properties:
+        phone:
+          type: string
+        mrn:
+          type: string
+          description: Patient MRN (when phone is ambiguous)
+        dateOfBirth:
+          type: string
+      required:
+        - phone
+    VerifyPatientOtpDto:
+      type: object
+      properties:
+        challengeId:
+          type: string
+        code:
+          type: string
+      required:
+        - challengeId
+        - code
+    PublicSubmitFormDto:
+      type: object
+      properties:
+        dataJson:
+          type: object
+        patientProof:
+          type: string
+          description: Short-lived proof returned by the OTP verification step
+      required:
+        - dataJson
+    ShareFormLinkDto:
+      type: object
+      properties:
+        formDefinitionId:
+          type: string
+        submissionId:
+          type: string
+        patientId:
+          type: string
+        channels:
+          type: array
+          items:
+            type: string
+        phone:
+          type: string
+        email:
+          type: string
+      required:
+        - formDefinitionId
+    DispatchFormNotificationDto:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        formDefinitionId:
+          type: string
+        eventKey:
+          type: string
+        printFormat:
+          type: string
+          enum:
+            - a4_print
+            - pos_print
+        recipients:
+          type: object
+        context:
+          type: object
+        channels:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+        message:
+          type: string
+        html:
+          type: string
     CreateSubModuleDto:
       type: object
       properties:
@@ -3787,7 +4109,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_38
+          enum: *ref_41
           default: CONSULTATION
         roleCodes:
           description: Identity role codes
@@ -3810,7 +4132,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_38
+          enum: *ref_41
         roleCodes:
           type: array
           items:
