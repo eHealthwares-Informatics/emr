@@ -53,7 +53,11 @@ function headerValue(value: string | string[] | undefined): string | undefined {
 export function resolveTenantClaims<T extends Record<string, any>>(
   payload: T,
   headers: Record<string, string | string[] | undefined> = {},
-): T & { organizationId: string | null; locationId: string | null; organizationScope: OrganizationScope } {
+): T & {
+  organizationId: string | null;
+  locationId: string | null;
+  organizationScope: OrganizationScope;
+} {
   const roles = Array.isArray(payload?.roles) ? (payload.roles as string[]) : [];
   const isSuperAdmin = roles.includes('super_admin');
 

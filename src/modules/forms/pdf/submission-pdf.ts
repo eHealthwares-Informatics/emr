@@ -38,6 +38,28 @@ function renderValue(value: unknown): string {
     return value.map((item) => renderValue(item)).join(', ');
   }
   if (typeof value === 'object') {
+    const staff = value as { staffName?: unknown; staffId?: unknown };
+    if (typeof staff.staffName === 'string') {
+      return `${escapeHtml(staff.staffName)}${
+        typeof staff.staffId === 'string' && staff.staffId
+          ? ` (${escapeHtml(staff.staffId)})`
+          : ''
+      }`;
+    }
+    const department = value as { name?: unknown; code?: unknown };
+    if (typeof department.name === 'string') {
+      return `${escapeHtml(department.name)}${
+        typeof department.code === 'string' && department.code
+          ? ` (${escapeHtml(department.code)})`
+          : ''
+      }`;
+    }
+    const file = value as { url?: unknown; name?: unknown };
+    if (typeof file.url === 'string') {
+      return `<a href="${escapeHtml(file.url)}">${escapeHtml(
+        typeof file.name === 'string' ? file.name : file.url,
+      )}</a>`;
+    }
     return escapeHtml(JSON.stringify(value));
   }
   return escapeHtml(String(value));
@@ -110,6 +132,16 @@ export function submissionPdfHtml(
   collectLabels(form?.schemaJson?.fields ?? []);
 
   const fieldRows = Object.entries(submission.dataJson ?? {})
+    .filter(([key]) => {
+      const type = fieldMeta.get(key)?.type;
+      return (
+        type !== 'hidden' &&
+        type !== 'html' &&
+        type !== 'print' &&
+        type !== 'send-form' &&
+        type !== 'qr-code'
+      );
+    })
     .map(([key, value]) => {
       const label = labels.get(key) ?? key;
       const meta = fieldMeta.get(key);
@@ -148,7 +180,7 @@ export function submissionPdfHtml(
     <span style="font-size: 10; color: #666666;">v${submission.formVersion}</span>
   </h1>
   <p style="font-size: 9; color: #666666;">
-    Status: ${escapeHtml(submission.status)} &middot; Patient MRN: ${escapeHtml(submission.patientId)} &middot;
+    Status: ${escapeHtml(submission.status)} &middot; Patient MRN: ${escapeHtml(submission.patientId ?? '—')} &middot;
     Submitted by ${escapeHtml(submission.submittedByName ?? 'Unknown')} &middot; ${escapeHtml(submittedAt)}
   </p>
   ${submission.encounterId || submission.visitId ? `<p style="font-size: 9; color: #666666; margin-top: 2;">Encounter ${escapeHtml(submission.encounterId ?? '—')} &middot; Visit ${escapeHtml(submission.visitId ?? '—')}</p>` : ''}

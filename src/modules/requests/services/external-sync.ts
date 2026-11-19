@@ -4,7 +4,8 @@ export type ExternalItemKind =
   | 'STOCK_ITEM'
   | 'GENERIC_PRODUCT'
   | 'GENERIC_DRUG'
-  | 'LOINC_TEST';
+  | 'LOINC_TEST'
+  | 'DICOM_TEST';
 
 /**
  * Kind-aware catalog code for a request item line.

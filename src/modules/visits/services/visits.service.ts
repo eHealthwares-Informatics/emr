@@ -138,25 +138,90 @@ export class VisitsService {
     // Auto-create an appointment when none exists for this patient at the
     // visit's start time (walk-ins / direct visits without a booking).
     if (!dto.appointmentId) {
-      await this.ensureAppointment(saved, tenant, user);
+      await this.ensureSameDayAppointment(saved, tenant, user);
     }
     return saved;
   }
 
   /**
+   * Latest ongoing visit for a patient on a given day. Used by feature
+   * sessions so opening a form reuses the same-day visit instead of creating
+   * a new one for every form.
+   */
+  async findOpenForPatientOnDate(
+    patientId: string,
+    date: Date,
+    tenant: TenantContext,
+  ): Promise<VisitOrmEntity | null> {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const qb = this.repo
+      .createQueryBuilder('visit')
+      .where('visit.patient_id = :patientId', { patientId })
+      .andWhere('visit.start_datetime >= :start', { start })
+      .andWhere('visit.start_datetime < :end', { end })
+      .andWhere('visit.status = :status', { status: 'ONGOING' })
+      .andWhere('visit.deleted_at IS NULL')
+      .orderBy('visit.start_datetime', 'DESC');
+
+    if (tenant.organizationId) {
+      qb.andWhere(
+        '(visit.organization_id = :orgId OR visit.organization_id IS NULL)',
+        { orgId: tenant.organizationId },
+      );
+    }
+
+    return qb.getOne();
+  }
+
+  /** Same-day open appointment for a patient, if one exists. */
+  async findSameDayAppointment(
+    patientId: string,
+    date: Date,
+    tenant: TenantContext,
+  ): Promise<AppointmentOrmEntity | null> {
+    const dateString = this.localDateString(date);
+
+    const qb = this.appointmentRepo
+      .createQueryBuilder('appointment')
+      .where('appointment.patient_id = :patientId', { patientId })
+      .andWhere('appointment.date = :date', { date: dateString })
+      .andWhere('appointment.deleted_at IS NULL')
+      .andWhere('appointment.status NOT IN (:...closed)', {
+        closed: ['COMPLETED', 'CANCELLED', 'NO_SHOW'],
+      })
+      .orderBy('appointment.start_time', 'DESC');
+
+    if (tenant.organizationId) {
+      qb.andWhere(
+        '(appointment.organization_id = :orgId OR appointment.organization_id IS NULL)',
+        { orgId: tenant.organizationId },
+      );
+    }
+
+    return qb.getOne();
+  }
+
+  /**
    * Creates a SCHEDULED appointment for the visit's patient when no open
    * appointment already exists for that patient on the visit's date.
-   * Best-effort: never fails the visit creation.
+   * Returns the existing/created appointment, or null on a best-effort
+   * failure (visit creation must not fail if appointment sync fails).
    */
-  private async ensureAppointment(
+  async ensureSameDayAppointment(
     visit: VisitOrmEntity,
     tenant: TenantContext,
     user: RequestUser,
-  ): Promise<void> {
+    date?: Date,
+  ): Promise<AppointmentOrmEntity | null> {
     try {
-      const visitDate = visit.startDatetime
-        ? new Date(visit.startDatetime).toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
+      const targetDate = date ?? visit.startDatetime ?? new Date();
+      const visitDate = this.localDateString(
+        targetDate instanceof Date ? targetDate : new Date(targetDate),
+      );
 
       const existing = await this.appointmentRepo
         .createQueryBuilder('appointment')
@@ -175,13 +240,13 @@ export class VisitsService {
         )
         .getOne();
 
-      if (existing) return;
+      if (existing) return existing;
 
       const startTime = visit.startDatetime
         ? new Date(visit.startDatetime).toTimeString().slice(0, 5)
         : new Date().toTimeString().slice(0, 5);
 
-      await this.appointmentRepo.save(
+      return await this.appointmentRepo.save(
         this.appointmentRepo.create({
           appointmentNumber: generateNumber('APT'),
           patientId: visit.patientId,
@@ -200,6 +265,37 @@ export class VisitsService {
       );
     } catch {
       // Best-effort — visit creation must not fail if appointment sync fails.
+      return null;
+    }
+  }
+
+  /** Local (server timezone) YYYY-MM-DD, matching the appointment date format. */
+  private localDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Links an appointment and a visit to each other when one side is missing
+   * the reference (feature sessions reuse same-day rows).
+   */
+  async linkAppointment(
+    visit: VisitOrmEntity,
+    appointment: AppointmentOrmEntity,
+  ): Promise<void> {
+    let changed = false;
+    if (visit.appointmentId !== appointment.id) {
+      visit.appointmentId = appointment.id;
+      changed = true;
+    }
+    if (appointment.visitId !== visit.id) {
+      appointment.visitId = visit.id;
+      await this.appointmentRepo.save(appointment);
+    }
+    if (changed) {
+      await this.repo.save(visit);
     }
   }
 
