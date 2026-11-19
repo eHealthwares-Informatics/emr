@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { normalizeTenantId } from '../tenant-context';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -61,7 +62,16 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      request.user = await this.jwtService.verifyAsync(token, { secret });
+      const payload = await this.jwtService.verifyAsync(token, { secret });
+      // Identity issues `organizationId: ""` (not null) for users without an
+      // organisation. Normalise tenant claims once, here, so no downstream
+      // consumer can hand a blank string to a uuid column (SQLSTATE 22P02) or
+      // mistake it for a real tenant.
+      request.user = {
+        ...payload,
+        organizationId: normalizeTenantId(payload?.organizationId),
+        locationId: normalizeTenantId(payload?.locationId),
+      };
       return true;
     } catch {
       throw new UnauthorizedException('Invalid access token');
