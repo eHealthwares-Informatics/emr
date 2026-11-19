@@ -1,5 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+export type OrganizationScope = 'all' | 'global' | 'org';
+
 export type RequestUser = {
   sub: string;
   organizationId: string | null;
@@ -7,6 +9,7 @@ export type RequestUser = {
   username: string;
   roles: string[];
   permissions: string[];
+  organizationScope?: OrganizationScope;
 };
 
 export const CurrentUser = createParamDecorator(

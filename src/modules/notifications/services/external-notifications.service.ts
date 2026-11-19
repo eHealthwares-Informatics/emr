@@ -67,6 +67,9 @@ export class ExternalNotificationsService {
       organizationId: appointment.organizationId,
       locationId: appointment.locationId ?? null,
       isGlobalAdmin: false,
+      isSuperAdmin: false,
+      organizationScope: 'org',
+      userId: null,
     });
     const patientName = patient
       ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() ||

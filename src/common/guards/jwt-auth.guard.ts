@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { resolveTenantClaims } from '../tenant-context';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -19,16 +20,23 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<{
+      headers: Record<string, string | string[] | undefined>;
+      user?: unknown;
+    }>();
+
     if (process.env.SKIP_AUTH === 'true') {
-      const request = context.switchToHttp().getRequest();
-      request.user = {
-        sub: 'skip-auth-user',
-        organizationId: '00000000-0000-0000-0000-000000000000',
-        locationId: null,
-        username: 'skip-auth',
-        roles: [],
-        permissions: [],
-      };
+      request.user = resolveTenantClaims(
+        {
+          sub: 'skip-auth-user',
+          organizationId: '00000000-0000-0000-0000-000000000000',
+          locationId: null,
+          username: 'skip-auth',
+          roles: [],
+          permissions: [],
+        },
+        request.headers,
+      );
       return true;
     }
 
@@ -40,11 +48,8 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{
-      headers: Record<string, string>;
-      user?: unknown;
-    }>();
-    const authHeader = request.headers.authorization;
+    const rawAuthHeader = request.headers.authorization;
+    const authHeader = Array.isArray(rawAuthHeader) ? rawAuthHeader[0] : rawAuthHeader;
 
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing bearer token');
@@ -61,7 +66,13 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      request.user = await this.jwtService.verifyAsync(token, { secret });
+      const payload = await this.jwtService.verifyAsync<Record<string, any>>(token, { secret });
+      // Identity issues `organizationId: ""` (not null) for users without an
+      // organisation. Normalise tenant claims once, here, so no downstream
+      // consumer can hand a blank string to a uuid column (SQLSTATE 22P02) or
+      // mistake it for a real tenant. Super admins may pick a tenant with the
+      // x-organization-id / x-location-id headers.
+      request.user = resolveTenantClaims(payload, request.headers);
       return true;
     } catch {
       throw new UnauthorizedException('Invalid access token');
