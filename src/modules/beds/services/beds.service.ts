@@ -49,6 +49,12 @@ export class BedsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere('(bed.location_id = :locId OR bed.location_id IS NULL)', {
+        locId: tenant.locationId,
+      });
+    }
+
     if (query.search) {
       qb.andWhere('bed.code ILIKE :search', { search: `%${query.search}%` });
     }

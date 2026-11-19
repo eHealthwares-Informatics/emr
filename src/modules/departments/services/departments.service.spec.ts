@@ -19,7 +19,9 @@ describe('DepartmentsService', () => {
 
   beforeEach(() => {
     repo = repoMock();
-    service = new DepartmentsService(repo as never);
+    service = new DepartmentsService(repo as never, {
+      assertBelongsToOrganization: jest.fn(),
+    } as never);
   });
 
   describe('list', () => {

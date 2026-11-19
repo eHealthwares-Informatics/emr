@@ -147,7 +147,12 @@ export class TagsService {
     await this.patientTagsRepo.delete({ patientId });
     if (uniqueIds.length > 0) {
       const rows = this.patientTagsRepo.create(
-        uniqueIds.map((tagId) => ({ patientId, tagId })),
+        uniqueIds.map((tagId) => ({
+          patientId,
+          tagId,
+          organizationId: tenant.organizationId,
+          locationId: tenant.locationId,
+        })),
       );
       await this.patientTagsRepo.save(rows);
     }

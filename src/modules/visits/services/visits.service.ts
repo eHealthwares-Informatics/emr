@@ -11,6 +11,7 @@ import { AppointmentOrmEntity } from '../../appointments/entities/appointment.or
 import { CreateVisitDto, EndVisitDto, UpdateVisitDto } from '../dto/visit.dto';
 import { CreateVisitCommentDto } from '../dto/visit-comment.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { TenantLocationService } from '../../../common/tenant-location.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort, applyTimestampFilter, dslFilterValue } from '../../../database/list';
@@ -35,6 +36,7 @@ export class VisitsService {
     private readonly commentsRepo: Repository<VisitCommentOrmEntity>,
     @InjectRepository(AppointmentOrmEntity)
     private readonly appointmentRepo: Repository<AppointmentOrmEntity>,
+    private readonly tenantLocations: TenantLocationService,
   ) {}
 
   async list(
@@ -54,6 +56,13 @@ export class VisitsService {
       qb.andWhere(
         '(visit.organization_id = :orgId OR visit.organization_id IS NULL)',
         { orgId: tenant.organizationId },
+      );
+    }
+
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(visit.location_id = :locId OR visit.location_id IS NULL)',
+        { locId: tenant.locationId },
       );
     }
 
@@ -110,6 +119,13 @@ export class VisitsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(visit.location_id = :locId OR visit.location_id IS NULL)',
+        { locId: tenant.locationId },
+      );
+    }
+
     const [data, total] = await qb.getManyAndCount();
     return { data, total };
   }
@@ -120,6 +136,10 @@ export class VisitsService {
   }
 
   async create(dto: CreateVisitDto, tenant: TenantContext, user: RequestUser) {
+    await this.tenantLocations.assertBelongsToOrganization(
+      dto.locationId,
+      tenant.organizationId,
+    );
     const startDatetime = dto.startDatetime
       ? new Date(dto.startDatetime)
       : new Date();
@@ -301,6 +321,12 @@ export class VisitsService {
 
   async update(id: string, dto: UpdateVisitDto, tenant: TenantContext) {
     const visit = await this.findOneScoped(id, tenant);
+    if (dto.locationId !== undefined) {
+      await this.tenantLocations.assertBelongsToOrganization(
+        dto.locationId,
+        tenant.organizationId,
+      );
+    }
     Object.assign(visit, dto);
     return this.repo.save(visit);
   }
@@ -355,6 +381,8 @@ export class VisitsService {
       comment: dto.comment,
       authorName: dto.authorName ?? user.username,
       createdById: user.sub,
+      organizationId: tenant.organizationId,
+      locationId: tenant.locationId,
     });
     return this.commentsRepo.save(comment);
   }

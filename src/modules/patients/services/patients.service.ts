@@ -72,6 +72,13 @@ export class PatientsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(patient.location_id = :locId OR patient.location_id IS NULL)',
+        { locId: tenant.locationId },
+      );
+    }
+
     if (query.search) {
       qb.andWhere(
         '(patient.patient_id ILIKE :search OR patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR patient.other_names ILIKE :search OR patient.phone ILIKE :search)',

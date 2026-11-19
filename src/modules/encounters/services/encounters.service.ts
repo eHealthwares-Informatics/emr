@@ -58,6 +58,13 @@ export class EncountersService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(encounter.location_id = :locId OR encounter.location_id IS NULL)',
+        { locId: tenant.locationId },
+      );
+    }
+
     if (query.search) {
       qb.andWhere(
         '(encounter.patient_id ILIKE :search OR encounter.encounter_number ILIKE :search OR encounter.reason ILIKE :search)',

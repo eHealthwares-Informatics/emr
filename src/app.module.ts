@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-options.interface';
 import { JwtModule } from '@nestjs/jwt';
 import { AuditModule } from './common/audit/audit.module';
+import { TenantLocationModule } from './common/tenant-location.module';
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthController } from './modules/health/controllers/health.controller';
@@ -57,6 +58,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
       },
     }),
     AuditModule,
+    TenantLocationModule,
     IdentityProxyModule,
     AuthProxyModule,
     LocationProxyModule,

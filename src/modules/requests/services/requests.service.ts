@@ -107,6 +107,13 @@ export class RequestsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(request.location_id = :locId OR request.location_id IS NULL)',
+        { locId: tenant.locationId },
+      );
+    }
+
     if (query.search) {
       qb.andWhere(
         '(request.patient_name ILIKE :search OR request.patient_id ILIKE :search OR request.request_number ILIKE :search)',
@@ -249,7 +256,12 @@ export class RequestsService {
       createdById: user.sub,
     });
     entity.items = (dto.items ?? []).map((item) =>
-      this.itemRepo.create({ ...item, contrast: item.contrast ?? false }),
+      this.itemRepo.create({
+        ...item,
+        contrast: item.contrast ?? false,
+        organizationId: tenant.organizationId,
+        locationId: tenant.locationId,
+      }),
     );
 
     const saved = await this.repo.save(entity);
@@ -303,6 +315,8 @@ export class RequestsService {
           ...item,
           requestId: id,
           contrast: item.contrast ?? false,
+          organizationId: request.organizationId,
+          locationId: request.locationId,
         }),
       );
     }

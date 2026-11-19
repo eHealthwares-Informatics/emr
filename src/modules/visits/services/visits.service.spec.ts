@@ -26,7 +26,9 @@ describe('VisitsService', () => {
   beforeEach(() => {
     repo = repoMock();
     commentsRepo = repoMock();
-    service = new VisitsService(repo as never, commentsRepo as never, {} as never);
+    service = new VisitsService(repo as never, commentsRepo as never, {} as never, {
+      assertBelongsToOrganization: jest.fn(),
+    } as never);
   });
 
   describe('list / active', () => {

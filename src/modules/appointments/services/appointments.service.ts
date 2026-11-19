@@ -14,6 +14,7 @@ import {
   UpdateAppointmentDto,
 } from '../dto/appointment.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { TenantLocationService } from '../../../common/tenant-location.service';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import {
@@ -42,6 +43,7 @@ export class AppointmentsService {
     private readonly repo: Repository<AppointmentOrmEntity>,
     private readonly visitsService: VisitsService,
     private readonly externalNotifications: ExternalNotificationsService,
+    private readonly tenantLocations: TenantLocationService,
   ) {}
 
   async list(
@@ -63,6 +65,13 @@ export class AppointmentsService {
       qb.andWhere(
         '(appointment.organization_id = :orgId OR appointment.organization_id IS NULL)',
         { orgId: tenant.organizationId },
+      );
+    }
+
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(appointment.location_id = :locId OR appointment.location_id IS NULL)',
+        { locId: tenant.locationId },
       );
     }
 
@@ -145,6 +154,10 @@ export class AppointmentsService {
     tenant: TenantContext,
     user: RequestUser,
   ) {
+    await this.tenantLocations.assertBelongsToOrganization(
+      dto.locationId,
+      tenant.organizationId,
+    );
     const entity = this.repo.create({
       ...dto,
       appointmentNumber: generateNumber('APT'),
@@ -167,6 +180,12 @@ export class AppointmentsService {
     ) {
       throw new BadRequestException(
         'Completed or cancelled appointments cannot be edited',
+      );
+    }
+    if (dto.locationId !== undefined) {
+      await this.tenantLocations.assertBelongsToOrganization(
+        dto.locationId,
+        tenant.organizationId,
       );
     }
     Object.assign(appointment, dto);
@@ -193,7 +212,13 @@ export class AppointmentsService {
     }
 
     appointment.status = 'CHECKED_IN';
-    if (dto.locationId) appointment.locationId = dto.locationId;
+    if (dto.locationId) {
+      await this.tenantLocations.assertBelongsToOrganization(
+        dto.locationId,
+        tenant.organizationId,
+      );
+      appointment.locationId = dto.locationId;
+    }
     if (dto.providerId) {
       appointment.providerId = dto.providerId;
       appointment.providerName = dto.providerName ?? appointment.providerName;
