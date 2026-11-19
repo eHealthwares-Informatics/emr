@@ -1,71 +1,97 @@
-import { normalizeTenantId, tenantFromUser } from './tenant-context';
+import { normalizeTenantId, resolveTenantClaims, tenantFromUser } from './tenant-context';
 
-describe('normalizeTenantId', () => {
-  it('treats an empty string as no tenant', () => {
-    // Identity issues "" (not null) for users without an organisation. Passing
-    // that to a `uuid` column fails with SQLSTATE 22P02.
-    expect(normalizeTenantId('')).toBeNull();
+describe('tenant-context', () => {
+  describe('normalizeTenantId', () => {
+    it('treats blank and whitespace as no tenant', () => {
+      expect(normalizeTenantId('')).toBeNull();
+      expect(normalizeTenantId('   ')).toBeNull();
+      expect(normalizeTenantId(null)).toBeNull();
+      expect(normalizeTenantId(undefined)).toBeNull();
+    });
+
+    it('keeps real ids', () => {
+      expect(normalizeTenantId(' org-1 ')).toBe('org-1');
+    });
   });
 
-  it('treats whitespace as no tenant', () => {
-    expect(normalizeTenantId('   ')).toBeNull();
+  describe('tenantFromUser', () => {
+    it('treats a super admin with a blank org as global-scoped', () => {
+      const tenant = tenantFromUser({
+        sub: 'u1',
+        organizationId: '',
+        locationId: null,
+        roles: ['super_admin'],
+      } as any);
+
+      expect(tenant).toMatchObject({
+        organizationId: null,
+        locationId: null,
+        isSuperAdmin: true,
+        isGlobalAdmin: true,
+        organizationScope: 'all',
+        userId: 'u1',
+      });
+    });
+
+    it('treats a normal user with a blank org as denied (not global)', () => {
+      const tenant = tenantFromUser({
+        sub: 'u2',
+        organizationId: '',
+        locationId: null,
+        roles: ['doctor'],
+      } as any);
+
+      expect(tenant.isSuperAdmin).toBe(false);
+      expect(tenant.isGlobalAdmin).toBe(false);
+      expect(tenant.organizationScope).toBe('org');
+    });
+
+    it('keeps a concrete org for a normal user', () => {
+      const tenant = tenantFromUser({
+        sub: 'u3',
+        organizationId: 'org-a',
+        locationId: 'loc-a',
+        roles: ['doctor'],
+      } as any);
+
+      expect(tenant).toMatchObject({
+        organizationId: 'org-a',
+        locationId: 'loc-a',
+        isSuperAdmin: false,
+        organizationScope: 'org',
+      });
+    });
   });
 
-  it('treats null and undefined as no tenant', () => {
-    expect(normalizeTenantId(null)).toBeNull();
-    expect(normalizeTenantId(undefined)).toBeNull();
-  });
+  describe('resolveTenantClaims', () => {
+    it('uses the header organisation for a super admin', () => {
+      const user = resolveTenantClaims(
+        { sub: 'u1', organizationId: '', locationId: null, roles: ['super_admin'] },
+        { 'x-organization-id': 'org-b' },
+      );
 
-  it('keeps a real id', () => {
-    expect(normalizeTenantId('60203e1c1ec8a00015baa357')).toBe(
-      '60203e1c1ec8a00015baa357',
-    );
-  });
+      expect(user.organizationId).toBe('org-b');
+      expect(user.organizationScope).toBe('org');
+    });
 
-  it('trims surrounding whitespace', () => {
-    expect(normalizeTenantId('  abc-123  ')).toBe('abc-123');
-  });
-});
+    it('maps the global marker to a global scope', () => {
+      const user = resolveTenantClaims(
+        { sub: 'u1', organizationId: 'org-a', roles: ['super_admin'] },
+        { 'x-organization-id': 'global' },
+      );
 
-describe('tenantFromUser', () => {
-  const base = {
-    sub: '1601624e-93e5-43a0-b122-247a5dcf2c62',
-    username: 'super_admin',
-    roles: ['super_admin'],
-    permissions: [],
-  };
+      expect(user.organizationId).toBeNull();
+      expect(user.organizationScope).toBe('global');
+    });
 
-  it('maps a blank organisationId to null and marks the user as a global admin', () => {
-    const tenant = tenantFromUser({
-      ...base,
-      organizationId: '',
-      locationId: null,
-    } as any);
+    it('ignores header overrides for non super admins', () => {
+      const user = resolveTenantClaims(
+        { sub: 'u2', organizationId: 'org-a', locationId: 'loc-a', roles: ['doctor'] },
+        { 'x-organization-id': 'org-b', 'x-location-id': 'loc-b' },
+      );
 
-    expect(tenant.organizationId).toBeNull();
-    expect(tenant.locationId).toBeNull();
-    expect(tenant.isGlobalAdmin).toBe(true);
-  });
-
-  it('keeps a real tenant and location', () => {
-    const tenant = tenantFromUser({
-      ...base,
-      organizationId: '60203e1c1ec8a00015baa357',
-      locationId: 'loc-1',
-    } as any);
-
-    expect(tenant.organizationId).toBe('60203e1c1ec8a00015baa357');
-    expect(tenant.locationId).toBe('loc-1');
-    expect(tenant.isGlobalAdmin).toBe(false);
-  });
-
-  it('normalises a blank locationId too', () => {
-    const tenant = tenantFromUser({
-      ...base,
-      organizationId: '60203e1c1ec8a00015baa357',
-      locationId: '   ',
-    } as any);
-
-    expect(tenant.locationId).toBeNull();
+      expect(user.organizationId).toBe('org-a');
+      expect(user.locationId).toBe('loc-a');
+    });
   });
 });

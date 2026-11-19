@@ -103,6 +103,9 @@ export const tenant = {
   organizationId: 'org-1',
   locationId: 'loc-1',
   isGlobalAdmin: false,
+  isSuperAdmin: false,
+  organizationScope: 'org' as const,
+  userId: 'user-1',
 };
 
 /** A fixed RequestUser used across most specs. */

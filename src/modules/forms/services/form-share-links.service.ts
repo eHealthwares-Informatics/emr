@@ -144,6 +144,9 @@ export class FormShareLinksService {
       organizationId: link.organizationId,
       locationId: link.locationId,
       isGlobalAdmin: !link.organizationId,
+      isSuperAdmin: false,
+      organizationScope: link.organizationId ? 'org' : 'global',
+      userId: null,
     };
   }
 
