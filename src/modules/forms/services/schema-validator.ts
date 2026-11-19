@@ -28,6 +28,8 @@ const FIELD_TYPES = [
   'send-form',
   'qr-code',
   'file',
+  'practitioner',
+  'department',
   'annotate',
 ];
 
@@ -265,6 +267,31 @@ export function validateFormData(
         }
         break;
       }
+      case 'practitioner':
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          !(
+            (value as Record<string, unknown>).id ||
+            (value as Record<string, unknown>).staffId
+          )
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected practitioner`,
+          );
+        }
+        break;
+      case 'department':
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          typeof (value as Record<string, unknown>).id !== 'string'
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected department`,
+          );
+        }
+        break;
       case 'item':
       case 'inventory-item':
       case 'generic-product':
