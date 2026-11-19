@@ -4,6 +4,7 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsObject,
   IsOptional,
   IsString,
   ValidateNested,
@@ -11,12 +12,14 @@ import {
 import {
   ENCOUNTER_STATUSES,
   ENCOUNTER_TYPES,
+  PHARMACY_SYNC_TARGETS,
   PRIORITIES,
   REQUEST_TYPES,
 } from '../../../shared/domain/enums';
 import type {
   EncounterStatus,
   EncounterType,
+  PharmacySyncTarget,
   Priority,
   RequestType,
 } from '../../../shared/domain/enums';
@@ -103,6 +106,23 @@ export class CreateEncounterRequestDto {
   @IsOptional()
   @IsDateString()
   requestedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Published REQUEST form the items were captured with.',
+  })
+  @IsOptional()
+  @IsString()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({ description: 'Raw answers from that form.' })
+  @IsOptional()
+  @IsObject()
+  formData?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ enum: PHARMACY_SYNC_TARGETS })
+  @IsOptional()
+  @IsEnum(PHARMACY_SYNC_TARGETS)
+  pharmacySyncTarget?: PharmacySyncTarget;
 
   @ApiProperty()
   @IsArray()

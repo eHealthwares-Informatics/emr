@@ -8,17 +8,20 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
 import {
+  PHARMACY_SYNC_TARGETS,
   PRIORITIES,
   REQUEST_STATUSES,
   REQUEST_TYPES,
 } from '../../../shared/domain/enums';
 import type {
+  PharmacySyncTarget,
   Priority,
   RequestStatus,
   RequestType,
@@ -30,6 +33,7 @@ export const REQUEST_ITEM_KINDS = [
   'GENERIC_PRODUCT',
   'GENERIC_DRUG',
   'LOINC_TEST',
+  'DICOM_TEST',
 ] as const;
 export type RequestItemKind = (typeof REQUEST_ITEM_KINDS)[number];
 
@@ -201,6 +205,30 @@ export class CreateRequestDto {
   @IsDateString()
   requestedAt?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Published REQUEST form the items were captured with (provenance/print).',
+  })
+  @IsOptional()
+  @IsString()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Raw answers from that form, kept for print and audit.',
+  })
+  @IsOptional()
+  @IsObject()
+  formData?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    enum: PHARMACY_SYNC_TARGETS,
+    description:
+      'PRESCRIPTION only: send to the pharmacy prescriptions queue (`prescription`) or as a storefront order (`order`). Defaults to EMR_PHARMACY_SYNC_MODE.',
+  })
+  @IsOptional()
+  @IsEnum(PHARMACY_SYNC_TARGETS)
+  pharmacySyncTarget?: PharmacySyncTarget;
+
   @ApiProperty()
   @IsArray()
   @ValidateNested({ each: true })
@@ -253,6 +281,30 @@ export class UpdateRequestDto {
   @IsOptional()
   @IsString()
   clinicalNotes?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Published REQUEST form the items were captured with (provenance/print).',
+  })
+  @IsOptional()
+  @IsString()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Raw answers from that form, kept for print and audit.',
+  })
+  @IsOptional()
+  @IsObject()
+  formData?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    enum: PHARMACY_SYNC_TARGETS,
+    description:
+      'PRESCRIPTION only: change where a later (re)send goes — prescriptions queue or pharmacy order.',
+  })
+  @IsOptional()
+  @IsEnum(PHARMACY_SYNC_TARGETS)
+  pharmacySyncTarget?: PharmacySyncTarget;
 
   @ApiPropertyOptional()
   @IsOptional()

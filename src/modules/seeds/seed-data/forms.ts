@@ -1,7 +1,7 @@
 import { FormDefinitionOrmEntity } from '../../forms/entities/form-definition.orm-entity';
 import { FormAccessOrmEntity } from '../../forms/entities/form-access.orm-entity';
 import { FormSchema } from '../../../shared/domain/emr.types';
-import { FormCategory } from '../../../shared/domain/enums';
+import { FormCategory, FormFieldType } from '../../../shared/domain/enums';
 
 export const clinicalNoteSchema: FormSchema = {
   fields: [
@@ -59,6 +59,64 @@ export const vitalsSchema: FormSchema = {
   ],
 };
 
+/**
+ * Request forms mirror the item editor they replace: one table whose columns
+ * are the same controls a clinician filled inline — the catalogue picker plus
+ * name/code/quantity/dose/frequency/route/instructions.
+ */
+const REQUEST_ITEM_COLUMNS: Array<{
+  key: string;
+  label: string;
+  type: FormFieldType;
+}> = [
+  { key: 'name', label: 'Name', type: 'text' },
+  { key: 'code', label: 'Code', type: 'text' },
+  { key: 'quantity', label: 'Quantity', type: 'number' },
+  { key: 'dose', label: 'Dose', type: 'text' },
+  { key: 'doseUnit', label: 'Dose unit', type: 'text' },
+  { key: 'frequency', label: 'Frequency', type: 'text' },
+  { key: 'route', label: 'Route', type: 'text' },
+  { key: 'instructions', label: 'Instructions', type: 'text' },
+];
+
+function requestSchema(
+  picker: { key: string; label: string; type: FormFieldType },
+  table: { key: string; label: string },
+): FormSchema {
+  return {
+    fields: [
+      {
+        key: table.key,
+        label: table.label,
+        type: 'table',
+        required: true,
+        columns: [picker, ...REQUEST_ITEM_COLUMNS],
+      },
+    ],
+  };
+}
+
+/** Stock items + generic products + generic drugs (the mixed catalogue picker). */
+export const prescriptionRequestSchema = requestSchema(
+  { key: 'item', label: 'Item / Drug', type: 'item' },
+  { key: 'medications', label: 'Medications' },
+);
+
+export const labRequestSchema = requestSchema(
+  { key: 'test', label: 'Lab test (LOINC)', type: 'loinc-test' },
+  { key: 'tests', label: 'Lab tests' },
+);
+
+export const radiologyRequestSchema = requestSchema(
+  { key: 'item', label: 'Item / Study', type: 'item' },
+  { key: 'studies', label: 'Studies' },
+);
+
+export const otherTestRequestSchema = requestSchema(
+  { key: 'item', label: 'Item / Test', type: 'item' },
+  { key: 'tests', label: 'Tests' },
+);
+
 export const starterFormDefinitions: Array<Partial<FormDefinitionOrmEntity>> = [
   {
     code: 'CLINICAL_NOTE',
@@ -82,6 +140,54 @@ export const starterFormDefinitions: Array<Partial<FormDefinitionOrmEntity>> = [
     publishedVersion: 1,
     isActive: true,
   },
+  {
+    code: 'REQUEST_PRESCRIPTION',
+    name: 'Prescription Request',
+    description: 'Medication lines for a prescription request',
+    version: 1,
+    category: 'REQUEST',
+    requestType: 'PRESCRIPTION',
+    schemaJson: prescriptionRequestSchema,
+    isPublished: true,
+    publishedVersion: 1,
+    isActive: true,
+  },
+  {
+    code: 'REQUEST_LAB',
+    name: 'Lab Request',
+    description: 'Laboratory tests (LOINC) for a lab request',
+    version: 1,
+    category: 'REQUEST',
+    requestType: 'LAB',
+    schemaJson: labRequestSchema,
+    isPublished: true,
+    publishedVersion: 1,
+    isActive: true,
+  },
+  {
+    code: 'REQUEST_RADIOLOGY',
+    name: 'Radiology Request',
+    description: 'Imaging studies for a radiology request',
+    version: 1,
+    category: 'REQUEST',
+    requestType: 'RADIOLOGY',
+    schemaJson: radiologyRequestSchema,
+    isPublished: true,
+    publishedVersion: 1,
+    isActive: true,
+  },
+  {
+    code: 'REQUEST_OTHER_TEST',
+    name: 'Other Test Request',
+    description: 'Non-lab, non-imaging test requests',
+    version: 1,
+    category: 'REQUEST',
+    requestType: 'OTHER_TEST',
+    schemaJson: otherTestRequestSchema,
+    isPublished: true,
+    publishedVersion: 1,
+    isActive: true,
+  },
 ];
 
 export const starterFormAccess: Array<{
@@ -95,6 +201,10 @@ export const starterFormAccess: Array<{
   { roleCode: 'admin', formCode: null, isAllowed: true },
   { roleCode: 'emr_clinician', formCode: 'CLINICAL_NOTE' },
   { roleCode: 'emr_clinician', formCode: 'VITALS' },
+  { roleCode: 'emr_clinician', formCode: 'REQUEST_PRESCRIPTION' },
+  { roleCode: 'emr_clinician', formCode: 'REQUEST_LAB' },
+  { roleCode: 'emr_clinician', formCode: 'REQUEST_RADIOLOGY' },
+  { roleCode: 'emr_clinician', formCode: 'REQUEST_OTHER_TEST' },
   { roleCode: 'auditor', formCode: 'VITALS' },
 ];
 
@@ -121,6 +231,8 @@ export function toFormEntity(
   entity.description = seed.description ?? null;
   entity.version = seed.version ?? 1;
   entity.category = seed.category as FormCategory;
+  entity.requestType =
+    (seed.requestType as FormDefinitionOrmEntity['requestType']) ?? null;
   entity.schemaJson = seed.schemaJson as FormSchema;
   entity.isPublished = seed.isPublished ?? false;
   entity.publishedVersion = seed.publishedVersion ?? null;

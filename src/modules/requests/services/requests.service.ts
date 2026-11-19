@@ -246,6 +246,7 @@ export class RequestsService {
       requestNumber: generateNumber('REQ'),
       status: 'REQUESTED',
       syncStatus: 'NONE',
+      pharmacySyncTarget: dto.pharmacySyncTarget ?? null,
       sendAttemptCount: 0,
       sentAt: null,
       lastSyncedAt: null,
@@ -500,9 +501,10 @@ export class RequestsService {
       if (request.requestType === 'LAB') {
         result = await this.lisIntegration.createLabOrder(request, token);
       } else {
-        result = await this.pharmacyIntegration.createPrescriptionOrder(
+        result = await this.pharmacyIntegration.syncPrescription(
           request,
           token,
+          request.pharmacySyncTarget,
         );
       }
 

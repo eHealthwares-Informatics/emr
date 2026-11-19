@@ -17,8 +17,8 @@ export class FormSubmissionOrmEntity extends EmrBaseEntity {
   @Column({ name: 'form_version', type: 'int' })
   formVersion!: number;
 
-  @Column({ name: 'patient_id', type: 'text' })
-  patientId!: string;
+  @Column({ name: 'patient_id', type: 'text', nullable: true })
+  patientId!: string | null;
 
   @Column({ name: 'visit_id', type: 'text', nullable: true })
   visitId!: string | null;

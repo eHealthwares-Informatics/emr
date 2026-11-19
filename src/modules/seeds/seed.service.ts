@@ -65,6 +65,9 @@ export class SeedService implements OnApplicationBootstrap {
             seed.schemaJson as FormDefinitionOrmEntity['schemaJson'];
           existing.isPublished = seed.isPublished ?? existing.isPublished;
           existing.isActive = seed.isActive ?? existing.isActive;
+          existing.requestType =
+            (seed.requestType as FormDefinitionOrmEntity['requestType']) ??
+            existing.requestType;
           await this.formRepo.save(existing);
           updated += 1;
         }

@@ -47,6 +47,84 @@ describe('validateFormSchema', () => {
     expect(validateFormSchema(schema)).toEqual([]);
   });
 
+  it('accepts the new form controls', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'patient', label: 'Patient', type: 'patient' },
+        { key: 'verified', label: 'Verified patient', type: 'auth-patient' },
+        { key: 'dicom', label: 'DICOM', type: 'dicom-test' },
+        { key: 'loinc', label: 'LOINC', type: 'loinc-test' },
+        { key: 'consent', label: 'Consent', type: 'html', html: '<p>Yes</p>' },
+        {
+          key: 'hidden',
+          label: 'Hidden',
+          type: 'hidden',
+          valueTemplate: '{{patient.mrn}}',
+        },
+        { key: 'print', label: 'Print', type: 'print' },
+        { key: 'send', label: 'Send', type: 'send-form' },
+        { key: 'qr', label: 'QR', type: 'qr-code' },
+      ],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
+  it('requires content for html and hidden controls', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'consent', label: 'Consent', type: 'html' },
+        { key: 'hidden', label: 'Hidden', type: 'hidden' },
+      ],
+    };
+    const errors = validateFormSchema(schema);
+    expect(errors).toContain('Field consent of type html requires html content');
+    expect(errors).toContain(
+      'Field hidden of type hidden requires a value template',
+    );
+  });
+
+  it('validates file uploads by URL', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'doc', label: 'Document', type: 'file' }],
+    };
+    expect(
+      validateFormData(schema, {
+        doc: { url: 'https://cdn.test/a.pdf', name: 'a.pdf' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { doc: { name: 'a.pdf' } })).toContain(
+      'Document must contain uploaded file URLs',
+    );
+  });
+
+  it('validates practitioner selections', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'practitioner', label: 'Practitioner', type: 'practitioner' }],
+    };
+    expect(
+      validateFormData(schema, {
+        practitioner: { id: 'staff-1', staffId: 'STF-1', staffName: 'Dr Ada' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { practitioner: {} })).toContain(
+      'Practitioner must be a selected practitioner',
+    );
+  });
+
+  it('validates department selections', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'department', label: 'Department', type: 'department' }],
+    };
+    expect(
+      validateFormData(schema, {
+        department: { id: 'dept-1', code: 'OPD', name: 'Outpatients' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { department: { name: 'Outpatients' } })).toContain(
+      'Department must be a selected department',
+    );
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [
@@ -258,5 +336,35 @@ describe('annotate fields', () => {
     expect(validateFormData(schema, { pain: [] })).toContain(
       'Pain is required',
     );
+  });
+});
+
+describe('catalogue item controls', () => {
+  it('accepts the item control types in a schema', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'stock', label: 'Stock', type: 'inventory-item' },
+        { key: 'product', label: 'Product', type: 'generic-product' },
+        { key: 'drug', label: 'Drug', type: 'generic-drug' },
+        { key: 'any', label: 'Any', type: 'item' },
+      ],
+    };
+    expect(validateFormSchema(schema)).toEqual([]);
+  });
+
+  it('requires a picked catalogue entry', () => {
+    const schema: FormSchema = {
+      fields: [
+        { key: 'drug', label: 'Drug', type: 'generic-drug', required: true },
+      ],
+    };
+    expect(validateFormData(schema, { drug: 'Paracetamol' })).toEqual([
+      'Drug must be a catalogue item',
+    ]);
+    expect(
+      validateFormData(schema, {
+        drug: { id: 'g1', label: 'Paracetamol', kind: 'GENERIC_DRUG' },
+      }),
+    ).toEqual([]);
   });
 });
