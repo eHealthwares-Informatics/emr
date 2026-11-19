@@ -29,6 +29,7 @@ const FIELD_TYPES = [
   'qr-code',
   'file',
   'practitioner',
+  'department',
   'annotate',
 ];
 
@@ -277,6 +278,17 @@ export function validateFormData(
         ) {
           errors.push(
             `${field.label || field.key} must be a selected practitioner`,
+          );
+        }
+        break;
+      case 'department':
+        if (
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          typeof (value as Record<string, unknown>).id !== 'string'
+        ) {
+          errors.push(
+            `${field.label || field.key} must be a selected department`,
           );
         }
         break;

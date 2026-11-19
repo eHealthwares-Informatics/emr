@@ -111,6 +111,20 @@ describe('validateFormSchema', () => {
     );
   });
 
+  it('validates department selections', () => {
+    const schema: FormSchema = {
+      fields: [{ key: 'department', label: 'Department', type: 'department' }],
+    };
+    expect(
+      validateFormData(schema, {
+        department: { id: 'dept-1', code: 'OPD', name: 'Outpatients' },
+      }),
+    ).toEqual([]);
+    expect(validateFormData(schema, { department: { name: 'Outpatients' } })).toContain(
+      'Department must be a selected department',
+    );
+  });
+
   it('requires options for select/radio/checkbox-group and columns for table', () => {
     const schema: FormSchema = {
       fields: [

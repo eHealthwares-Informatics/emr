@@ -46,6 +46,14 @@ function renderValue(value: unknown): string {
           : ''
       }`;
     }
+    const department = value as { name?: unknown; code?: unknown };
+    if (typeof department.name === 'string') {
+      return `${escapeHtml(department.name)}${
+        typeof department.code === 'string' && department.code
+          ? ` (${escapeHtml(department.code)})`
+          : ''
+      }`;
+    }
     const file = value as { url?: unknown; name?: unknown };
     if (typeof file.url === 'string') {
       return `<a href="${escapeHtml(file.url)}">${escapeHtml(
