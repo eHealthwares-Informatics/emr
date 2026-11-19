@@ -73,6 +73,13 @@ export class AdmissionsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere(
+        '(admission.location_id = :locId OR admission.location_id IS NULL)',
+        { locId: tenant.locationId },
+      );
+    }
+
     if (query.search) {
       qb.andWhere(
         '(admission.patient_name ILIKE :search OR admission.patient_id ILIKE :search OR admission.admission_number ILIKE :search)',

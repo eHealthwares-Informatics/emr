@@ -41,6 +41,12 @@ export class WardsService {
       );
     }
 
+    if (tenant.locationId) {
+      qb.andWhere('(ward.location_id = :locId OR ward.location_id IS NULL)', {
+        locId: tenant.locationId,
+      });
+    }
+
     if (query.search) {
       qb.andWhere('(ward.name ILIKE :search OR ward.code ILIKE :search)', {
         search: `%${query.search}%`,

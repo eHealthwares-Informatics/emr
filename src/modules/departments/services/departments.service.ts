@@ -11,6 +11,7 @@ import {
   UpdateDepartmentDto,
 } from '../dto/department.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { TenantLocationService } from '../../../common/tenant-location.service';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { applySort, dslFilterValue } from '../../../database/list';
 
@@ -21,6 +22,7 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(DepartmentOrmEntity)
     private readonly repo: Repository<DepartmentOrmEntity>,
+    private readonly tenantLocations: TenantLocationService,
   ) {}
 
   async list(
@@ -92,6 +94,10 @@ export class DepartmentsService {
   async create(dto: CreateDepartmentDto, tenant: TenantContext) {
     await this.assertCodeAvailable(dto.code, tenant);
     await this.assertParentUsable(dto.parentId ?? null, tenant);
+    await this.tenantLocations.assertBelongsToOrganization(
+      dto.locationId,
+      tenant.organizationId,
+    );
 
     const entity = this.repo.create({
       code: dto.code,
@@ -113,6 +119,12 @@ export class DepartmentsService {
     }
     if (dto.parentId !== undefined) {
       await this.assertParentUsable(dto.parentId, tenant, id);
+    }
+    if (dto.locationId !== undefined) {
+      await this.tenantLocations.assertBelongsToOrganization(
+        dto.locationId,
+        tenant.organizationId,
+      );
     }
     Object.assign(department, dto);
     return this.repo.save(department);
