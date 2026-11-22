@@ -26,6 +26,20 @@ export class PatientOrmEntity extends EmrBaseEntity {
   @Column({ type: 'text', nullable: true })
   phone!: string | null;
 
+  /**
+   * Identity-service user id, when this patient signs in to the patient app.
+   * Linking on the id is preferred over the phone so a changed number does not
+   * split the record.
+   */
+  @Index()
+  @Column({ name: 'external_user_id', type: 'text', nullable: true })
+  externalUserId!: string | null;
+
+  /** Conversation-engine participant id, when the patient came from a chat. */
+  @Index()
+  @Column({ name: 'participant_id', type: 'text', nullable: true })
+  participantId!: string | null;
+
   @Column({ type: 'text', nullable: true })
   email!: string | null;
 
