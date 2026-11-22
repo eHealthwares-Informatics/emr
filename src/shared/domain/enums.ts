@@ -9,6 +9,13 @@ export const APPOINTMENT_TYPES = [
 ] as const;
 export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
 
+/**
+ * How the consultation happens. `VIDEO`/`AUDIO` are teleconsultations booked
+ * from the patient app; `IN_PERSON` is the clinic default.
+ */
+export const APPOINTMENT_MODALITIES = ['IN_PERSON', 'VIDEO', 'AUDIO'] as const;
+export type AppointmentModality = (typeof APPOINTMENT_MODALITIES)[number];
+
 export const APPOINTMENT_STATUSES = [
   'SCHEDULED',
   'CHECKED_IN',

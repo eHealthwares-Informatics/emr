@@ -1,6 +1,7 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
 import type {
+  AppointmentModality,
   AppointmentStatus,
   AppointmentType,
   Priority,
@@ -38,6 +39,9 @@ export class AppointmentOrmEntity extends EmrBaseEntity {
 
   @Column({ type: 'text', default: 'SCHEDULED' })
   status!: AppointmentStatus;
+
+  @Column({ type: 'text', nullable: true })
+  modality!: AppointmentModality | null;
 
   @Column({ type: 'text', default: 'ROUTINE' })
   priority!: Priority;

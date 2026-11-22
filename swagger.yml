@@ -3347,7 +3347,7 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-11-18T08:28:36.828Z'
+          default: '2026-11-21T13:46:27.626Z'
         admissionType:
           type: string
           enum: &ref_36
@@ -3437,7 +3437,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-11-18T08:28:36.829Z'
+          default: '2026-11-21T13:46:27.627Z'
     CreateVisitDto:
       type: object
       properties:
@@ -3521,6 +3521,12 @@ components:
             - EMERGENCY
             - SURGERY
             - OTHER
+        modality:
+          type: string
+          enum: &ref_39
+            - IN_PERSON
+            - VIDEO
+            - AUDIO
         date:
           type: string
         startTime:
@@ -3537,7 +3543,7 @@ components:
           type: string
         priority:
           type: string
-          enum: &ref_39
+          enum: &ref_40
             - ROUTINE
             - URGENT
             - EMERGENCY
@@ -3587,6 +3593,9 @@ components:
         appointmentType:
           type: string
           enum: *ref_38
+        modality:
+          type: string
+          enum: *ref_39
         date:
           type: string
         startTime:
@@ -3603,7 +3612,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_39
+          enum: *ref_40
         status:
           type: string
           enum:
@@ -3645,7 +3654,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: &ref_41
+          enum: &ref_42
             - CONSULTATION
             - VITALS
             - HISTORY_AND_PHYSICAL
@@ -3661,7 +3670,7 @@ components:
             - OTHER
         status:
           type: string
-          enum: &ref_40
+          enum: &ref_41
             - ACTIVE
             - COMPLETED
             - CANCELLED
@@ -3684,14 +3693,14 @@ components:
       properties:
         requestType:
           type: string
-          enum: &ref_42
+          enum: &ref_43
             - PRESCRIPTION
             - LAB
             - RADIOLOGY
             - OTHER_TEST
         priority:
           type: string
-          enum: *ref_39
+          enum: *ref_40
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -3711,7 +3720,7 @@ components:
           description: Raw answers from that form.
         pharmacySyncTarget:
           type: string
-          enum: &ref_43
+          enum: &ref_44
             - prescription
             - order
         items:
@@ -3726,7 +3735,7 @@ components:
       properties:
         status:
           type: string
-          enum: *ref_40
+          enum: *ref_41
         endedAt:
           type: string
         patientId:
@@ -3735,7 +3744,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_41
+          enum: *ref_42
         providerId:
           type: string
         providerName:
@@ -3759,10 +3768,10 @@ components:
           type: string
         requestType:
           type: string
-          enum: *ref_42
+          enum: *ref_43
         priority:
           type: string
-          enum: *ref_39
+          enum: *ref_40
           default: ROUTINE
         orderingProviderId:
           type: string
@@ -3784,7 +3793,7 @@ components:
           description: Raw answers from that form, kept for print and audit.
         pharmacySyncTarget:
           type: string
-          enum: *ref_43
+          enum: *ref_44
           description: >-
             PRESCRIPTION only: send to the pharmacy prescriptions queue
             (`prescription`) or as a storefront order (`order`). Defaults to
@@ -3839,7 +3848,7 @@ components:
           type: string
         priority:
           type: string
-          enum: *ref_39
+          enum: *ref_40
         orderingProviderId:
           type: string
         orderingProviderName:
@@ -3858,7 +3867,7 @@ components:
           description: Raw answers from that form, kept for print and audit.
         pharmacySyncTarget:
           type: string
-          enum: *ref_43
+          enum: *ref_44
           description: >-
             PRESCRIPTION only: change where a later (re)send goes —
             prescriptions queue or pharmacy order.
@@ -3877,7 +3886,7 @@ components:
           type: string
         category:
           type: string
-          enum: &ref_44
+          enum: &ref_45
             - CLINICAL_NOTE
             - VITALS
             - ASSESSMENT
@@ -3887,7 +3896,7 @@ components:
             - OTHER
         requestType:
           type: string
-          enum: *ref_42
+          enum: *ref_43
           description: >-
             Required for REQUEST forms: the request type whose items this form
             captures.
@@ -3919,10 +3928,10 @@ components:
           type: string
         category:
           type: string
-          enum: *ref_44
+          enum: *ref_45
         requestType:
           type: string
-          enum: *ref_42
+          enum: *ref_43
         eventKey:
           type: string
         schemaJson:
@@ -4109,7 +4118,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_41
+          enum: *ref_42
           default: CONSULTATION
         roleCodes:
           description: Identity role codes
@@ -4132,7 +4141,7 @@ components:
           type: string
         encounterType:
           type: string
-          enum: *ref_41
+          enum: *ref_42
         roleCodes:
           type: array
           items:
