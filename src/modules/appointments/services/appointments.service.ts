@@ -155,10 +155,10 @@ export class AppointmentsService {
    * Scoped by patient id so a patient token can only touch its own row; the
    * appointment number is the identifier the conversation already carries.
    */
-  async setCallLink(
+  async setConversationId(
     appointmentNumber: string,
     patientId: string,
-    callLink: string,
+    conversationId: string,
     tenant: TenantContext,
   ) {
     const row = await this.repo.findOne({
@@ -173,7 +173,7 @@ export class AppointmentsService {
         `Appointment ${appointmentNumber} not found for this patient`,
       );
     }
-    row.callLink = callLink;
+    row.conversationId = conversationId;
     return this.repo.save(row);
   }
 

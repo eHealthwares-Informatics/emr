@@ -53,10 +53,10 @@ class BookAppointmentDto {
   providerName?: string;
 }
 
-class SetCallLinkDto {
-  @ApiProperty({ example: 'https://myaiha.ehealthwares.com/call/6b04…' })
+class SetConversationDto {
+  @ApiProperty({ example: '6b047d8ff2602eea60a2a8aa' })
   @IsString()
-  callLink!: string;
+  conversationId!: string;
 }
 
 @ApiTags('patient')
@@ -130,22 +130,22 @@ export class PatientSelfController {
     );
   }
 
-  @Post('appointments/:appointmentNumber/call-link')
+  @Post('appointments/:appointmentNumber/conversation')
   @ApiOperation({
-    summary: 'Attach the consultation room link to the caller\'s appointment',
+    summary: 'Attach the consultation conversation to the caller\'s appointment',
   })
-  async setCallLink(
+  async setConversation(
     @Param('appointmentNumber') appointmentNumber: string,
-    @Body() dto: SetCallLinkDto,
+    @Body() dto: SetConversationDto,
     @CurrentUser() user: RequestUser,
     @Headers('x-patient-phone') phone?: string,
     @Headers('x-participant-id') participantId?: string,
   ) {
     const patient = await this.resolve(user, phone, participantId);
-    return this.appointments.setCallLink(
+    return this.appointments.setConversationId(
       appointmentNumber,
       patient.patientId,
-      dto.callLink,
+      dto.conversationId,
       tenantFromUser(user),
     );
   }

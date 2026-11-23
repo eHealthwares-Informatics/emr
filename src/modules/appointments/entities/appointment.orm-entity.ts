@@ -44,12 +44,11 @@ export class AppointmentOrmEntity extends EmrBaseEntity {
   modality!: AppointmentModality | null;
 
   /**
-   * Link that joins the appointment's consultation room (the conversation the
-   * patient and clinician share). Set when a call is joined, so the EMR console
-   * can open the room from the appointment row.
+   * Conversation the consultation happens in. The room id IS this id, so the
+   * doctor joins by conversation id — no URL to keep in sync.
    */
-  @Column({ name: 'call_link', type: 'text', nullable: true })
-  callLink!: string | null;
+  @Column({ name: 'conversation_id', type: 'text', nullable: true })
+  conversationId!: string | null;
 
   @Column({ type: 'text', default: 'ROUTINE' })
   priority!: Priority;
