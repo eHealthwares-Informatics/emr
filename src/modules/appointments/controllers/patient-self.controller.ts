@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  Param,
   Post,
   Query,
   UnauthorizedException,
@@ -50,6 +51,12 @@ class BookAppointmentDto {
   @IsOptional()
   @IsString()
   providerName?: string;
+}
+
+class SetCallLinkDto {
+  @ApiProperty({ example: 'https://myaiha.ehealthwares.com/call/6b04…' })
+  @IsString()
+  callLink!: string;
 }
 
 @ApiTags('patient')
@@ -120,6 +127,26 @@ export class PatientSelfController {
       } as any,
       tenantFromUser(user),
       user,
+    );
+  }
+
+  @Post('appointments/:appointmentNumber/call-link')
+  @ApiOperation({
+    summary: 'Attach the consultation room link to the caller\'s appointment',
+  })
+  async setCallLink(
+    @Param('appointmentNumber') appointmentNumber: string,
+    @Body() dto: SetCallLinkDto,
+    @CurrentUser() user: RequestUser,
+    @Headers('x-patient-phone') phone?: string,
+    @Headers('x-participant-id') participantId?: string,
+  ) {
+    const patient = await this.resolve(user, phone, participantId);
+    return this.appointments.setCallLink(
+      appointmentNumber,
+      patient.patientId,
+      dto.callLink,
+      tenantFromUser(user),
     );
   }
 

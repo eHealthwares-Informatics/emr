@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { AppointmentOrmEntity } from '../entities/appointment.orm-entity';
 import {
   CancelAppointmentDto,
@@ -147,6 +147,34 @@ export class AppointmentsService {
 
   async get(id: string, tenant: TenantContext) {
     return this.findOneScoped(id, tenant);
+  }
+
+  /**
+   * Attach the consultation room link to one of the caller's appointments.
+   *
+   * Scoped by patient id so a patient token can only touch its own row; the
+   * appointment number is the identifier the conversation already carries.
+   */
+  async setCallLink(
+    appointmentNumber: string,
+    patientId: string,
+    callLink: string,
+    tenant: TenantContext,
+  ) {
+    const row = await this.repo.findOne({
+      where: {
+        appointmentNumber,
+        patientId,
+        deletedAt: IsNull(),
+      },
+    });
+    if (!row) {
+      throw new NotFoundException(
+        `Appointment ${appointmentNumber} not found for this patient`,
+      );
+    }
+    row.callLink = callLink;
+    return this.repo.save(row);
   }
 
   async create(
