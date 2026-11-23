@@ -47,7 +47,7 @@ export class PatientIdentityService {
     const phone = this.clean(identity.phone);
 
     const existing =
-      (userId && (await this.find({ externalUserId: userId }))) ||
+      (userId && (await this.find({ userId: userId }))) ||
       (participantId && (await this.find({ participantId }))) ||
       (phone && (await this.find({ phone })));
 
@@ -55,7 +55,7 @@ export class PatientIdentityService {
       // Backfill links learned since the record was created (e.g. the patient
       // has now signed in, so the phone record gains a userId).
       const patch: Partial<PatientOrmEntity> = {};
-      if (userId && !existing.externalUserId) patch.externalUserId = userId;
+      if (userId && !existing.userId) patch.userId = userId;
       if (participantId && !existing.participantId) {
         patch.participantId = participantId;
       }
@@ -88,10 +88,10 @@ export class PatientIdentityService {
     );
 
     await this.repo.update(created.id, {
-      externalUserId: userId ?? null,
+      userId: userId ?? null,
       participantId: participantId ?? null,
     });
-    return { ...created, externalUserId: userId ?? null, participantId };
+    return { ...created, userId: userId ?? null, participantId };
   }
 
   private find(where: Record<string, unknown>) {

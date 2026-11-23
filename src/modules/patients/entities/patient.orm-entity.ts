@@ -32,8 +32,8 @@ export class PatientOrmEntity extends EmrBaseEntity {
    * split the record.
    */
   @Index()
-  @Column({ name: 'external_user_id', type: 'text', nullable: true })
-  externalUserId!: string | null;
+  @Column({ name: 'user_id', type: 'text', nullable: true })
+  userId!: string | null;
 
   /** Conversation-engine participant id, when the patient came from a chat. */
   @Index()

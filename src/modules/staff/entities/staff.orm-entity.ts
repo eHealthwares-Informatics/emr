@@ -48,8 +48,14 @@ export class StaffOrmEntity extends EmrBaseEntity {
 
   // Attached identity-service user (the staff member's login). Staff data is
   // not duplicated: this links to the identity user record instead.
+  @Index()
   @Column({ name: 'user_id', type: 'text', nullable: true })
   userId!: string | null;
+
+  // Conversation-engine participant, when the staff member joins chats/calls.
+  @Index()
+  @Column({ name: 'participant_id', type: 'text', nullable: true })
+  participantId!: string | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
