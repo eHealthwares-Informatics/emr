@@ -3426,7 +3426,7 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-11-23T11:59:45.205Z'
+          default: '2026-11-23T15:02:51.263Z'
         admissionType:
           type: string
           enum: &ref_37
@@ -3516,7 +3516,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-11-23T11:59:45.206Z'
+          default: '2026-11-23T15:02:51.265Z'
     CreateVisitDto:
       type: object
       properties:

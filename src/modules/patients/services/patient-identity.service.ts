@@ -47,9 +47,9 @@ export class PatientIdentityService {
     const phone = this.clean(identity.phone);
 
     const existing =
-      (userId && (await this.find({ userId: userId }))) ||
+      (phone && (await this.findByPhone(phone))) ||
       (participantId && (await this.find({ participantId }))) ||
-      (phone && (await this.find({ phone })));
+      (userId && (await this.find({ userId: userId })));
 
     if (existing) {
       // Backfill links learned since the record was created (e.g. the patient
@@ -92,6 +92,26 @@ export class PatientIdentityService {
       participantId: participantId ?? null,
     });
     return { ...created, userId: userId ?? null, participantId };
+  }
+
+  /**
+   * Match on the phone's digits, not the stored formatting.
+   *
+   * Numbers arrive as `23480…`, `+23480…` or `080…` depending on the caller, so
+   * an exact string match silently misses every record stored in another shape.
+   */
+  private async findByPhone(phone: string) {
+    const digits = phone.replace(/\D/g, '');
+    if (!digits) return null;
+    return this.repo
+      .createQueryBuilder('patient')
+      .where('patient.deleted_at IS NULL')
+      .andWhere(
+        "regexp_replace(coalesce(patient.phone, ''), '\\D', '', 'g') = :digits",
+        { digits },
+      )
+      .limit(1)
+      .getOne();
   }
 
   private find(where: Record<string, unknown>) {
