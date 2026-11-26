@@ -1343,6 +1343,36 @@ paths:
           description: ''
       summary: Book a consultation for the caller
       tags: *ref_12
+  /api/patient/appointments/{appointmentNumber}/conversation:
+    post:
+      operationId: PatientSelfController_setConversation
+      parameters:
+        - name: appointmentNumber
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: x-patient-phone
+          required: true
+          in: header
+          schema:
+            type: string
+        - name: x-participant-id
+          required: true
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetConversationDto'
+      responses:
+        '201':
+          description: ''
+      summary: Attach the consultation conversation to the caller's appointment
+      tags: *ref_12
   /api/notifications:
     get:
       operationId: NotificationsController_list
@@ -3426,7 +3456,7 @@ components:
           description: Bed to allocate on admission
         admissionDatetime:
           type: string
-          default: '2026-11-23T15:02:51.263Z'
+          default: '2026-11-25T09:16:19.535Z'
         admissionType:
           type: string
           enum: &ref_37
@@ -3516,7 +3546,7 @@ components:
           type: string
         dischargeDatetime:
           type: string
-          default: '2026-11-23T15:02:51.265Z'
+          default: '2026-11-25T09:16:19.536Z'
     CreateVisitDto:
       type: object
       properties:
@@ -3733,6 +3763,14 @@ components:
         - date
         - startTime
         - appointmentType
+    SetConversationDto:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          example: 6b047d8ff2602eea60a2a8aa
+      required:
+        - conversationId
     SubscribeNotificationsDto:
       type: object
       properties:
