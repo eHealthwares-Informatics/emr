@@ -85,6 +85,13 @@ export class CreateStaffDto {
   @IsString()
   userId?: string;
 
+  @ApiPropertyOptional({
+    description: 'Linked conversation-engine participant id',
+  })
+  @IsOptional()
+  @IsString()
+  participantId?: string;
+
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
@@ -158,6 +165,13 @@ export class UpdateStaffDto {
   @IsOptional()
   @IsString()
   userId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Linked conversation-engine participant id',
+  })
+  @IsOptional()
+  @IsString()
+  participantId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

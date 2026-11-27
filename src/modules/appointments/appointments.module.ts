@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppointmentOrmEntity } from './entities/appointment.orm-entity';
 import { AppointmentsService } from './services/appointments.service';
 import { AppointmentsController } from './controllers/appointments.controller';
+import { PatientSelfController } from './controllers/patient-self.controller';
+import { PatientsModule } from '../patients/patients.module';
 import { VisitsModule } from '../visits/visits.module';
 import { PdfModule } from '../pdf/pdf.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -13,8 +15,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
     VisitsModule,
     PdfModule,
     NotificationsModule,
+    PatientsModule,
   ],
-  controllers: [AppointmentsController],
+  controllers: [AppointmentsController, PatientSelfController],
   providers: [AppointmentsService],
   exports: [AppointmentsService],
 })

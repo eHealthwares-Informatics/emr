@@ -1,6 +1,7 @@
 import { Column, Entity, Index } from 'typeorm';
 import { EmrBaseEntity } from '../../emr-base.entity';
 import type {
+  AppointmentModality,
   AppointmentStatus,
   AppointmentType,
   Priority,
@@ -38,6 +39,16 @@ export class AppointmentOrmEntity extends EmrBaseEntity {
 
   @Column({ type: 'text', default: 'SCHEDULED' })
   status!: AppointmentStatus;
+
+  @Column({ type: 'text', nullable: true })
+  modality!: AppointmentModality | null;
+
+  /**
+   * Conversation the consultation happens in. The room id IS this id, so the
+   * doctor joins by conversation id — no URL to keep in sync.
+   */
+  @Column({ name: 'conversation_id', type: 'text', nullable: true })
+  conversationId!: string | null;
 
   @Column({ type: 'text', default: 'ROUTINE' })
   priority!: Priority;

@@ -1,11 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import {
+  APPOINTMENT_MODALITIES,
   APPOINTMENT_STATUSES,
   APPOINTMENT_TYPES,
   PRIORITIES,
 } from '../../../shared/domain/enums';
 import type {
+  AppointmentModality,
   AppointmentStatus,
   AppointmentType,
   Priority,
@@ -24,6 +26,11 @@ export class CreateAppointmentDto {
   @ApiProperty({ enum: APPOINTMENT_TYPES })
   @IsEnum(APPOINTMENT_TYPES)
   appointmentType!: AppointmentType;
+
+  @ApiPropertyOptional({ enum: APPOINTMENT_MODALITIES })
+  @IsOptional()
+  @IsEnum(APPOINTMENT_MODALITIES)
+  modality?: AppointmentModality;
 
   @ApiProperty()
   @IsDateString()
@@ -89,6 +96,11 @@ export class UpdateAppointmentDto {
   @IsOptional()
   @IsEnum(APPOINTMENT_TYPES)
   appointmentType?: AppointmentType;
+
+  @ApiPropertyOptional({ enum: APPOINTMENT_MODALITIES })
+  @IsOptional()
+  @IsEnum(APPOINTMENT_MODALITIES)
+  modality?: AppointmentModality;
 
   @ApiPropertyOptional()
   @IsOptional()
